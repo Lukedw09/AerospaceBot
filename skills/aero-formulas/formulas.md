@@ -4,9 +4,11 @@ Units below are SI unless a section says otherwise. Any single consistent unit s
 
 The file is grouped so a search can start in one category:
 
-- Compressible flow: perfect-gas thermodynamics, isentropic flow, area-Mach, shocks, Prandtl-Meyer expansion, and calorically imperfect air.
-- Rocket propulsion: thrust, impulse, mass ratio, nozzles, and solid- and liquid-propellant relations.
-- Aerodynamics: incompressible Bernoulli and the force, moment, pressure, and skin-friction coefficients.
+- Compressible flow: perfect-gas thermodynamics, isentropic flow, area-Mach, shocks, Prandtl-Meyer expansion, calorically imperfect air, Newtonian viscosity, and Reynolds number.
+- Atmosphere: geopotential altitude, the hydrostatic gradient, tropospheric temperature, Sutherland viscosity, and the specific gas constant, from the 1976 U.S. Standard Atmosphere.
+- Rocket propulsion: thrust, impulse, mass ratio, nozzles, solid- and liquid-propellant relations, and two-body orbital speed, period, and energy.
+- Aerodynamics: incompressible Bernoulli, force and moment coefficients, wing aspect ratio, induced drag, stall speed, and load factor.
+- Structures: thin-wall motor-case hoop stress, margin of safety, and longitudinal-weld radial mismatch.
 
 The rocket symbol \(k\) is the same ratio of specific heats as \(\gamma\). Standard sea-level gravitational acceleration is \(g_0 = 9.80665\,\mathrm{m/s}^2\).
 
@@ -207,6 +209,63 @@ At a choked throat, \(V = a\) and \(M = 1\).
 | \(T\) | Static temperature | K |
 
 Assumptions: perfect gas. In the rocket-propulsion category the same definition is written with speed \(v\) and specific-heat ratio \(k\).
+
+## Newtonian viscosity and Reynolds number
+
+Shear stress in a Newtonian fluid, kinematic viscosity, and the Reynolds number. The viscosity page of NASA Glenn's Beginner's Guide to Aeronautics states \(\tau = \mu\,\mathrm{d}V/\mathrm{d}y\) and \(Re = \rho V L/\mu\).
+
+\[
+\tau = \mu \frac{\mathrm{d}V}{\mathrm{d}y}
+\]
+
+```formula
+## newtonian_shear
+family: thermo
+expr: mu*dVdy
+symbols: mu, dVdy
+```
+
+\[
+\nu = \frac{\mu}{\rho}
+\]
+
+```formula
+## kinematic_viscosity
+family: thermo
+expr: mu/rho
+symbols: mu, rho
+```
+
+\[
+Re = \frac{\rho V L}{\mu} = \frac{V L}{\nu}
+\]
+
+```formula
+## reynolds_number
+family: thermo
+expr: rho*V*L/mu
+symbols: rho, V, L, mu
+```
+
+```formula
+## reynolds_number_kinematic
+family: thermo
+expr: V*L/nu
+symbols: V, L, nu
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(\tau\) | Shear stress | Pa |
+| \(\mu\) | Dynamic viscosity | Pa·s |
+| \(\mathrm{d}V/\mathrm{d}y\) | Velocity gradient normal to the surface | 1/s |
+| \(\nu\) | Kinematic viscosity | m²/s |
+| \(\rho\) | Density | kg/m³ |
+| \(Re\) | Reynolds number | dimensionless |
+| \(V\) | Flow speed | m/s |
+| \(L\) | Characteristic length | m |
+
+Assumptions: Newtonian fluid, so shear stress is proportional to the velocity gradient. \(Re\) compares inertial to viscous effects. Matching \(Re\) is required if a test is to represent viscous forces correctly. In this section \(L\) is a length, not characteristic chamber length, and \(\nu\) is kinematic viscosity, not Prandtl-Meyer angle.
 
 ## Dynamic pressure
 
@@ -948,6 +1007,140 @@ Engineering values of the corrected ratio \(\gamma\) for dry air. Temperatures i
 
 Assumptions: these values are the NACA Report 1135 engineering approximation for air from \(400^\circ\mathrm{R}\) to \(5500^\circ\mathrm{R}\). They do not include chemical dissociation. Interpolate between neighboring rows. Below about \(500^\circ\mathrm{R}\), \(\gamma = 1.400\).
 
+# Atmosphere
+
+Defining relations of the U.S. Standard Atmosphere, 1976 (NASA TM-X-74335 / NOAA-S/T-76-1562). Below 86 km the air is treated as a mixture of constant mean molecular weight. In this category \(R^{*}\) is the universal gas constant and \(M\) is molar mass.
+
+Sea-level values of that model, unless the user gives others: \(g_0 = 9.80665\,\mathrm{m/s}^2\), \(T_0 = 288.15\,\mathrm{K}\), \(p_0 = 101325\,\mathrm{Pa}\), \(\rho_0 = 1.2250\,\mathrm{kg/m}^3\), \(r_0 = 6.356766\times 10^{6}\,\mathrm{m}\), \(M_0 = 28.9644\,\mathrm{kg/kmol}\), \(R^{*} = 8.31432\times 10^{3}\,\mathrm{N\cdot m/(kmol\cdot K)}\), tropospheric lapse \(L_{M,b} = -6.5\times 10^{-3}\,\mathrm{K/m}\) from \(H = 0\) to \(H = 11\,\mathrm{km}\). The 1976 report's \(R^{*}\) is the value adopted then; NIST CODATA 2022 lists the molar gas constant as exactly \(8.314462618\,\mathrm{J/(mol\cdot K)}\). Do not mix the two in one calculation.
+
+## Specific gas constant
+
+Specific gas constant of a perfect gas of molar mass \(M\).
+
+\[
+R = \frac{R^{*}}{M}
+\]
+
+```formula
+## specific_gas_constant
+family: atmosphere
+expr: Rstar/M
+symbols: Rstar, M
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(R\) | Specific gas constant | J/(kg·K) |
+| \(R^{*}\) | Universal (molar) gas constant | J/(kmol·K) |
+| \(M\) | Molar mass | kg/kmol |
+
+Assumptions: thermally perfect gas. With the 1976 dry-air \(M_0\) and \(R^{*}\), \(R = R^{*}/M_0 \approx 287.05\,\mathrm{J/(kg\cdot K)}\).
+
+## Geopotential altitude
+
+Geopotential altitude \(H\) from geometric altitude \(Z\) above the adopted Earth radius \(r_0\).
+
+\[
+H = \frac{r_0 Z}{r_0 + Z}
+\]
+
+```formula
+## geopotential_altitude
+family: atmosphere
+expr: r0*Z/(r0 + Z)
+symbols: r0, Z
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(H\) | Geopotential altitude | m |
+| \(Z\) | Geometric altitude above \(r_0\) | m |
+| \(r_0\) | Effective Earth radius used by the 1976 model | m |
+
+Assumptions: the 1976 definition that converts geometric height to geopotential height with a single spherical radius \(r_0\). At \(Z = 0\), \(H = 0\).
+
+## Hydrostatic gradient
+
+Vertical derivative of pressure in a still atmosphere.
+
+\[
+\frac{\mathrm{d}p}{\mathrm{d}Z} = -g \rho
+\]
+
+```formula
+## hydrostatic_gradient
+family: atmosphere
+expr: -g*rho
+symbols: g, rho
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(\mathrm{d}p/\mathrm{d}Z\) | Pressure change with geometric altitude | Pa/m |
+| \(g\) | Gravitational acceleration | m/s² |
+| \(\rho\) | Density | kg/m³ |
+
+Assumptions: hydrostatic balance, no vertical acceleration. Near the surface, \(g \approx g_0\).
+
+## Tropospheric molecular-scale temperature
+
+Linear molecular-scale temperature in a constant-lapse layer, which is ordinary kinetic temperature while \(M = M_0\).
+
+\[
+T_M = T_{M,b} + L_{M,b}(H - H_b)
+\]
+
+```formula
+## troposphere_temperature
+family: atmosphere
+expr: TMb + LMb*(H - Hb)
+symbols: TMb, LMb, H, Hb
+```
+
+In the lowest 1976 layer, \(H_b = 0\), \(T_{M,b} = 288.15\,\mathrm{K}\), and \(L_{M,b} = -6.5\times 10^{-3}\,\mathrm{K/m}\), so
+
+\[
+T = 288.15 - 0.0065\,H
+\]
+
+with \(H\) in metres and \(T\) in kelvin up to \(H = 11\,\mathrm{km}\).
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(T_M\) | Molecular-scale temperature | K |
+| \(T_{M,b}\) | Molecular-scale temperature at the base of the layer | K |
+| \(L_{M,b}\) | Molecular-scale temperature gradient of the layer | K/m |
+| \(H\) | Geopotential altitude | m |
+| \(H_b\) | Geopotential altitude at the base of the layer | m |
+
+Assumptions: 1976 lower-atmosphere layer with constant lapse. Below 86 km, \(M = M_0\) and \(T_M = T\). The tropopause of that model is at \(H = 11\,\mathrm{km}\), where \(T = 216.65\,\mathrm{K}\).
+
+## Sutherland viscosity
+
+Dynamic viscosity of air as a function of kinetic temperature, from the 1976 standard.
+
+\[
+\mu = \frac{\beta T^{3/2}}{T + S}
+\]
+
+```formula
+## sutherland_viscosity
+family: atmosphere
+expr: beta*T**1.5/(T + S)
+symbols: beta, T, S
+```
+
+The 1976 constants are \(\beta = 1.458\times 10^{-6}\,\mathrm{kg/(s\cdot m\cdot K^{1/2})}\) and \(S = 110.4\,\mathrm{K}\).
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(\mu\) | Dynamic viscosity | Pa·s |
+| \(\beta\) | Sutherland coefficient | kg/(s·m·K\(^{1/2}\)) |
+| \(T\) | Kinetic temperature | K |
+| \(S\) | Sutherland temperature | K |
+
+Assumptions: dry air, continuum, temperatures where the Sutherland fit of the 1976 tables applies. NASA Glenn's educational viscosity page writes the same law in Rankine with a sea-level English-unit reference; convert units before mixing that form with SI.
+
 # Rocket propulsion
 
 Vehicle and motor performance. In this category \(k\) is the ratio of specific heats. Nozzle area ratio and isentropic exit state use the Area-Mach and stagnation relations in Compressible flow. In the mass-flow section, \(V\) is specific volume.
@@ -1038,6 +1231,34 @@ symbols: F, mdot
 | \(g_0\) | Standard gravitational acceleration | m/s² |
 
 Assumptions: \(c = F/\dot{m}\) defines effective exhaust velocity for any rocket. The product \(c^{*} C_F\) is the ideal decomposition into chamber and nozzle performance. \(g_0\) converts specific impulse in seconds into a velocity; it is not local gravity.
+
+## Equivalent exhaust velocity
+
+Nozzle-exit speed plus the pressure-thrust contribution used on NASA Glenn's specific-impulse page.
+
+\[
+V_{\mathrm{eq}} = v_2 + \frac{(p_2 - p_3)A_2}{\dot{m}}
+\]
+
+```formula
+## equivalent_exhaust_velocity
+family: rocket
+expr: v2 + (p2 - p3)*A2/mdot
+symbols: v2, p2, p3, A2, mdot
+```
+
+Then \(F = \dot{m} V_{\mathrm{eq}}\) and \(I_s = V_{\mathrm{eq}}/g_0\). \(V_{\mathrm{eq}}\) is the same quantity as effective exhaust velocity \(c\).
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(V_{\mathrm{eq}}\) | Equivalent exhaust velocity | m/s |
+| \(v_2\) | Average nozzle-exit velocity | m/s |
+| \(p_2\) | Nozzle-exit pressure | Pa |
+| \(p_3\) | Ambient pressure | Pa |
+| \(A_2\) | Nozzle-exit area | m² |
+| \(\dot{m}\) | Propellant mass flow rate | kg/s |
+
+Assumptions: steady one-dimensional rocket thrust with negligible inlet momentum. When \(p_2 = p_3\), \(V_{\mathrm{eq}} = v_2\).
 
 ## Thrust
 
@@ -1459,6 +1680,147 @@ symbols: R0, g0, h
 
 Assumptions: spherical planet and inverse-square gravity, neglecting atmosphere. \(v_e\) here is escape speed, not exhaust velocity. For Earth, use \(R_0 = 6.3742 \times 10^{6}\,\text{m}\) unless the user gives another value.
 
+## Gravitational parameter
+
+Standard gravitational parameter of a central body, \(\mu = GM\).
+
+\[
+\mu = G M
+\]
+
+```formula
+## gravitational_parameter
+family: flight
+expr: G*M
+symbols: G, M
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(\mu\) | Gravitational parameter | m³/s² |
+| \(G\) | Newtonian gravitational constant | m³/(kg·s²) |
+| \(M\) | Mass of the central body | kg |
+
+Assumptions: point-mass or spherical inverse-square gravity. NIST CODATA 2022 gives \(G = 6.67430\times 10^{-11}\,\mathrm{m}^3\,\mathrm{kg}^{-1}\,\mathrm{s}^{-2}\). For Earth, \(\mu \approx g_0 R_0^{2}\) with the radius used in the circular-orbit and escape formulas. In this section \(M\) is mass, not Mach number or moment.
+
+## Vis-viva speed
+
+Relative speed on a Keplerian two-body orbit, from conservation of specific mechanical energy. NASA SP *The Orbital Mechanics of Flight Mechanics* develops the inverse-square two-body problem from which this follows.
+
+\[
+v = \sqrt{\mu\left(\frac{2}{r} - \frac{1}{a}\right)}
+\]
+
+```formula
+## vis_viva
+family: flight
+expr: (mu*(2/r - 1/a))**0.5
+symbols: mu, r, a
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(v\) | Relative orbital speed | m/s |
+| \(\mu\) | Gravitational parameter of the central body | m³/s² |
+| \(r\) | Radial distance from the attracting centre | m |
+| \(a\) | Semi-major axis | m |
+
+Assumptions: two-body inverse-square gravity and no drag or thrust. \(a > 0\) on an ellipse, \(1/a = 0\) on a parabola, and \(a < 0\) on a hyperbola. A circular orbit has \(a = r\), which recovers \(v = \sqrt{\mu/r}\). Escape speed is the parabolic case \(v = \sqrt{2\mu/r}\).
+
+## Specific orbital energy
+
+Specific mechanical energy of a two-body orbit.
+
+\[
+\varepsilon = \frac{v^{2}}{2} - \frac{\mu}{r} = -\frac{\mu}{2a}
+\]
+
+```formula
+## specific_orbital_energy
+family: flight
+expr: -(mu)/(2*a)
+symbols: mu, a
+```
+
+```formula
+## specific_orbital_energy_from_speed
+family: flight
+expr: v**2/2 - mu/r
+symbols: v, mu, r
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(\varepsilon\) | Specific orbital energy | J/kg |
+| \(v\) | Relative orbital speed | m/s |
+| \(\mu\) | Gravitational parameter | m³/s² |
+| \(r\) | Radial distance | m |
+| \(a\) | Semi-major axis | m |
+
+Assumptions: two-body inverse-square gravity. \(\varepsilon < 0\) is an ellipse, \(\varepsilon = 0\) a parabola, and \(\varepsilon > 0\) a hyperbola.
+
+## Orbital period
+
+Period of an elliptic two-body orbit (Kepler's third law in Newtonian form).
+
+\[
+T = 2\pi\sqrt{\frac{a^{3}}{\mu}}
+\]
+
+```formula
+## orbital_period
+family: flight
+expr: 2*pi*(a**3/mu)**0.5
+symbols: a, mu, pi
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(T\) | Orbital period | s |
+| \(a\) | Semi-major axis | m |
+| \(\mu\) | Gravitational parameter | m³/s² |
+| \(\pi\) | Circle constant | dimensionless |
+
+Assumptions: unperturbed elliptic two-body motion. For two comparable masses replace \(\mu\) by \(G(m_1+m_2)\). A circular orbit uses \(a = r\).
+
+## Periapsis, apoapsis, and eccentricity
+
+Radial extremes of an ellipse, and eccentricity from those radii.
+
+\[
+r_p = a(1 - e) \qquad r_a = a(1 + e) \qquad e = \frac{r_a - r_p}{r_a + r_p}
+\]
+
+```formula
+## periapsis_radius
+family: flight
+expr: a*(1 - e)
+symbols: a, e
+```
+
+```formula
+## apoapsis_radius
+family: flight
+expr: a*(1 + e)
+symbols: a, e
+```
+
+```formula
+## orbit_eccentricity
+family: flight
+expr: (ra - rp)/(ra + rp)
+symbols: ra, rp
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(r_p\) | Periapsis radius | m |
+| \(r_a\) | Apoapsis radius | m |
+| \(a\) | Semi-major axis | m |
+| \(e\) | Eccentricity | dimensionless |
+
+Assumptions: elliptic orbit with \(0 \le e < 1\) and \(r_a \ge r_p > 0\). Then \(a = (r_a + r_p)/2\). In this section \(e\) is eccentricity, not Oswald efficiency and not the base of the natural logarithm.
+
 ## Liquid-propellant mixture ratio
 
 Oxidizer flow divided by fuel flow, and the split of a known total flow.
@@ -1685,7 +2047,7 @@ Assumptions: the derivative is at constant \(K\).
 
 # Aerodynamics
 
-Incompressible flow and the dimensionless force and moment coefficients. Freestream dynamic pressure \(q_{\infty}\) is the dynamic-pressure relation in Compressible flow evaluated far ahead of the body. In this category \(V\) is flow speed.
+Incompressible flow and the dimensionless force and moment coefficients. Freestream dynamic pressure \(q_{\infty}\) is the dynamic-pressure relation in Compressible flow evaluated far ahead of the body. In this category \(V\) is flow speed. Wing geometry and induced drag follow NASA Glenn's Beginner's Guide (public-domain educational pages). Stall speed and load factor follow the usual force definitions used in FAA-H-8083 and NASA SP-367.
 
 ## Bernoulli's relation
 
@@ -2005,3 +2367,262 @@ This is the same statement as \(M'_{\mathrm{LE}} = -x_{\mathrm{cp}} N'\).
 | \(N'\) | Normal force per unit span | N/m |
 
 Assumptions: two-dimensional airfoil, with \(N'\) perpendicular to the chord and the axial force on the chord line. Positive moment is pitch-up. A positive \(N'\) acting aft of the leading edge produces a negative moment, which is why the leading minus sign makes \(x_{\mathrm{cp}}\) positive.
+
+## Lift and drag forces
+
+The modern lift and drag equations from NASA Glenn: force equals coefficient times dynamic pressure times reference area.
+
+\[
+L = C_L q_{\infty} S \qquad D = C_D q_{\infty} S
+\]
+
+```formula
+## lift_force
+family: aerodynamics
+expr: CL*q_inf*S
+symbols: CL, q_inf, S
+```
+
+```formula
+## drag_force
+family: aerodynamics
+expr: CD*q_inf*S
+symbols: CD, q_inf, S
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(L\) | Lift, perpendicular to the freestream | N |
+| \(D\) | Drag, parallel to the freestream | N |
+| \(C_L\) | Lift coefficient | dimensionless |
+| \(C_D\) | Drag coefficient | dimensionless |
+| \(q_{\infty}\) | Freestream dynamic pressure | Pa |
+| \(S\) | Reference area | m² |
+
+Assumptions: the same \(S\) used to define \(C_L\) and \(C_D\). These invert the coefficient definitions above.
+
+## Aspect ratio
+
+Wing aspect ratio is the square of the span divided by the planform area. For a rectangular wing that is span over chord.
+
+\[
+AR = \frac{b^{2}}{S}
+\]
+
+```formula
+## aspect_ratio
+family: aerodynamics
+expr: b**2/S
+symbols: b, S
+```
+
+```formula
+## rectangular_aspect_ratio
+family: aerodynamics
+expr: b/c
+symbols: b, c
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(AR\) | Aspect ratio | dimensionless |
+| \(b\) | Wing span | m |
+| \(S\) | Wing planform area | m² |
+| \(c\) | Chord of a rectangular wing | m |
+
+Assumptions: \(S\) is the reference planform area used with the force coefficients. The rectangular form requires constant chord.
+
+## Induced drag and the drag polar
+
+Induced-drag coefficient and the two-term drag polar from NASA Glenn. \(e = 1\) for an elliptic spanwise lift distribution.
+
+\[
+C_{D_i} = \frac{C_L^{2}}{\pi\, AR\, e} \qquad C_D = C_{D0} + C_{D_i}
+\]
+
+```formula
+## induced_drag_coefficient
+family: aerodynamics
+expr: CL**2/(pi*AR*e)
+symbols: CL, AR, e, pi
+```
+
+```formula
+## drag_polar
+family: aerodynamics
+expr: CD0 + CDi
+symbols: CD0, CDi
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(C_{D_i}\) | Induced-drag coefficient | dimensionless |
+| \(C_L\) | Lift coefficient | dimensionless |
+| \(AR\) | Aspect ratio | dimensionless |
+| \(e\) | Span efficiency, or airplane efficiency factor | dimensionless |
+| \(\pi\) | Circle constant | dimensionless |
+| \(C_D\) | Total drag coefficient | dimensionless |
+| \(C_{D0}\) | Zero-lift drag coefficient | dimensionless |
+
+Assumptions: coefficients use the same wing area. \(0 < e \le 1\). NACA Report 408 includes non-elliptic loading and fuselage effects in \(e\). In this section \(e\) is efficiency, not eccentricity.
+
+## Lift-to-drag ratio
+
+\[
+\frac{L}{D} = \frac{C_L}{C_D}
+\]
+
+```formula
+## lift_to_drag
+family: aerodynamics
+expr: CL/CD
+symbols: CL, CD
+```
+
+```formula
+## lift_to_drag_from_forces
+family: aerodynamics
+expr: L/D
+symbols: L, D
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(L/D\) | Lift-to-drag ratio | dimensionless |
+| \(C_L\) | Lift coefficient | dimensionless |
+| \(C_D\) | Drag coefficient | dimensionless |
+| \(L\) | Lift | N |
+| \(D\) | Drag | N |
+
+Assumptions: lift and drag (or their coefficients) are taken at the same flight condition and use the same reference area.
+
+## Stall speed
+
+Level unaccelerated stall when lift equals weight at \(C_{L,\max}\).
+
+\[
+V_{\mathrm{stall}} = \sqrt{\frac{2W}{\rho S C_{L,\max}}}
+\]
+
+```formula
+## stall_speed
+family: aerodynamics
+expr: (2*W/(rho*S*CLmax))**0.5
+symbols: W, rho, S, CLmax
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(V_{\mathrm{stall}}\) | Stall speed | m/s |
+| \(W\) | Weight | N |
+| \(\rho\) | Air density | kg/m³ |
+| \(S\) | Wing planform area | m² |
+| \(C_{L,\max}\) | Maximum lift coefficient | dimensionless |
+
+Assumptions: unaccelerated 1-g flight, \(L = W\), and incompressible dynamic pressure \(\frac{1}{2}\rho V^{2}\). Use the density at the altitude of interest. In a coordinated level turn at load factor \(n\), replace \(W\) by \(nW\).
+
+## Load factor
+
+Lift divided by weight.
+
+\[
+n = \frac{L}{W}
+\]
+
+```formula
+## load_factor
+family: aerodynamics
+expr: L/W
+symbols: L, W
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(n\) | Load factor | dimensionless |
+| \(L\) | Lift | N |
+| \(W\) | Weight | N |
+
+Assumptions: \(W\) is the vehicle weight, not mass times a local \(g\) different from the weight definition in use. Straight and level flight has \(n = 1\) when \(L = W\).
+
+# Structures
+
+Thin-shell relations written out in NASA SP-8025, *Solid Rocket Motor Metal Cases* (April 1970). Buckling, fracture mechanics, and weight scaling in that monograph are cited to other documents and are not recorded here. In this category \(R\) is cylinder radius. The load ratio in the margin-of-safety definition is not called \(R\).
+
+## Cylinder hoop stress
+
+Hoop, or circumferential, membrane stress in a thin cylindrical motor case under internal pressure. Section 2.3.1.1 works an example with \(\sigma_h = pD/(2t)\). Section 3.3.6.3 calls \(pR/t\) the basic membrane stress. With \(R = D/2\) the two statements are the same.
+
+\[
+\sigma_h = \frac{p D}{2 t} = \frac{p R}{t}
+\]
+
+```formula
+## cylinder_hoop_stress
+family: shell
+expr: p*R/t
+symbols: p, R, t
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(\sigma_h\) | Hoop membrane stress | Pa |
+| \(p\) | Internal design pressure | Pa |
+| \(D\) | Cylinder inner diameter | m |
+| \(R\) | Cylinder radius, \(D/2\) | m |
+| \(t\) | Wall thickness | m |
+
+Assumptions: thin cylindrical membrane, with thickness small compared with \(R\), away from openings, welds, and thickness changes. \(p\) is the design pressure, the maximum expected operating pressure times the design safety factor. The SP-8025 sample uses \(800\,\mathrm{psi} \times 1.25 = 1000\,\mathrm{psi}\), \(D = 40\,\mathrm{in}\), and \(t = 0.1\,\mathrm{in}\), which gives \(\sigma_h = 200000\,\mathrm{psi}\). The recorded expression uses \(R\).
+
+## Margin of safety
+
+Fractional amount by which the allowable load or stress exceeds the design load or stress. Section 2.3.1.1 defines
+
+\[
+\mathrm{MS} = \frac{S_{\mathrm{allow}}}{S_{\mathrm{design}}} - 1
+\]
+
+```formula
+## margin_of_safety
+family: design
+expr: allowable/design - 1
+symbols: allowable, design
+```
+
+SP-8025 also writes \(\mathrm{MS} = 1/R - 1\), where \(R = S_{\mathrm{design}}/S_{\mathrm{allow}}\). That ratio is not the cylinder radius used above.
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(\mathrm{MS}\) | Margin of safety | dimensionless |
+| \(S_{\mathrm{allow}}\) | Allowable load or stress | same unit as \(S_{\mathrm{design}}\) |
+| \(S_{\mathrm{design}}\) | Design load or stress | same unit as \(S_{\mathrm{allow}}\) |
+| \(\mathrm{allowable}\) | Script symbol for \(S_{\mathrm{allow}}\) | same unit as \(\mathrm{design}\) |
+| \(\mathrm{design}\) | Script symbol for \(S_{\mathrm{design}}\) | same unit as \(\mathrm{allowable}\) |
+
+Assumptions: failure is the chosen allowable, such as yield, ultimate, or buckling. \(\mathrm{MS}\) is a fraction. The SP-8025 sample with design stress \(160000\,\mathrm{psi}\) and allowable stress \(200000\,\mathrm{psi}\) gives \(\mathrm{MS} = 0.25\). Equal design and allowable stresses give \(\mathrm{MS} = 0\).
+
+## Longitudinal-weld radial mismatch
+
+Elastic hoop bending stress from a radial offset across a longitudinal weld, for a weld designed to the full elastic stress. Section 3.3.6.3 writes
+
+\[
+\sigma_h = \frac{3 p R \delta}{t^{2}}
+\]
+
+```formula
+## weld_radial_mismatch
+family: shell
+expr: 3*p*R*delta/t**2
+symbols: p, R, delta, t
+```
+
+Dividing by the membrane hoop stress \(pR/t\) shows that the bending stress is \(3(\delta/t)\) times the membrane stress. A mismatch of 5 percent of the thickness is 15 percent of the membrane stress.
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(\sigma_h\) | Elastic hoop bending stress from radial mismatch | Pa |
+| \(p\) | Internal pressure | Pa |
+| \(R\) | Cylinder radius | m |
+| \(\delta\) | Radial mismatch across the longitudinal weld | m |
+| \(t\) | Wall thickness | m |
+
+Assumptions: elastic bending from radial mismatch at a longitudinal weld in a thin cylinder. Residual stress and angular mismatch are separate effects. SP-8025 adds example fractions of yield strength for those effects and states that the fractions change with the design, so they are not part of this expression. On the sample cylinder \(p = 1000\,\mathrm{psi}\), \(R = 20\,\mathrm{in}\), \(t = 0.1\,\mathrm{in}\), a 5 percent mismatch is \(\delta = 0.005\,\mathrm{in}\) and \(\sigma_h = 30000\,\mathrm{psi}\).

@@ -156,6 +156,49 @@ Then run `python check_formulas.py`.
     T: 8/7
   expected: 2
 
+### newtonian_shear
+
+<!-- family: thermo; symbols: mu, dVdy; expr: mu*dVdy; numeric: yes -->
+
+- name: linear_profile
+  inputs:
+    mu: 1/50000
+    dVdy: 500
+  expected: 1/100
+
+### kinematic_viscosity
+
+<!-- family: thermo; symbols: mu, rho; expr: mu/rho; numeric: yes -->
+
+- name: sea_level_air
+  inputs:
+    mu: 9/500000
+    rho: 6/5
+  expected: 3/200000
+
+### reynolds_number
+
+<!-- family: thermo; symbols: rho, V, L, mu; expr: rho*V*L/mu; numeric: yes -->
+
+- name: chord_two_metres
+  inputs:
+    rho: 6/5
+    V: 50
+    L: 2
+    mu: 3/200000
+  expected: 8000000
+
+### reynolds_number_kinematic
+
+<!-- family: thermo; symbols: V, L, nu; expr: V*L/nu; numeric: yes -->
+
+- name: chord_two_metres
+  inputs:
+    V: 50
+    L: 2
+    nu: 3/200000
+  expected: 20000000/3
+
 ### dynamic_pressure
 
 <!-- family: isentropic; symbols: rho, V; expr: 0.5*rho*V**2; numeric: yes -->
@@ -824,6 +867,63 @@ Then run `python check_formulas.py`.
     theta: log(4)
   expected: 7/2 + (4/3)*log(2)
 
+## Atmosphere
+
+#### atmosphere
+
+### specific_gas_constant
+
+<!-- family: atmosphere; symbols: Rstar, M; expr: Rstar/M; numeric: yes -->
+
+- name: dry_air_1976
+  inputs:
+    Rstar: 8314.32
+    M: 28.9644
+  expected: 8314.32/28.9644
+
+### geopotential_altitude
+
+<!-- family: atmosphere; symbols: r0, Z; expr: r0*Z/(r0 + Z); numeric: yes -->
+
+- name: half_radius
+  inputs:
+    r0: 6
+    Z: 2
+  expected: 3/2
+
+### hydrostatic_gradient
+
+<!-- family: atmosphere; symbols: g, rho; expr: -g*rho; numeric: yes -->
+
+- name: sea_level_weight
+  inputs:
+    g: 10
+    rho: 5/4
+  expected: -25/2
+
+### troposphere_temperature
+
+<!-- family: atmosphere; symbols: TMb, LMb, H, Hb; expr: TMb + LMb*(H - Hb); numeric: yes -->
+
+- name: tropopause
+  inputs:
+    TMb: 288.15
+    LMb: -13/2000
+    H: 11000
+    Hb: 0
+  expected: 216.65
+
+### sutherland_viscosity
+
+<!-- family: atmosphere; symbols: beta, T, S; expr: beta*T**1.5/(T + S); numeric: yes -->
+
+- name: round_temperature
+  inputs:
+    beta: 1
+    T: 400
+    S: 100
+  expected: 16
+
 ## Rocket propulsion
 
 #### rocket
@@ -873,6 +973,19 @@ Then run `python check_formulas.py`.
     F: 9.80665*1000
     mdot: 2
   expected: 9.80665*500
+
+### equivalent_exhaust_velocity
+
+<!-- family: rocket; symbols: v2, p2, p3, A2, mdot; expr: v2 + (p2 - p3)*A2/mdot; numeric: yes -->
+
+- name: pressure_thrust
+  inputs:
+    v2: 2400
+    p2: 120000
+    p3: 100000
+    A2: 1/2
+    mdot: 10
+  expected: 3400
 
 ### thrust_momentum
 
@@ -1094,6 +1207,96 @@ Then run `python check_formulas.py`.
     g0: 10
     h: 6400000
   expected: 8000
+
+### gravitational_parameter
+
+<!-- family: flight; symbols: G, M; expr: G*M; numeric: yes -->
+
+- name: product
+  inputs:
+    G: 2
+    M: 8
+  expected: 16
+
+### vis_viva
+
+<!-- family: flight; symbols: mu, r, a; expr: (mu*(2/r - 1/a))**0.5; numeric: yes -->
+
+- name: circular
+  inputs:
+    mu: 16
+    r: 4
+    a: 4
+  expected: 2
+
+- name: periapsis_of_ellipse
+  inputs:
+    mu: 16
+    r: 2
+    a: 4
+  expected: 12**0.5
+
+### specific_orbital_energy
+
+<!-- family: flight; symbols: mu, a; expr: -(mu)/(2*a); numeric: yes -->
+
+- name: circular_energy
+  inputs:
+    mu: 16
+    a: 4
+  expected: -2
+
+### specific_orbital_energy_from_speed
+
+<!-- family: flight; symbols: v, mu, r; expr: v**2/2 - mu/r; numeric: yes -->
+
+- name: circular_energy
+  inputs:
+    v: 2
+    mu: 16
+    r: 4
+  expected: -2
+
+### orbital_period
+
+<!-- family: flight; symbols: a, mu, pi; expr: 2*pi*(a**3/mu)**0.5; numeric: yes -->
+
+- name: unit_orbit
+  inputs:
+    a: 1
+    mu: 1
+    pi: pi
+  expected: 2*pi
+
+### periapsis_radius
+
+<!-- family: flight; symbols: a, e; expr: a*(1 - e); numeric: yes -->
+
+- name: eccentricity_one_half
+  inputs:
+    a: 4
+    e: 1/2
+  expected: 2
+
+### apoapsis_radius
+
+<!-- family: flight; symbols: a, e; expr: a*(1 + e); numeric: yes -->
+
+- name: eccentricity_one_half
+  inputs:
+    a: 4
+    e: 1/2
+  expected: 6
+
+### orbit_eccentricity
+
+<!-- family: flight; symbols: ra, rp; expr: (ra - rp)/(ra + rp); numeric: yes -->
+
+- name: two_and_six
+  inputs:
+    ra: 6
+    rp: 2
+  expected: 1/2
 
 #### rocket
 
@@ -1425,3 +1628,162 @@ Then run `python check_formulas.py`.
     M_LE: -40
     Np: 100
   expected: 2/5
+
+### lift_force
+
+<!-- family: aerodynamics; symbols: CL, q_inf, S; expr: CL*q_inf*S; numeric: yes -->
+
+- name: steady_load
+  inputs:
+    CL: 1/5
+    q_inf: 4000
+    S: 20
+  expected: 16000
+
+### drag_force
+
+<!-- family: aerodynamics; symbols: CD, q_inf, S; expr: CD*q_inf*S; numeric: yes -->
+
+- name: steady_load
+  inputs:
+    CD: 3/100
+    q_inf: 4000
+    S: 20
+  expected: 2400
+
+### aspect_ratio
+
+<!-- family: aerodynamics; symbols: b, S; expr: b**2/S; numeric: yes -->
+
+- name: span_ten
+  inputs:
+    b: 10
+    S: 20
+  expected: 5
+
+### rectangular_aspect_ratio
+
+<!-- family: aerodynamics; symbols: b, c; expr: b/c; numeric: yes -->
+
+- name: span_ten
+  inputs:
+    b: 10
+    c: 2
+  expected: 5
+
+### induced_drag_coefficient
+
+<!-- family: aerodynamics; symbols: CL, AR, e, pi; expr: CL**2/(pi*AR*e); numeric: yes -->
+
+- name: elliptic_unit_lift
+  inputs:
+    CL: 1
+    AR: 5
+    e: 1
+    pi: pi
+  expected: 1/(5*pi)
+
+### drag_polar
+
+<!-- family: aerodynamics; symbols: CD0, CDi; expr: CD0 + CDi; numeric: yes -->
+
+- name: two_term
+  inputs:
+    CD0: 1/50
+    CDi: 1/25
+  expected: 3/50
+
+### lift_to_drag
+
+<!-- family: aerodynamics; symbols: CL, CD; expr: CL/CD; numeric: yes -->
+
+- name: twenty_to_one
+  inputs:
+    CL: 1/2
+    CD: 1/40
+  expected: 20
+
+### lift_to_drag_from_forces
+
+<!-- family: aerodynamics; symbols: L, D; expr: L/D; numeric: yes -->
+
+- name: twenty_to_one
+  inputs:
+    L: 16000
+    D: 800
+  expected: 20
+
+### stall_speed
+
+<!-- family: aerodynamics; symbols: W, rho, S, CLmax; expr: (2*W/(rho*S*CLmax))**0.5; numeric: yes -->
+
+- name: one_g_level
+  inputs:
+    W: 25000
+    rho: 5/4
+    S: 16
+    CLmax: 1
+  expected: 50
+
+### load_factor
+
+<!-- family: aerodynamics; symbols: L, W; expr: L/W; numeric: yes -->
+
+- name: three_g
+  inputs:
+    L: 24000
+    W: 8000
+  expected: 3
+
+## Structures
+
+#### shell
+
+### cylinder_hoop_stress
+
+<!-- family: shell; symbols: p, R, t; expr: p*R/t; numeric: yes -->
+
+- name: forty_inch_cylinder
+  inputs:
+    p: 1000
+    R: 20
+    t: 1/10
+  expected: 200000
+
+### weld_radial_mismatch
+
+<!-- family: shell; symbols: p, R, delta, t; expr: 3*p*R*delta/t**2; numeric: yes -->
+
+- name: five_percent_mismatch
+  inputs:
+    p: 1000
+    R: 20
+    delta: 1/200
+    t: 1/10
+  expected: 30000
+
+- name: unit_offset
+  inputs:
+    p: 1
+    R: 1
+    delta: 1
+    t: 1
+  expected: 3
+
+#### design
+
+### margin_of_safety
+
+<!-- family: design; symbols: allowable, design; expr: allowable/design - 1; numeric: yes -->
+
+- name: zero_margin
+  inputs:
+    allowable: 200000
+    design: 200000
+  expected: 0
+
+- name: quarter_margin
+  inputs:
+    allowable: 200000
+    design: 160000
+  expected: 1/4

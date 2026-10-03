@@ -5,7 +5,7 @@ A formula is listed when every identity named for it passed, or when it is a def
 A definition is exempt from the identity check.
 Use only these formula ids. Do not use a formula that is absent from this file.
 
-Passed: 107
+Passed: 138
 Failed: 0
 Unchecked: 0
 
@@ -36,6 +36,10 @@ Exempt from the identity check.
 - `internal_energy_perfect` (thermo): calorically_perfect
 - `speed_of_sound` (thermo): exact_square
 - `mach_number` (isentropic): twice_sonic
+- `newtonian_shear` (thermo): linear_profile
+- `kinematic_viscosity` (thermo): sea_level_air
+- `reynolds_number` (thermo): chord_two_metres
+- `reynolds_number_kinematic` (thermo): chord_two_metres
 - `dynamic_pressure` (isentropic): definition
 - `dynamic_pressure_air` (isentropic): mach_two
 - `total_enthalpy` (isentropic): stagnation_enthalpy
@@ -84,12 +88,21 @@ Exempt from the identity check.
 - `imperfect_pressure_ratio` (imperfect): equal_static_and_total, temperature_ratio_two
 - `imperfect_dynamic_pressure` (imperfect): rest, temperature_ratio_two
 
+## Atmosphere
+
+- `specific_gas_constant` (atmosphere): dry_air_1976
+- `geopotential_altitude` (atmosphere): half_radius
+- `hydrostatic_gradient` (atmosphere): sea_level_weight
+- `troposphere_temperature` (atmosphere): tropopause
+- `sutherland_viscosity` (atmosphere): round_temperature
+
 ## Rocket propulsion
 
 - `exhaust_velocity_from_effective` (rocket): pressure_imbalance
 - `exhaust_velocity_isentropic` (rocket): pressure_ratio_four
 - `exhaust_velocity_enthalpy` (rocket): enthalpy_drop
 - `effective_exhaust_velocity` (rocket): five_hundred_seconds
+- `equivalent_exhaust_velocity` (rocket): pressure_thrust
 - `thrust_momentum` (rocket): momentum_and_pressure
 - `thrust_coefficient_form` (rocket): definition
 - `thrust_constant_burn` (rocket): steady_burn
@@ -110,6 +123,14 @@ Exempt from the identity check.
 - `nozzle_area_ratio` (rocket): expansion_fifty
 - `circular_orbit_velocity` (flight): altitude_equal_to_radius
 - `escape_velocity` (flight): altitude_equal_to_radius
+- `gravitational_parameter` (flight): product
+- `vis_viva` (flight): circular, periapsis_of_ellipse
+- `specific_orbital_energy` (flight): circular_energy
+- `specific_orbital_energy_from_speed` (flight): circular_energy
+- `orbital_period` (flight): unit_orbit
+- `periapsis_radius` (flight): eccentricity_one_half
+- `apoapsis_radius` (flight): eccentricity_one_half
+- `orbit_eccentricity` (flight): two_and_six
 - `mixture_ratio` (rocket): oxidizer_six_to_one
 - `propellant_flow_sum` (rocket): same_split
 - `fuel_flow` (rocket): same_split
@@ -142,3 +163,19 @@ Exempt from the identity check.
 - `section_lift_from_normal` (aerodynamics): thirty_degrees
 - `section_drag_from_normal` (aerodynamics): thirty_degrees
 - `center_of_pressure` (aerodynamics): nose_down_moment
+- `lift_force` (aerodynamics): steady_load
+- `drag_force` (aerodynamics): steady_load
+- `aspect_ratio` (aerodynamics): span_ten
+- `rectangular_aspect_ratio` (aerodynamics): span_ten
+- `induced_drag_coefficient` (aerodynamics): elliptic_unit_lift
+- `drag_polar` (aerodynamics): two_term
+- `lift_to_drag` (aerodynamics): twenty_to_one
+- `lift_to_drag_from_forces` (aerodynamics): twenty_to_one
+- `stall_speed` (aerodynamics): one_g_level
+- `load_factor` (aerodynamics): three_g
+
+## Structures
+
+- `cylinder_hoop_stress` (shell): forty_inch_cylinder
+- `margin_of_safety` (design): zero_margin, quarter_margin
+- `weld_radial_mismatch` (shell): five_percent_mismatch, unit_offset

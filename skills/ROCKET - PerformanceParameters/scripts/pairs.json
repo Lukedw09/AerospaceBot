@@ -1,0 +1,71 @@
+{
+  "pc_bar": [10, 20, 40],
+  "pairs": [
+    {
+      "oxName": "LOX",
+      "fuelName": "RP1",
+      "of_min": 1.8,
+      "of_max": 3.2,
+      "of_step": 0.1,
+      "rho_ox_kg_m3": 1141,
+      "rho_ox_T_K": 90,
+      "rho_fuel_kg_m3": 810,
+      "rho_fuel_T_K": 288
+    },
+    {
+      "oxName": "LOX",
+      "fuelName": "Ethanol",
+      "of_min": 1.0,
+      "of_max": 2.4,
+      "of_step": 0.1,
+      "rho_ox_kg_m3": 1141,
+      "rho_ox_T_K": 90,
+      "rho_fuel_kg_m3": 789,
+      "rho_fuel_T_K": 293
+    },
+    {
+      "oxName": "LOX",
+      "fuelName": "CH4",
+      "of_min": 2.0,
+      "of_max": 4.2,
+      "of_step": 0.1,
+      "rho_ox_kg_m3": 1141,
+      "rho_ox_T_K": 90,
+      "rho_fuel_kg_m3": 422,
+      "rho_fuel_T_K": 111
+    },
+    {
+      "oxName": "LOX",
+      "fuelName": "LH2",
+      "of_min": 3.5,
+      "of_max": 7.5,
+      "of_step": 0.1,
+      "rho_ox_kg_m3": 1141,
+      "rho_ox_T_K": 90,
+      "rho_fuel_kg_m3": 71,
+      "rho_fuel_T_K": 20
+    },
+    {
+      "oxName": "N2O4",
+      "fuelName": "MMH",
+      "of_min": 1.0,
+      "of_max": 2.8,
+      "of_step": 0.1,
+      "rho_ox_kg_m3": 1443,
+      "rho_ox_T_K": 293,
+      "rho_fuel_kg_m3": 878,
+      "rho_fuel_T_K": 293
+    },
+    {
+      "oxName": "N2O4",
+      "fuelName": "UDMH",
+      "of_min": 1.2,
+      "of_max": 3.2,
+      "of_step": 0.1,
+      "rho_ox_kg_m3": 1443,
+      "rho_ox_T_K": 293,
+      "rho_fuel_kg_m3": 791,
+      "rho_fuel_T_K": 293
+    }
+  ]
+}

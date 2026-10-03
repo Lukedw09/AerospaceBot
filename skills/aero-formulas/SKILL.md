@@ -4,7 +4,8 @@ description: >-
   Select a checked aerospace formula from the skill reference using the user's
   context, then either calculate with it or present it with every variable and
   unit defined. Use when the user asks for an aerospace equation, a flight or
-  orbital calculation, or what a formula's symbols and units mean. Use only
+  orbital calculation, atmosphere properties, a motor-case stress or margin of
+  safety, or what a formula's symbols and units mean. Use only
   formulas listed in checks/check.md. Definitions listed there are exempt
   from the identity check.
 ---
@@ -15,7 +16,7 @@ Read [formulas.md](formulas.md) before answering. Use only a formula whose id is
 
 ## Select the formula
 
-1. Start in the category that matches the question: Compressible flow, Rocket propulsion, or Aerodynamics. Read another category only if that one does not contain a fit.
+1. Start in the category that matches the question: Compressible flow, Atmosphere, Rocket propulsion, Aerodynamics, or Structures. Read another category only if that one does not contain a fit.
 2. Use the user's wording, known quantities, and requested result to choose the formula that fits.
 3. Reject any formula that is not listed in [checks/check.md](checks/check.md). A listed definition is allowed.
 4. If more than one listed formula fits, choose the one that uses the quantities the user already has. If the choice is still ambiguous, ask which result they want before calculating.

@@ -996,7 +996,13 @@ def self_test() -> int:
         print("self-test: formula count does not match formula fences", file=sys.stderr)
         return 1
     categories = list(dict.fromkeys(formula.category for formula in formulas))
-    if categories != ["Compressible flow", "Rocket propulsion", "Aerodynamics"]:
+    if categories != [
+        "Compressible flow",
+        "Atmosphere",
+        "Rocket propulsion",
+        "Aerodynamics",
+        "Structures",
+    ]:
         print(f"self-test: unexpected categories {categories}", file=sys.stderr)
         return 1
     by_name = {formula.name: formula for formula in formulas}
