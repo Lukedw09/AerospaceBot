@@ -20,9 +20,10 @@ Mathematical relations are not copyrightable. The wording, figures, and tabulate
 
 | ID | Document | Status | Scope |
 | --- | --- | --- | --- |
-| V4 | NOAA / NASA / USAF, *U.S. Standard Atmosphere, 1976*, NASA TM-X-74335 / NOAA-S/T-76-1562. NTRS 19770009539. [Citation](https://ntrs.nasa.gov/citations/19770009539). [NOAA PDF](https://www.ngdc.noaa.gov/stp/space-weather/online-publications/miscellaneous/us-standard-atmosphere-1976/us-standard-atmosphere_st76-1562_noaa.pdf) | NTRS: Work of the US Gov. Public Use Permitted | Hydrostatic equation, geopotential and geometric altitude, molecular-scale temperature layers, equation of state, speed of sound, dynamic viscosity, mean free path, sea-level constants |
-| V5 | NASA TR R-459, *Defining Constants, Equations, and Abbreviated Tables of the 1975 U.S. Standard Atmosphere*. [PDF](https://ntrs.nasa.gov/api/citations/19760017709/downloads/19760017709.pdf) | NASA technical report; U.S. government work | Layer equations and adopted constants in a shorter form than V4 |
+| V4 | NOAA / NASA / USAF, *U.S. Standard Atmosphere, 1976*, NASA TM-X-74335 / NOAA-S/T-76-1562. NTRS 19770009539. [Citation](https://ntrs.nasa.gov/citations/19770009539). [NOAA PDF](https://www.ngdc.noaa.gov/stp/space-weather/online-publications/miscellaneous/us-standard-atmosphere-1976/us-standard-atmosphere_st76-1562_noaa.pdf) | NTRS: Work of the US Gov. Public Use Permitted | Full mid-latitude standard from 0 to 1000 km: hydrostatic layers below 86 km, kinetic-temperature segments above 86 km, equation of state, gravity, geopotential, sound speed, viscosity, thermal conductivity, mean free path, number density, scale height, sea-level constants |
+| V5 | Minzner et al., NASA TR R-459, *Defining Constants, Equations, and Abbreviated Tables of the 1975 U.S. Standard Atmosphere* (1976). NTRS 19760017709. [Citation](https://ntrs.nasa.gov/citations/19760017709). [PDF](https://ntrs.nasa.gov/api/citations/19760017709/downloads/19760017709.pdf) | NASA technical report; U.S. government work | Same defining constants and layer, pressure, density, and transport equations as V4, in a shorter computational form |
 | V6 | NIST, CODATA 2022 recommended constants (non-SRD). [Constants](https://physics.nist.gov/cuu/Constants/index.html), [ASCII table](https://physics.nist.gov/cuu/Constants/Table/allascii.txt), [wallet card](https://physics.nist.gov/cuu/pdf/wallet_2022.pdf), [license](https://www.nist.gov/open/license) | 17 U.S.C. § 105 for NIST employee works not covered by the Standard Reference Data Act | Molar gas constant, Boltzmann constant, speed of light, Newtonian \(G\). Standard Reference Database compilations are excluded (R12) |
+| V19 | NASA Glenn Research Center, Earth atmosphere curve fit. [Metric equations](https://www1.grc.nasa.gov/beginners-guide-to-aeronautics/earth-atmosphere-equation-metric/), [K-12 metric](https://www.grc.nasa.gov/www/k-12/airplane/atmosmet.html), [English equations](https://www1.grc.nasa.gov/beginners-guide-to-aeronautics/earth-atmosphere-equation-english/). Site notice: developed in the public domain | Public domain (Glenn guide) | Three-zone geometric-altitude fit (troposphere, lower stratosphere, upper stratosphere) for temperature, pressure, and density. Not the 1976 standard |
 
 ## Rocket propulsion
 
@@ -47,9 +48,11 @@ Mathematical relations are not copyrightable. The wording, figures, and tabulate
 
 | ID | Document | Status | Scope |
 | --- | --- | --- | --- |
-| V16 | Dunning, NASA SP, *The Orbital Mechanics of Flight Mechanics* (1973). NTRS 19740004369. [Citation](https://ntrs.nasa.gov/citations/19740004369) | NTRS: Work of the US Gov. Public Use Permitted | Inverse-square gravity, two-body motion, vis-viva and specific energy, circular and escape speed, period, relative motion |
+| V16 | Dunning, NASA SP-325, *The Orbital Mechanics of Flight Mechanics* (1973). NTRS 19740004369. [Citation](https://ntrs.nasa.gov/citations/19740004369). [PDF](https://ntrs.nasa.gov/api/citations/19740004369/downloads/19740004369.pdf) | NTRS: Work of the US Gov. Public Use Permitted | Inverse-square gravity, two-body motion, vis-viva and specific energy, circular and escape speed, period, conic polar equation, semi-latus rectum \(p=h^{2}/\mu=a(1-e^{2})\), mean motion, mean anomaly, Kepler’s equation, radius and true anomaly from the eccentric anomaly, perifocal projection, inclination, longitude of the ascending node, argument of periapsis |
 | V17 | Doody, NASA Science, *Basics of Space Flight*. [Tutorial](https://science.nasa.gov/learn/basics-of-space-flight/), [gravity and Kepler](https://science.nasa.gov/learn/basics-of-space-flight/chapter3-3/) | NASA educational material | Kepler’s laws, elliptical geometry, gravity gradient. Confirm any third-party figure credits before reuse |
 | V18 | NASA Goddard Space Flight Center, `two_body.f`. [Source](https://acd-ext.gsfc.nasa.gov/Data_services/cloud_slice/two_body.f) | U.S. government work unless a third-party notice appears on the file | Kepler III, \(T^2=4\pi^2 a^3/G(m_1+m_2)\); circular relative speed \(2\pi a/T\) |
+| V20 | Kohout and Layton, NASA TN D-6712, *Optimized Solution of Kepler’s Equation* (1972). NTRS 19720016564. [Citation](https://ntrs.nasa.gov/citations/19720016564). [PDF](https://ntrs.nasa.gov/api/citations/19720016564/downloads/19720016564.pdf) | NTRS: Work of the US Gov. Public Use Permitted. NASA Goddard authors | Kepler’s equation for an ellipse, \(E=M+e\sin E\) |
+| V21 | Plummer, *An Introductory Treatise on Dynamical Astronomy* (Cambridge University Press, 1918). [Internet Archive](https://archive.org/details/introductorytrea00plumiala) | Public domain in the United States. Published 1918; the Archive record reports no copyright notice and status NOT_IN_COPYRIGHT. The 1960 reprint is not used | Mean motion \(n^{2}a^{3}=\mu\), mean anomaly \(M=n(t-T)\), Kepler’s equation, half-angle relations between true and eccentric anomaly, argument of latitude. Cite this 1918 edition only |
 
 ## Structures
 
@@ -75,6 +78,10 @@ Motor-case hoop stress, margin of safety, and weld mismatch follow NASA SP-8025,
 | R12 | NIST Standard Reference Data products | May be copyrighted under 15 U.S.C. § 290e; use V6 instead |
 | R13 | NASA insignia, logotype, and branded imagery | Not public domain |
 | R14 | Third-party figures on NASA pages | Licensed display by NASA does not confer reuse rights |
+| R15 | ISO 2533, *Standard Atmosphere* | ISO copyright; use V4 instead |
+| R16 | ICAO Doc 7488, *Manual of the ICAO Standard Atmosphere* | ICAO copyright; the ICAO profile through 32 km is reproduced by V4, not by copying that manual |
+| R17 | Picone, Hedin, Drob, and Aikin, NRLMSISE-00 journal article | Commercial/society copyright. Naval Research Laboratory code may be limited by its own notice |
+| R18 | NASA Earth-GRAM software and user manuals | General public-release software is not transcribed here; it is a climatology program, not the 1976 algebraic standard |
 
 ---
 
@@ -83,14 +90,14 @@ Motor-case hoop stress, margin of safety, and weld mismatch follow NASA SP-8025,
 | Subject | Primary | Supporting |
 | --- | --- | --- |
 | Compressible flow | V1 | V2, V3 |
-| Atmosphere | V4 | V5, V11 |
+| Atmosphere | V4 | V5, V11, V19 |
 | Physical constants | V6 | V4 |
 | Liquid rockets | V8 | V7 |
 | Solid rockets | V9 | V7, V8 |
 | Wing geometry and induced drag | V10 | V11, V13 |
 | Airfoil coefficients | V12 | V11 |
 | Flight performance terms | V11, V15 | V13 |
-| Two-body orbits | V16 | V17, V18, V6 |
+| Two-body orbits | V16 | V17, V18, V6, V20, V21 |
 | Motor-case structures | NASA SP-8025 | — |
 
 Equations and programs in this repository rest on the primary column. Supporting documents supply nomenclature, unit conversions, and cross-checks. Relations are restated in SI with the project’s script-record format; source tables and prose are not reproduced verbatim.

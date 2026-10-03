@@ -891,6 +891,27 @@ Then run `python check_formulas.py`.
     Z: 2
   expected: 3/2
 
+### geometric_altitude
+
+<!-- family: atmosphere; symbols: r0, H; expr: r0*H/(r0 - H); numeric: yes -->
+
+- name: inverse_of_half_radius
+  inputs:
+    r0: 6
+    H: 3/2
+  expected: 2
+
+### gravity_inverse_square
+
+<!-- family: atmosphere; symbols: g0, r0, Z; expr: g0*(r0/(r0 + Z))**2; numeric: yes -->
+
+- name: equal_radius
+  inputs:
+    g0: 16
+    r0: 2
+    Z: 2
+  expected: 4
+
 ### hydrostatic_gradient
 
 <!-- family: atmosphere; symbols: g, rho; expr: -g*rho; numeric: yes -->
@@ -900,6 +921,38 @@ Then run `python check_formulas.py`.
     g: 10
     rho: 5/4
   expected: -25/2
+
+### hydrostatic_geopotential
+
+<!-- family: atmosphere; symbols: g0, rho; expr: -g0*rho; numeric: yes -->
+
+- name: sea_level_weight
+  inputs:
+    g0: 10
+    rho: 5/4
+  expected: -25/2
+
+### molecular_scale_temperature
+
+<!-- family: atmosphere; symbols: T, M0, M; expr: T*M0/M; numeric: yes -->
+
+- name: half_molar_mass
+  inputs:
+    T: 200
+    M0: 30
+    M: 20
+  expected: 300
+
+### kinetic_temperature
+
+<!-- family: atmosphere; symbols: TM, M, M0; expr: TM*M/M0; numeric: yes -->
+
+- name: inverse_half_molar_mass
+  inputs:
+    TM: 300
+    M: 20
+    M0: 30
+  expected: 200
 
 ### troposphere_temperature
 
@@ -913,6 +966,170 @@ Then run `python check_formulas.py`.
     Hb: 0
   expected: 216.65
 
+### atmosphere_equation_of_state
+
+<!-- family: atmosphere; symbols: rho, Rstar, T, M; expr: rho*Rstar*T/M; numeric: yes -->
+
+- name: unit_gas
+  inputs:
+    rho: 2
+    Rstar: 10
+    T: 300
+    M: 20
+  expected: 300
+
+### atmosphere_density
+
+<!-- family: atmosphere; symbols: p, M, Rstar, T; expr: p*M/(Rstar*T); numeric: yes -->
+
+- name: unit_gas
+  inputs:
+    p: 300
+    M: 20
+    Rstar: 10
+    T: 300
+  expected: 2
+
+### atmosphere_density_molecular
+
+<!-- family: atmosphere; symbols: p, M0, Rstar, TM; expr: p*M0/(Rstar*TM); numeric: yes -->
+
+- name: unit_gas
+  inputs:
+    p: 300
+    M0: 20
+    Rstar: 10
+    TM: 300
+  expected: 2
+
+### gradient_layer_pressure
+
+<!-- family: atmosphere; symbols: pb, TMb, TM, g0, M0, Rstar, LMb; expr: pb*(TMb/TM)**(g0*M0/(Rstar*LMb)); numeric: yes -->
+
+- name: double_temperature
+  inputs:
+    pb: 16
+    TMb: 4
+    TM: 2
+    g0: 1
+    M0: 1
+    Rstar: 1
+    LMb: 1
+  expected: 32
+
+### isothermal_layer_pressure
+
+<!-- family: atmosphere; symbols: pb, g0, M0, H, Hb, Rstar, TMb; expr: pb*exp(-g0*M0*(H - Hb)/(Rstar*TMb)); numeric: yes -->
+
+- name: one_scale_height
+  inputs:
+    pb: 1
+    g0: 1
+    M0: 1
+    H: 1
+    Hb: 0
+    Rstar: 1
+    TMb: 1
+  expected: exp(-1)
+
+### gradient_layer_density
+
+<!-- family: atmosphere; symbols: rhob, TMb, TM, g0, M0, Rstar, LMb; expr: rhob*(TMb/TM)**(g0*M0/(Rstar*LMb) + 1); numeric: yes -->
+
+- name: double_temperature
+  inputs:
+    rhob: 1
+    TMb: 4
+    TM: 2
+    g0: 1
+    M0: 1
+    Rstar: 1
+    LMb: 1
+  expected: 4
+
+### isothermal_layer_density
+
+<!-- family: atmosphere; symbols: rhob, g0, M0, H, Hb, Rstar, TMb; expr: rhob*exp(-g0*M0*(H - Hb)/(Rstar*TMb)); numeric: yes -->
+
+- name: one_scale_height
+  inputs:
+    rhob: 1
+    g0: 1
+    M0: 1
+    H: 1
+    Hb: 0
+    Rstar: 1
+    TMb: 1
+  expected: exp(-1)
+
+### number_density
+
+<!-- family: atmosphere; symbols: p, kB, T; expr: p/(kB*T); numeric: yes -->
+
+- name: unit_thermal
+  inputs:
+    p: 200
+    kB: 2
+    T: 50
+  expected: 2
+
+### species_number_density
+
+<!-- family: atmosphere; symbols: Fi, N; expr: Fi*N; numeric: yes -->
+
+- name: nitrogen_fraction
+  inputs:
+    Fi: 4/5
+    N: 10
+  expected: 8
+
+### atmosphere_partial_pressure
+
+<!-- family: atmosphere; symbols: ni, kB, T; expr: ni*kB*T; numeric: yes -->
+
+- name: unit_thermal
+  inputs:
+    ni: 2
+    kB: 2
+    T: 50
+  expected: 200
+
+### pressure_scale_height
+
+<!-- family: atmosphere; symbols: Rstar, T, g, M; expr: Rstar*T/(g*M); numeric: yes -->
+
+- name: ten_kilometres
+  inputs:
+    Rstar: 300
+    T: 200
+    g: 10
+    M: 6
+  expected: 1000
+
+### geopotential_pressure_scale_height
+
+<!-- family: atmosphere; symbols: Rstar, TM, g0, M0; expr: Rstar*TM/(g0*M0); numeric: yes -->
+
+- name: ten_kilometres
+  inputs:
+    Rstar: 300
+    TM: 200
+    g0: 10
+    M0: 6
+  expected: 1000
+
+### atmosphere_sound_speed
+
+<!-- family: atmosphere; symbols: g, Rstar, TM, M0; expr: (g*Rstar*TM/M0)**0.5; numeric: yes -->
+
+- name: perfect_square
+  inputs:
+    g: 4
+    Rstar: 50
+    TM: 20
+    M0: 10
+  expected: 20
+
 ### sutherland_viscosity
 
 <!-- family: atmosphere; symbols: beta, T, S; expr: beta*T**1.5/(T + S); numeric: yes -->
@@ -923,6 +1140,136 @@ Then run `python check_formulas.py`.
     T: 400
     S: 100
   expected: 16
+
+### thermal_conductivity_air
+
+<!-- family: atmosphere; symbols: k0, T, C; expr: k0*T**1.5/(T + C*10**(-12/T)); numeric: yes -->
+
+- name: twelve_kelvin
+  inputs:
+    k0: 1
+    T: 12
+    C: 10
+  expected: 12**1.5/13
+
+### mean_particle_speed
+
+<!-- family: atmosphere; symbols: Rstar, T, M, pi; expr: (8*Rstar*T/(pi*M))**0.5; numeric: yes -->
+
+- name: cancel_pi
+  inputs:
+    Rstar: pi
+    T: 2
+    M: 4
+    pi: pi
+  expected: 2
+
+### mean_free_path
+
+<!-- family: atmosphere; symbols: Rstar, T, sigma, NA, p, pi; expr: Rstar*T/(2**0.5*pi*sigma**2*NA*p); numeric: yes -->
+
+- name: unit_collision
+  inputs:
+    Rstar: 2**0.5
+    T: 1
+    sigma: 1
+    NA: 1
+    p: 1
+    pi: 1
+  expected: 1
+
+### collision_frequency
+
+<!-- family: atmosphere; symbols: Vbar, L; expr: Vbar/L; numeric: yes -->
+
+- name: unit_path
+  inputs:
+    Vbar: 400
+    L: 2
+  expected: 200
+
+### kinetic_temperature_linear
+
+<!-- family: atmosphere; symbols: Tb, LKb, Z, Zb; expr: Tb + LKb*(Z - Zb); numeric: yes -->
+
+- name: one_hundred_twenty_km
+  inputs:
+    Tb: 240
+    LKb: 12/1000
+    Z: 120000
+    Zb: 110000
+  expected: 360
+
+### mesosphere_ellipse_temperature
+
+<!-- family: atmosphere; symbols: Tc, A, Z, Z8, a; expr: Tc + A*(1 - ((Z - Z8)/a)**2)**0.5; numeric: yes -->
+
+- name: layer_base
+  inputs:
+    Tc: 10
+    A: -4
+    Z: 5
+    Z8: 5
+    a: 20
+  expected: 6
+
+### reduced_geopotential
+
+<!-- family: atmosphere; symbols: Z, Zb, r0; expr: (Z - Zb)*(r0 + Zb)/(r0 + Z); numeric: yes -->
+
+- name: four_over_eight
+  inputs:
+    Z: 5
+    Zb: 1
+    r0: 3
+  expected: 2
+
+### exospheric_temperature
+
+<!-- family: atmosphere; symbols: Tinf, Tb, lam, xi; expr: Tinf - (Tinf - Tb)*exp(-lam*xi); numeric: yes -->
+
+- name: one_e_fold
+  inputs:
+    Tinf: 5
+    Tb: 1
+    lam: 1
+    xi: log(2)
+  expected: 3
+
+### glenn_zone_pressure_power
+
+<!-- family: atmosphere; symbols: pref, T, Tref, n; expr: pref*(T/Tref)**n; numeric: yes -->
+
+- name: square
+  inputs:
+    pref: 16
+    T: 4
+    Tref: 2
+    n: 2
+  expected: 64
+
+### glenn_zone_pressure_exponential
+
+<!-- family: atmosphere; symbols: pref, A, B, h; expr: pref*exp(A - B*h); numeric: yes -->
+
+- name: cancel_exponent
+  inputs:
+    pref: 10
+    A: 3
+    B: 1
+    h: 3
+  expected: 10
+
+### glenn_density
+
+<!-- family: atmosphere; symbols: p, R, T; expr: p/(R*T); numeric: yes -->
+
+- name: glenn_gas
+  inputs:
+    p: 287
+    R: 287
+    T: 1
+  expected: 1
 
 ## Rocket propulsion
 
@@ -1297,6 +1644,247 @@ Then run `python check_formulas.py`.
     ra: 6
     rp: 2
   expected: 1/2
+
+### semi_latus_rectum
+
+<!-- family: flight; symbols: a, e; expr: a*(1 - e**2); numeric: yes -->
+
+- name: eccentricity_one_half
+  inputs:
+    a: 4
+    e: 1/2
+  expected: 3
+
+### semi_minor_axis
+
+<!-- family: flight; symbols: a, e; expr: a*(1 - e**2)**0.5; numeric: yes -->
+
+- name: eccentricity_one_half
+  inputs:
+    a: 4
+    e: 1/2
+  expected: 2*(3**0.5)
+
+### conic_radius
+
+<!-- family: flight; symbols: a, e, nu; expr: a*(1 - e**2)/(1 + e*cos(nu)); numeric: yes -->
+
+- name: periapsis
+  inputs:
+    a: 4
+    e: 1/2
+    nu: 0
+  expected: 2
+
+- name: apoapsis
+  inputs:
+    a: 4
+    e: 1/2
+    nu: pi
+  expected: 6
+
+### conic_radius_from_parameter
+
+<!-- family: flight; symbols: p, e, nu; expr: p/(1 + e*cos(nu)); numeric: yes -->
+
+- name: periapsis
+  inputs:
+    p: 3
+    e: 1/2
+    nu: 0
+  expected: 2
+
+### specific_angular_momentum
+
+<!-- family: flight; symbols: mu, p; expr: (mu*p)**0.5; numeric: yes -->
+
+- name: parameter_nine
+  inputs:
+    mu: 4
+    p: 9
+  expected: 6
+
+### mean_motion
+
+<!-- family: flight; symbols: mu, a; expr: (mu/a**3)**0.5; numeric: yes -->
+
+- name: unit_rate
+  inputs:
+    mu: 8
+    a: 2
+  expected: 1
+
+### mean_motion_from_period
+
+<!-- family: flight; symbols: pi, T; expr: 2*pi/T; numeric: yes -->
+
+- name: quarter_turn
+  inputs:
+    pi: pi
+    T: 4
+  expected: pi/2
+
+### mean_anomaly
+
+<!-- family: flight; symbols: n, t, tp; expr: n*(t - tp); numeric: yes -->
+
+- name: four_seconds_after_periapsis
+  inputs:
+    n: 2
+    t: 5
+    tp: 1
+  expected: 8
+
+### kepler_equation
+
+<!-- family: flight; symbols: E, e; expr: E - e*sin(E); numeric: yes -->
+
+- name: quarter_turn
+  inputs:
+    E: pi/2
+    e: 1/2
+  expected: pi/2 - 1/2
+
+- name: periapsis
+  inputs:
+    E: 0
+    e: 1/2
+  expected: 0
+
+### radius_from_eccentric_anomaly
+
+<!-- family: flight; symbols: a, e, E; expr: a*(1 - e*cos(E)); numeric: yes -->
+
+- name: periapsis
+  inputs:
+    a: 4
+    e: 1/2
+    E: 0
+  expected: 2
+
+- name: apoapsis
+  inputs:
+    a: 4
+    e: 1/2
+    E: pi
+  expected: 6
+
+### true_anomaly_cosine
+
+<!-- family: flight; symbols: E, e; expr: (cos(E) - e)/(1 - e*cos(E)); numeric: yes -->
+
+- name: periapsis
+  inputs:
+    E: 0
+    e: 1/2
+  expected: 1
+
+- name: apoapsis
+  inputs:
+    E: pi
+    e: 1/2
+  expected: -1
+
+### true_anomaly_sine
+
+<!-- family: flight; symbols: E, e; expr: ((1 - e**2)**0.5)*sin(E)/(1 - e*cos(E)); numeric: yes -->
+
+- name: quarter_turn
+  inputs:
+    E: pi/2
+    e: 1/2
+  expected: (3**0.5)/2
+
+### true_anomaly
+
+<!-- family: flight; symbols: e, E; expr: 2*atan(((1 + e)/(1 - e))**0.5*tan(E/2)); numeric: yes -->
+
+- name: quarter_eccentric_anomaly
+  inputs:
+    e: 1/2
+    E: pi/2
+  expected: 2*pi/3
+
+- name: periapsis
+  inputs:
+    e: 1/2
+    E: 0
+  expected: 0
+
+### eccentric_anomaly_cosine
+
+<!-- family: flight; symbols: e, nu; expr: (e + cos(nu))/(1 + e*cos(nu)); numeric: yes -->
+
+- name: periapsis
+  inputs:
+    e: 1/2
+    nu: 0
+  expected: 1
+
+- name: apoapsis
+  inputs:
+    e: 1/2
+    nu: pi
+  expected: -1
+
+### eccentric_anomaly_sine
+
+<!-- family: flight; symbols: e, nu; expr: ((1 - e**2)**0.5)*sin(nu)/(1 + e*cos(nu)); numeric: yes -->
+
+- name: quarter_turn
+  inputs:
+    e: 1/2
+    nu: pi/2
+  expected: (3**0.5)/2
+
+### eccentric_anomaly_from_true
+
+<!-- family: flight; symbols: e, nu; expr: 2*atan(((1 - e)/(1 + e))**0.5*tan(nu/2)); numeric: yes -->
+
+- name: matches_quarter_eccentric_anomaly
+  inputs:
+    e: 1/2
+    nu: 2*pi/3
+  expected: pi/2
+
+### perifocal_x
+
+<!-- family: flight; symbols: a, E, e; expr: a*(cos(E) - e); numeric: yes -->
+
+- name: periapsis
+  inputs:
+    a: 4
+    E: 0
+    e: 1/2
+  expected: 2
+
+- name: apoapsis
+  inputs:
+    a: 4
+    E: pi
+    e: 1/2
+  expected: -6
+
+### perifocal_y
+
+<!-- family: flight; symbols: a, e, E; expr: a*((1 - e**2)**0.5)*sin(E); numeric: yes -->
+
+- name: quarter_turn
+  inputs:
+    a: 4
+    e: 1/2
+    E: pi/2
+  expected: 2*(3**0.5)
+
+### argument_of_latitude
+
+<!-- family: flight; symbols: omega, nu; expr: omega + nu; numeric: yes -->
+
+- name: sum
+  inputs:
+    omega: 3/10
+    nu: 7/10
+  expected: 1
 
 #### rocket
 

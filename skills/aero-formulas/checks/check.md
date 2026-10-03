@@ -5,7 +5,7 @@ A formula is listed when every identity named for it passed, or when it is a def
 A definition is exempt from the identity check.
 Use only these formula ids. Do not use a formula that is absent from this file.
 
-Passed: 138
+Passed: 186
 Failed: 0
 Unchecked: 0
 
@@ -92,9 +92,38 @@ Exempt from the identity check.
 
 - `specific_gas_constant` (atmosphere): dry_air_1976
 - `geopotential_altitude` (atmosphere): half_radius
+- `geometric_altitude` (atmosphere): inverse_of_half_radius
+- `gravity_inverse_square` (atmosphere): equal_radius
 - `hydrostatic_gradient` (atmosphere): sea_level_weight
+- `hydrostatic_geopotential` (atmosphere): sea_level_weight
+- `molecular_scale_temperature` (atmosphere): half_molar_mass
+- `kinetic_temperature` (atmosphere): inverse_half_molar_mass
 - `troposphere_temperature` (atmosphere): tropopause
+- `atmosphere_equation_of_state` (atmosphere): unit_gas
+- `atmosphere_density` (atmosphere): unit_gas
+- `atmosphere_density_molecular` (atmosphere): unit_gas
+- `gradient_layer_pressure` (atmosphere): double_temperature
+- `isothermal_layer_pressure` (atmosphere): one_scale_height
+- `gradient_layer_density` (atmosphere): double_temperature
+- `isothermal_layer_density` (atmosphere): one_scale_height
+- `number_density` (atmosphere): unit_thermal
+- `species_number_density` (atmosphere): nitrogen_fraction
+- `atmosphere_partial_pressure` (atmosphere): unit_thermal
+- `pressure_scale_height` (atmosphere): ten_kilometres
+- `geopotential_pressure_scale_height` (atmosphere): ten_kilometres
+- `atmosphere_sound_speed` (atmosphere): perfect_square
 - `sutherland_viscosity` (atmosphere): round_temperature
+- `thermal_conductivity_air` (atmosphere): twelve_kelvin
+- `mean_particle_speed` (atmosphere): cancel_pi
+- `mean_free_path` (atmosphere): unit_collision
+- `collision_frequency` (atmosphere): unit_path
+- `kinetic_temperature_linear` (atmosphere): one_hundred_twenty_km
+- `mesosphere_ellipse_temperature` (atmosphere): layer_base
+- `reduced_geopotential` (atmosphere): four_over_eight
+- `exospheric_temperature` (atmosphere): one_e_fold
+- `glenn_zone_pressure_power` (atmosphere): square
+- `glenn_zone_pressure_exponential` (atmosphere): cancel_exponent
+- `glenn_density` (atmosphere): glenn_gas
 
 ## Rocket propulsion
 
@@ -131,6 +160,25 @@ Exempt from the identity check.
 - `periapsis_radius` (flight): eccentricity_one_half
 - `apoapsis_radius` (flight): eccentricity_one_half
 - `orbit_eccentricity` (flight): two_and_six
+- `semi_latus_rectum` (flight): eccentricity_one_half
+- `semi_minor_axis` (flight): eccentricity_one_half
+- `conic_radius` (flight): periapsis, apoapsis
+- `conic_radius_from_parameter` (flight): periapsis
+- `specific_angular_momentum` (flight): parameter_nine
+- `mean_motion` (flight): unit_rate
+- `mean_motion_from_period` (flight): quarter_turn
+- `mean_anomaly` (flight): four_seconds_after_periapsis
+- `kepler_equation` (flight): quarter_turn, periapsis
+- `radius_from_eccentric_anomaly` (flight): periapsis, apoapsis
+- `true_anomaly_cosine` (flight): periapsis, apoapsis
+- `true_anomaly_sine` (flight): quarter_turn
+- `true_anomaly` (flight): quarter_eccentric_anomaly, periapsis
+- `eccentric_anomaly_cosine` (flight): periapsis, apoapsis
+- `eccentric_anomaly_sine` (flight): quarter_turn
+- `eccentric_anomaly_from_true` (flight): matches_quarter_eccentric_anomaly
+- `perifocal_x` (flight): periapsis, apoapsis
+- `perifocal_y` (flight): quarter_turn
+- `argument_of_latitude` (flight): sum
 - `mixture_ratio` (rocket): oxidizer_six_to_one
 - `propellant_flow_sum` (rocket): same_split
 - `fuel_flow` (rocket): same_split

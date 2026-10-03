@@ -16,7 +16,7 @@ Read [formulas.md](formulas.md) before answering. Use only a formula whose id is
 
 ## Select the formula
 
-1. Start in the category that matches the question: Compressible flow, Atmosphere, Rocket propulsion, Aerodynamics, or Structures. Read another category only if that one does not contain a fit.
+1. Start in the category that matches the question: Compressible flow, Atmosphere, Rocket propulsion (including two-body orbits and anomalies), Aerodynamics, or Structures. Read another category only if that one does not contain a fit.
 2. Use the user's wording, known quantities, and requested result to choose the formula that fits.
 3. Reject any formula that is not listed in [checks/check.md](checks/check.md). A listed definition is allowed.
 4. If more than one listed formula fits, choose the one that uses the quantities the user already has. If the choice is still ambiguous, ask which result they want before calculating.

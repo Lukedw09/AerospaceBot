@@ -5,8 +5,8 @@ Units below are SI unless a section says otherwise. Any single consistent unit s
 The file is grouped so a search can start in one category:
 
 - Compressible flow: perfect-gas thermodynamics, isentropic flow, area-Mach, shocks, Prandtl-Meyer expansion, calorically imperfect air, Newtonian viscosity, and Reynolds number.
-- Atmosphere: geopotential altitude, the hydrostatic gradient, tropospheric temperature, Sutherland viscosity, and the specific gas constant, from the 1976 U.S. Standard Atmosphere.
-- Rocket propulsion: thrust, impulse, mass ratio, nozzles, solid- and liquid-propellant relations, and two-body orbital speed, period, and energy.
+- Atmosphere: the 1976 U.S. Standard Atmosphere from the surface to 1000 km, including geopotential and gravity, the seven hydrostatic layers below 86 km, kinetic temperature above 86 km, and the transport properties of that model. A three-zone NASA Glenn curve fit is recorded separately.
+- Rocket propulsion: thrust, impulse, mass ratio, nozzles, solid- and liquid-propellant relations, and two-body orbital speed, period, energy, anomalies, and mean motion.
 - Aerodynamics: incompressible Bernoulli, force and moment coefficients, wing aspect ratio, induced drag, stall speed, and load factor.
 - Structures: thin-wall motor-case hoop stress, margin of safety, and longitudinal-weld radial mismatch.
 
@@ -1009,9 +1009,26 @@ Assumptions: these values are the NACA Report 1135 engineering approximation for
 
 # Atmosphere
 
-Defining relations of the U.S. Standard Atmosphere, 1976 (NASA TM-X-74335 / NOAA-S/T-76-1562). Below 86 km the air is treated as a mixture of constant mean molecular weight. In this category \(R^{*}\) is the universal gas constant and \(M\) is molar mass.
+Defining relations of the U.S. Standard Atmosphere, 1976 (NASA TM-X-74335 / NOAA-S/T-76-1562), with the same closed-form layer equations as NASA TR R-459. Do not mix this model with the NASA Glenn three-zone curve fit at the end of the category. In this category \(R^{*}\) is the universal gas constant and \(M\) is molar mass. Geometric altitude is \(Z\); geopotential altitude is \(H\).
 
-Sea-level values of that model, unless the user gives others: \(g_0 = 9.80665\,\mathrm{m/s}^2\), \(T_0 = 288.15\,\mathrm{K}\), \(p_0 = 101325\,\mathrm{Pa}\), \(\rho_0 = 1.2250\,\mathrm{kg/m}^3\), \(r_0 = 6.356766\times 10^{6}\,\mathrm{m}\), \(M_0 = 28.9644\,\mathrm{kg/kmol}\), \(R^{*} = 8.31432\times 10^{3}\,\mathrm{N\cdot m/(kmol\cdot K)}\), tropospheric lapse \(L_{M,b} = -6.5\times 10^{-3}\,\mathrm{K/m}\) from \(H = 0\) to \(H = 11\,\mathrm{km}\). The 1976 report's \(R^{*}\) is the value adopted then; NIST CODATA 2022 lists the molar gas constant as exactly \(8.314462618\,\mathrm{J/(mol\cdot K)}\). Do not mix the two in one calculation.
+The air is dry and, below about 80 km, homogeneously mixed at constant mean molar mass \(M_0\). Hydrostatic balance and the perfect-gas law then give pressure and density from a piecewise-linear molecular-scale temperature in \(H\). That hydrostatic argument runs to \(Z = 86\,\mathrm{km}\) (\(H = 84.8520\,\mathrm{km}\)). Above 86 km the model switches to geometric altitude, a four-segment kinetic-temperature profile, and species number densities; total pressure is then the sum of partial pressures. Species diffusion above 86 km is not reduced to a single algebraic script here.
+
+Adopted 1976 constants, unless the user gives others: \(g_0 = 9.80665\,\mathrm{m/s}^2\), \(T_0 = 288.15\,\mathrm{K}\), \(p_0 = 1.01325\times 10^{5}\,\mathrm{Pa}\), \(\rho_0 = 1.2250\,\mathrm{kg/m}^3\), \(r_0 = 6.356766\times 10^{6}\,\mathrm{m}\), \(M_0 = 28.9644\,\mathrm{kg/kmol}\), \(R^{*} = 8.31432\times 10^{3}\,\mathrm{N\cdot m/(kmol\cdot K)}\), \(\gamma = 1.4\), Boltzmann \(k = 1.380622\times 10^{-23}\,\mathrm{J/K}\), Avogadro \(N_A = 6.022169\times 10^{26}\,\mathrm{kmol}^{-1}\), collision diameter \(\sigma = 3.65\times 10^{-10}\,\mathrm{m}\). The 1976 \(R^{*}\) is the value adopted then; NIST CODATA 2022 lists the molar gas constant as exactly \(8.314462618\,\mathrm{J/(mol\cdot K)}\). Do not mix the two in one calculation.
+
+Defining molecular-scale layers for \(0 \le H \le 84.8520\,\mathrm{km}\). Heights and gradients are in geopotential kilometres and kelvin per geopotential kilometre; convert to metres and K/m before substituting in the scripts.
+
+| \(b\) | \(H_b\) (km) | \(L_{M,b}\) (K/km) | \(T_{M,b}\) (K) |
+| --- | --- | --- | --- |
+| 0 | 0 | \(-6.5\) | 288.15 |
+| 1 | 11 | 0 | 216.65 |
+| 2 | 20 | \(+1.0\) | 216.65 |
+| 3 | 32 | \(+2.8\) | 228.65 |
+| 4 | 47 | 0 | 270.65 |
+| 5 | 51 | \(-2.8\) | 270.65 |
+| 6 | 71 | \(-2.0\) | 214.65 |
+| 7 | 84.8520 | — | 186.946 |
+
+Each \(T_{M,b}\) after sea level follows from the linear layer that ends at that \(H_b\). Base pressures \(p_b\) for \(b \ge 1\) are the pressure at the top of the previous layer, starting from \(p_0\). Between 80 and 86 km the model lets \(M/M_0\) fall slightly below 1; for flight work take \(M = M_0\) through 86 km unless the user asks for that correction.
 
 ## Specific gas constant
 
@@ -1036,12 +1053,13 @@ symbols: Rstar, M
 
 Assumptions: thermally perfect gas. With the 1976 dry-air \(M_0\) and \(R^{*}\), \(R = R^{*}/M_0 \approx 287.05\,\mathrm{J/(kg\cdot K)}\).
 
-## Geopotential altitude
+## Geopotential and geometric altitude
 
-Geopotential altitude \(H\) from geometric altitude \(Z\) above the adopted Earth radius \(r_0\).
+Geopotential altitude \(H\) from geometric altitude \(Z\) above the adopted Earth radius \(r_0\), and the inverse.
 
 \[
-H = \frac{r_0 Z}{r_0 + Z}
+H = \frac{r_0 Z}{r_0 + Z} \qquad
+Z = \frac{r_0 H}{r_0 - H}
 \]
 
 ```formula
@@ -1051,20 +1069,52 @@ expr: r0*Z/(r0 + Z)
 symbols: r0, Z
 ```
 
+```formula
+## geometric_altitude
+family: atmosphere
+expr: r0*H/(r0 - H)
+symbols: r0, H
+```
+
 | Symbol | Meaning | Unit |
 | --- | --- | --- |
 | \(H\) | Geopotential altitude | m |
 | \(Z\) | Geometric altitude above \(r_0\) | m |
 | \(r_0\) | Effective Earth radius used by the 1976 model | m |
 
-Assumptions: the 1976 definition that converts geometric height to geopotential height with a single spherical radius \(r_0\). At \(Z = 0\), \(H = 0\).
+Assumptions: the 1976 spherical conversion. At \(Z = 0\), \(H = 0\). \(H\) must stay below \(r_0\). Geopotential is the working argument only below 86 km.
 
-## Hydrostatic gradient
+## Gravity
 
-Vertical derivative of pressure in a still atmosphere.
+Inverse-square gravity used to relate \(g\,\mathrm{d}Z\) to \(g_0\,\mathrm{d}H\).
 
 \[
-\frac{\mathrm{d}p}{\mathrm{d}Z} = -g \rho
+g = g_0\left(\frac{r_0}{r_0 + Z}\right)^2
+\]
+
+```formula
+## gravity_inverse_square
+family: atmosphere
+expr: g0*(r0/(r0 + Z))**2
+symbols: g0, r0, Z
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(g\) | Acceleration of gravity | m/s² |
+| \(g_0\) | Sea-level gravity of the 1976 model | m/s² |
+| \(r_0\) | Effective Earth radius | m |
+| \(Z\) | Geometric altitude | m |
+
+Assumptions: inverse-square field with the 1976 \(r_0\) that already includes the centrifugal contribution at the latitude where \(g_0 = 9.80665\,\mathrm{m/s}^2\).
+
+## Hydrostatic balance
+
+Vertical derivative of pressure in a still atmosphere, in geometric and geopotential altitude.
+
+\[
+\frac{\mathrm{d}p}{\mathrm{d}Z} = -g \rho \qquad
+\frac{\mathrm{d}p}{\mathrm{d}H} = -g_0 \rho
 \]
 
 ```formula
@@ -1074,17 +1124,47 @@ expr: -g*rho
 symbols: g, rho
 ```
 
+```formula
+## hydrostatic_geopotential
+family: atmosphere
+expr: -g0*rho
+symbols: g0, rho
+```
+
 | Symbol | Meaning | Unit |
 | --- | --- | --- |
 | \(\mathrm{d}p/\mathrm{d}Z\) | Pressure change with geometric altitude | Pa/m |
+| \(\mathrm{d}p/\mathrm{d}H\) | Pressure change with geopotential altitude | Pa/m |
 | \(g\) | Gravitational acceleration | m/s² |
+| \(g_0\) | Sea-level gravity of the model | m/s² |
 | \(\rho\) | Density | kg/m³ |
 
-Assumptions: hydrostatic balance, no vertical acceleration. Near the surface, \(g \approx g_0\).
+Assumptions: hydrostatic balance, no vertical acceleration. The geopotential form is the one integrated for \(H \le 84.8520\,\mathrm{km}\).
 
-## Tropospheric molecular-scale temperature
+## Molecular-scale and kinetic temperature
 
-Linear molecular-scale temperature in a constant-lapse layer, which is ordinary kinetic temperature while \(M = M_0\).
+Molecular-scale temperature folds a changing molar mass into the hydrostatic integral. While \(M = M_0\), it equals kinetic temperature.
+
+\[
+T_M = T\frac{M_0}{M} \qquad
+T = T_M\frac{M}{M_0}
+\]
+
+```formula
+## molecular_scale_temperature
+family: atmosphere
+expr: T*M0/M
+symbols: T, M0, M
+```
+
+```formula
+## kinetic_temperature
+family: atmosphere
+expr: TM*M/M0
+symbols: TM, M, M0
+```
+
+Linear molecular-scale temperature in every constant-lapse layer below 86 km.
 
 \[
 T_M = T_{M,b} + L_{M,b}(H - H_b)
@@ -1097,27 +1177,235 @@ expr: TMb + LMb*(H - Hb)
 symbols: TMb, LMb, H, Hb
 ```
 
-In the lowest 1976 layer, \(H_b = 0\), \(T_{M,b} = 288.15\,\mathrm{K}\), and \(L_{M,b} = -6.5\times 10^{-3}\,\mathrm{K/m}\), so
-
-\[
-T = 288.15 - 0.0065\,H
-\]
-
-with \(H\) in metres and \(T\) in kelvin up to \(H = 11\,\mathrm{km}\).
+In the lowest 1976 layer, \(H_b = 0\), \(T_{M,b} = 288.15\,\mathrm{K}\), and \(L_{M,b} = -6.5\times 10^{-3}\,\mathrm{K/m}\), so \(T = 288.15 - 0.0065\,H\) with \(H\) in metres up to \(H = 11\,\mathrm{km}\).
 
 | Symbol | Meaning | Unit |
 | --- | --- | --- |
 | \(T_M\) | Molecular-scale temperature | K |
+| \(T\) | Kinetic temperature | K |
+| \(M\) | Mean molar mass | kg/kmol |
+| \(M_0\) | Sea-level mean molar mass | kg/kmol |
 | \(T_{M,b}\) | Molecular-scale temperature at the base of the layer | K |
 | \(L_{M,b}\) | Molecular-scale temperature gradient of the layer | K/m |
 | \(H\) | Geopotential altitude | m |
 | \(H_b\) | Geopotential altitude at the base of the layer | m |
 
-Assumptions: 1976 lower-atmosphere layer with constant lapse. Below 86 km, \(M = M_0\) and \(T_M = T\). The tropopause of that model is at \(H = 11\,\mathrm{km}\), where \(T = 216.65\,\mathrm{K}\).
+Assumptions: 1976 lower-atmosphere layers with constant \(L_{M,b}\). Below about 80 km, \(M = M_0\) and \(T_M = T\). The tropopause is at \(H = 11\,\mathrm{km}\), where \(T = 216.65\,\mathrm{K}\).
 
-## Sutherland viscosity
+## Equation of state
 
-Dynamic viscosity of air as a function of kinetic temperature, from the 1976 standard.
+Perfect-gas law for the mixture, and the molecular-scale form used below 86 km.
+
+\[
+p = \frac{\rho R^{*} T}{M} \qquad
+\rho = \frac{p M}{R^{*} T} = \frac{p M_0}{R^{*} T_M}
+\]
+
+```formula
+## atmosphere_equation_of_state
+family: atmosphere
+expr: rho*Rstar*T/M
+symbols: rho, Rstar, T, M
+```
+
+```formula
+## atmosphere_density
+family: atmosphere
+expr: p*M/(Rstar*T)
+symbols: p, M, Rstar, T
+```
+
+```formula
+## atmosphere_density_molecular
+family: atmosphere
+expr: p*M0/(Rstar*TM)
+symbols: p, M0, Rstar, TM
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(p\) | Pressure | Pa |
+| \(\rho\) | Mass density | kg/m³ |
+| \(R^{*}\) | Universal gas constant | J/(kmol·K) |
+| \(T\) | Kinetic temperature | K |
+| \(T_M\) | Molecular-scale temperature | K |
+| \(M\) | Mean molar mass | kg/kmol |
+| \(M_0\) | Sea-level mean molar mass | kg/kmol |
+
+Assumptions: thermally perfect gas. The \(T_M\) density form is the working relation below 86 km.
+
+## Layer pressure and density
+
+Integrals of hydrostatic balance in a layer of constant \(L_{M,b}\). Use the power form when \(L_{M,b} \ne 0\) (layers \(b = 0,2,3,5,6\)) and the exponential form when \(L_{M,b} = 0\) (layers \(b = 1,4\)).
+
+\[
+p = p_b\left(\frac{T_{M,b}}{T_M}\right)^{g_0 M_0/(R^{*} L_{M,b})}
+\qquad
+p = p_b\exp\left(-\frac{g_0 M_0(H - H_b)}{R^{*} T_{M,b}}\right)
+\]
+
+```formula
+## gradient_layer_pressure
+family: atmosphere
+expr: pb*(TMb/TM)**(g0*M0/(Rstar*LMb))
+symbols: pb, TMb, TM, g0, M0, Rstar, LMb
+```
+
+```formula
+## isothermal_layer_pressure
+family: atmosphere
+expr: pb*exp(-g0*M0*(H - Hb)/(Rstar*TMb))
+symbols: pb, g0, M0, H, Hb, Rstar, TMb
+```
+
+\[
+\rho = \rho_b\left(\frac{T_{M,b}}{T_M}\right)^{g_0 M_0/(R^{*} L_{M,b})+1}
+\qquad
+\rho = \rho_b\exp\left(-\frac{g_0 M_0(H - H_b)}{R^{*} T_{M,b}}\right)
+\]
+
+```formula
+## gradient_layer_density
+family: atmosphere
+expr: rhob*(TMb/TM)**(g0*M0/(Rstar*LMb) + 1)
+symbols: rhob, TMb, TM, g0, M0, Rstar, LMb
+```
+
+```formula
+## isothermal_layer_density
+family: atmosphere
+expr: rhob*exp(-g0*M0*(H - Hb)/(Rstar*TMb))
+symbols: rhob, g0, M0, H, Hb, Rstar, TMb
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(p\) | Pressure | Pa |
+| \(p_b\) | Pressure at the base of the layer | Pa |
+| \(\rho\) | Density | kg/m³ |
+| \(\rho_b\) | Density at the base of the layer | kg/m³ |
+| \(T_M\) | Molecular-scale temperature in the layer | K |
+| \(T_{M,b}\) | Molecular-scale temperature at the base | K |
+| \(L_{M,b}\) | Molecular-scale lapse of the layer | K/m |
+| \(H\), \(H_b\) | Geopotential altitude and layer base | m |
+| \(g_0\) | Sea-level gravity | m/s² |
+| \(M_0\) | Sea-level molar mass | kg/kmol |
+| \(R^{*}\) | Universal gas constant | J/(kmol·K) |
+
+Assumptions: hydrostatic perfect gas, \(M = M_0\), \(T_M\) linear or constant in the layer. Evaluate \(T_M\) from `troposphere_temperature` at the same \(H\). Do not use the power form at \(L_{M,b} = 0\).
+
+## Number density and partial pressure
+
+Total number density of neutral particles, mixing-region species density, and Dalton partial pressure.
+
+\[
+N = \frac{p}{k T} \qquad
+n_i = F_i N \qquad
+p_i = n_i k T
+\]
+
+```formula
+## number_density
+family: atmosphere
+expr: p/(kB*T)
+symbols: p, kB, T
+```
+
+```formula
+## species_number_density
+family: atmosphere
+expr: Fi*N
+symbols: Fi, N
+```
+
+```formula
+## atmosphere_partial_pressure
+family: atmosphere
+expr: ni*kB*T
+symbols: ni, kB, T
+```
+
+Sea-level volume fractions of the 1976 dry-air mixture include \(F(\mathrm{N}_2) = 0.78084\), \(F(\mathrm{O}_2) = 0.209476\), and \(F(\mathrm{Ar}) = 0.00934\). Above 86 km, \(p = N k T\) still holds, but each \(n_i\) is integrated from the species flux equation rather than from a constant \(F_i\).
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(N\) | Total number density | m\(^{-3}\) |
+| \(n_i\) | Number density of species \(i\) | m\(^{-3}\) |
+| \(F_i\) | Volume fraction of species \(i\) | dimensionless |
+| \(p_i\) | Partial pressure of species \(i\) | Pa |
+| \(p\) | Total pressure | Pa |
+| \(k\) | Boltzmann constant | J/K |
+| \(T\) | Kinetic temperature | K |
+
+Assumptions: ideal mixture. \(n_i = F_i N\) applies in the mixed region below about 80 km.
+
+## Pressure scale height
+
+Geometric and geopotential pressure scale heights of the mixture.
+
+\[
+H_p = \frac{R^{*} T}{g M} = \frac{R^{*} T_M}{g M_0}
+\qquad
+H_p' = \frac{R^{*} T_M}{g_0 M_0}
+\]
+
+```formula
+## pressure_scale_height
+family: atmosphere
+expr: Rstar*T/(g*M)
+symbols: Rstar, T, g, M
+```
+
+```formula
+## geopotential_pressure_scale_height
+family: atmosphere
+expr: Rstar*TM/(g0*M0)
+symbols: Rstar, TM, g0, M0
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(H_p\) | Geometric pressure scale height | m |
+| \(H_p'\) | Geopotential pressure scale height | m |
+| \(R^{*}\) | Universal gas constant | J/(kmol·K) |
+| \(T\) | Kinetic temperature | K |
+| \(T_M\) | Molecular-scale temperature | K |
+| \(g\) | Local gravity | m/s² |
+| \(g_0\) | Sea-level gravity | m/s² |
+| \(M\), \(M_0\) | Local and sea-level molar mass | kg/kmol |
+
+Assumptions: local hydrostatic slope of \(\ln p\). In an isothermal geopotential layer, pressure falls by \(1/e\) over one \(H_p'\). \(H_p\) is only approximate in the 80–120 km mixing-to-diffusion transition and in the exosphere.
+
+## Speed of sound
+
+\[
+c_s = \sqrt{\frac{\gamma R^{*} T_M}{M_0}} = \sqrt{\gamma R T}
+\]
+
+```formula
+## atmosphere_sound_speed
+family: atmosphere
+expr: (g*Rstar*TM/M0)**0.5
+symbols: g, Rstar, TM, M0
+```
+
+The 1976 model takes \(\gamma = 1.4\). At sea level this gives \(c_s \approx 340.29\,\mathrm{m/s}\).
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(c_s\) | Speed of sound | m/s |
+| \(\gamma\) | Ratio of specific heats | dimensionless |
+| \(R^{*}\) | Universal gas constant | J/(kmol·K) |
+| \(T_M\) | Molecular-scale temperature | K |
+| \(M_0\) | Sea-level molar mass | kg/kmol |
+| \(R\) | Specific gas constant | J/(kg·K) |
+| \(T\) | Kinetic temperature | K |
+
+Assumptions: small perturbation, calorically perfect air. The 1976 tables stop listing \(c_s\) above 86 km because attenuation grows with mean free path.
+
+## Viscosity, conductivity, and kinetic-theory lengths
+
+Dynamic viscosity of air from the 1976 Sutherland fit.
 
 \[
 \mu = \frac{\beta T^{3/2}}{T + S}
@@ -1130,16 +1418,193 @@ expr: beta*T**1.5/(T + S)
 symbols: beta, T, S
 ```
 
-The 1976 constants are \(\beta = 1.458\times 10^{-6}\,\mathrm{kg/(s\cdot m\cdot K^{1/2})}\) and \(S = 110.4\,\mathrm{K}\).
+The 1976 constants are \(\beta = 1.458\times 10^{-6}\,\mathrm{kg/(s\cdot m\cdot K^{1/2})}\) and \(S = 110.4\,\mathrm{K}\). Kinematic viscosity is \(\nu = \mu/\rho\), already recorded as `kinematic_viscosity` in Compressible flow.
+
+Thermal conductivity of air in the same tables.
+
+\[
+k_t = \frac{k_0 T^{3/2}}{T + C\,10^{-12/T}}
+\]
+
+```formula
+## thermal_conductivity_air
+family: atmosphere
+expr: k0*T**1.5/(T + C*10**(-12/T))
+symbols: k0, T, C
+```
+
+The 1976 constants are \(k_0 = 2.64638\times 10^{-3}\,\mathrm{W/(m\cdot K^{3/2})}\) and \(C = 245.4\,\mathrm{K}\).
+
+Mean thermal speed, mean free path, and collision frequency of the neutral mixture.
+
+\[
+\bar{V} = \sqrt{\frac{8 R^{*} T}{\pi M}}
+\qquad
+L = \frac{R^{*} T}{\sqrt{2}\,\pi\sigma^2 N_A p}
+\qquad
+\nu_c = \frac{\bar{V}}{L}
+\]
+
+```formula
+## mean_particle_speed
+family: atmosphere
+expr: (8*Rstar*T/(pi*M))**0.5
+symbols: Rstar, T, M, pi
+```
+
+```formula
+## mean_free_path
+family: atmosphere
+expr: Rstar*T/(2**0.5*pi*sigma**2*NA*p)
+symbols: Rstar, T, sigma, NA, p, pi
+```
+
+```formula
+## collision_frequency
+family: atmosphere
+expr: Vbar/L
+symbols: Vbar, L
+```
 
 | Symbol | Meaning | Unit |
 | --- | --- | --- |
 | \(\mu\) | Dynamic viscosity | Pa·s |
 | \(\beta\) | Sutherland coefficient | kg/(s·m·K\(^{1/2}\)) |
-| \(T\) | Kinetic temperature | K |
 | \(S\) | Sutherland temperature | K |
+| \(k_t\) | Thermal conductivity | W/(m·K) |
+| \(k_0\) | Conductivity coefficient | W/(m·K\(^{3/2}\)) |
+| \(C\) | Conductivity temperature constant | K |
+| \(T\) | Kinetic temperature | K |
+| \(\bar{V}\) | Mean particle speed | m/s |
+| \(L\) | Mean free path | m |
+| \(\nu_c\) | Mean collision frequency | s\(^{-1}\) |
+| \(\sigma\) | Effective collision diameter | m |
+| \(N_A\) | Avogadro constant | kmol\(^{-1}\) |
+| \(p\) | Pressure | Pa |
+| \(R^{*}\) | Universal gas constant | J/(kmol·K) |
+| \(M\) | Mean molar mass | kg/kmol |
 
-Assumptions: dry air, continuum, temperatures where the Sutherland fit of the 1976 tables applies. NASA Glenn's educational viscosity page writes the same law in Rankine with a sea-level English-unit reference; convert units before mixing that form with SI.
+Assumptions: dry air, continuum. Viscosity and conductivity are tabulated only to 86 km. \(\sigma = 3.65\times 10^{-10}\,\mathrm{m}\) is a sea-level dry-air value; it is a poorer constant once atomic oxygen dominates. NASA Glenn's educational viscosity page writes Sutherland's law in Rankine; convert units before mixing that form with SI.
+
+## Kinetic temperature above 86 km
+
+Above \(Z_7 = 86\,\mathrm{km}\) the argument is geometric altitude. Kinetic temperature is continuous with a continuous first derivative. Linear segments cover the isothermal mesopause \(86\)–\(91\,\mathrm{km}\) (\(T_7 = 186.8673\,\mathrm{K}\), \(L_{K,7} = 0\)) and the \(110\)–\(120\,\mathrm{km}\) ramp (\(T_9 = 240\,\mathrm{K}\), \(L_{K,9} = 12\,\mathrm{K/km}\)).
+
+\[
+T = T_b + L_{K,b}(Z - Z_b)
+\]
+
+```formula
+## kinetic_temperature_linear
+family: atmosphere
+expr: Tb + LKb*(Z - Zb)
+symbols: Tb, LKb, Z, Zb
+```
+
+From 91 to 110 km the profile is an ellipse segment that matches \(T_8 = T_7\) with zero slope at 91 km and \(T_9\), \(L_{K,9}\) at 110 km.
+
+\[
+T = T_c + A\left[1 - \left(\frac{Z - Z_8}{a}\right)^2\right]^{1/2}
+\]
+
+```formula
+## mesosphere_ellipse_temperature
+family: atmosphere
+expr: Tc + A*(1 - ((Z - Z8)/a)**2)**0.5
+symbols: Tc, A, Z, Z8, a
+```
+
+The 1976 constants are \(T_c = 263.1905\,\mathrm{K}\), \(A = -76.3232\,\mathrm{K}\), \(a = -19.9429\,\mathrm{km}\), and \(Z_8 = 91\,\mathrm{km}\). Keep \(Z\) and \(a\) in the same length unit.
+
+From 120 to 1000 km the temperature approaches the exospheric value \(T_\infty = 1000\,\mathrm{K}\) (mean solar activity) from \(T_{10} = 360\,\mathrm{K}\) at \(Z_{10} = 120\,\mathrm{km}\).
+
+\[
+\xi = (Z - Z_{10})\frac{r_0 + Z_{10}}{r_0 + Z}
+\qquad
+T = T_\infty - (T_\infty - T_{10})\exp(-\lambda\xi)
+\]
+
+with \(\lambda = L_{K,9}/(T_\infty - T_{10}) = 0.01875\,\mathrm{km}^{-1}\).
+
+```formula
+## reduced_geopotential
+family: atmosphere
+expr: (Z - Zb)*(r0 + Zb)/(r0 + Z)
+symbols: Z, Zb, r0
+```
+
+```formula
+## exospheric_temperature
+family: atmosphere
+expr: Tinf - (Tinf - Tb)*exp(-lam*xi)
+symbols: Tinf, Tb, lam, xi
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(T\) | Kinetic temperature | K |
+| \(T_b\) | Temperature at the base of a linear or Bates layer | K |
+| \(L_{K,b}\) | Kinetic-temperature gradient | K/m |
+| \(Z\), \(Z_b\) | Geometric altitude and layer base | m |
+| \(T_c\), \(A\), \(a\) | Ellipse centre temperature, amplitude, and semi-axis | K, K, m |
+| \(Z_8\) | Base of the ellipse layer | m |
+| \(\xi\) | Reduced height above \(Z_{10}\) | m |
+| \(T_\infty\) | Exospheric temperature | K |
+| \(\lambda\) | Bates inverse-length | m\(^{-1}\) |
+| \(r_0\) | Effective Earth radius | m |
+
+Assumptions: 1976 four-segment profile. Pressure and density above 86 km are not closed algebraic functions of \(Z\) alone; they need the species number densities of that model.
+
+## Glenn three-zone curve fit
+
+NASA Glenn's educational Earth-atmosphere model is a 1960s three-zone fit in geometric altitude \(h\), not the 1976 standard. Convert Glenn's published Celsius temperatures with their offset \(273.1\) so the scripts stay in kelvin and pascal. Do not mix these constants with the 1976 layer table.
+
+Troposphere, \(0 \le h \le 11000\,\mathrm{m}\): \(T = 288.14 - 0.00649\,h\) (use `troposphere_temperature` with those constants). Lower stratosphere, \(11000\,\mathrm{m} < h \le 25000\,\mathrm{m}\): \(T = 216.64\,\mathrm{K}\). Upper stratosphere, \(h > 25000\,\mathrm{m}\): \(T = 141.89 + 0.00299\,h\).
+
+\[
+p = p_{\mathrm{ref}}\left(\frac{T}{T_{\mathrm{ref}}}\right)^{n}
+\qquad
+p = p_{\mathrm{ref}}\exp(A - B h)
+\qquad
+\rho = \frac{p}{R T}
+\]
+
+```formula
+## glenn_zone_pressure_power
+family: atmosphere
+expr: pref*(T/Tref)**n
+symbols: pref, T, Tref, n
+```
+
+```formula
+## glenn_zone_pressure_exponential
+family: atmosphere
+expr: pref*exp(A - B*h)
+symbols: pref, A, B, h
+```
+
+```formula
+## glenn_density
+family: atmosphere
+expr: p/(R*T)
+symbols: p, R, T
+```
+
+Glenn's published metric constants, after conversion to Pa and K: troposphere \(p_{\mathrm{ref}} = 1.0129\times 10^{5}\,\mathrm{Pa}\), \(T_{\mathrm{ref}} = 288.08\,\mathrm{K}\), \(n = 5.256\); lower stratosphere \(p_{\mathrm{ref}} = 2.265\times 10^{4}\,\mathrm{Pa}\), \(A = 1.73\), \(B = 1.57\times 10^{-4}\,\mathrm{m}^{-1}\); upper stratosphere \(p_{\mathrm{ref}} = 2.488\times 10^{3}\,\mathrm{Pa}\), \(T_{\mathrm{ref}} = 216.6\,\mathrm{K}\), \(n = -11.388\); \(R = 286.9\,\mathrm{J/(kg\cdot K)}\).
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(p\) | Pressure | Pa |
+| \(p_{\mathrm{ref}}\) | Zone reference pressure | Pa |
+| \(T\) | Temperature on Glenn's \(t + 273.1\) scale | K |
+| \(T_{\mathrm{ref}}\) | Zone reference temperature | K |
+| \(n\) | Zone pressure exponent | dimensionless |
+| \(A\), \(B\) | Lower-stratosphere exponential coefficients | dimensionless, m\(^{-1}\) |
+| \(h\) | Geometric altitude | m |
+| \(\rho\) | Density | kg/m³ |
+| \(R\) | Glenn specific gas constant | J/(kg·K) |
+
+Assumptions: altitude-only curve fit for FoilSim-type estimates. Temperature and pressure change only with height. The fit is not hydrostatic 1976 and is not valid as a thermosphere model.
 
 # Rocket propulsion
 
@@ -1820,6 +2285,340 @@ symbols: ra, rp
 | \(e\) | Eccentricity | dimensionless |
 
 Assumptions: elliptic orbit with \(0 \le e < 1\) and \(r_a \ge r_p > 0\). Then \(a = (r_a + r_p)/2\). In this section \(e\) is eccentricity, not Oswald efficiency and not the base of the natural logarithm.
+
+## Classical orbital elements
+
+Six quantities fix a Keplerian ellipse in space. NASA SP-325 and Plummer (1918) use the same set, with the names in NASA *Basics of Space Flight*:
+
+- semi-major axis \(a\) and eccentricity \(e\), which fix the size and shape
+- inclination \(i\) of the orbit plane to the reference plane
+- longitude of the ascending node \(\Omega\)
+- argument of periapsis \(\omega\), measured in the orbit plane from the ascending node to periapsis
+- a time element: the time of periapsis passage \(t_p\), or the mean anomaly at a chosen epoch
+
+The position in the orbit plane is the true anomaly \(\nu\), measured from periapsis in the direction of motion. The eccentric anomaly \(E\) is the angle at the centre of the auxiliary circle. The mean anomaly \(M\) grows uniformly with time. All three anomalies below are in radians. In these records \(M\) is mean anomaly, not mass or Mach number; \(n\) is mean motion; \(p\) is the semi-latus rectum, not pressure; and \(h\) is specific angular momentum, not altitude.
+
+## Semi-latus rectum and semi-minor axis
+
+The parameter of the conic, and the semi-minor axis of an ellipse. NASA SP-325 writes \(p = a(1-e^{2})\) and \(p = h^{2}/\mu\).
+
+\[
+p = a(1 - e^{2}) \qquad b = a\sqrt{1 - e^{2}}
+\]
+
+```formula
+## semi_latus_rectum
+family: flight
+expr: a*(1 - e**2)
+symbols: a, e
+```
+
+```formula
+## semi_minor_axis
+family: flight
+expr: a*(1 - e**2)**0.5
+symbols: a, e
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(p\) | Semi-latus rectum | m |
+| \(b\) | Semi-minor axis | m |
+| \(a\) | Semi-major axis | m |
+| \(e\) | Eccentricity | dimensionless |
+
+Assumptions: ellipse with \(0 \le e < 1\). Then \(p = b^{2}/a\), and \(p = r_p(1+e) = r_a(1-e)\).
+
+## Orbit equation
+
+Radial distance on a conic with one focus at the attracting centre. NASA SP-325 gives the polar equation \(r = p/(1+e\cos\nu)\) and, on an ellipse, \(r = a(1-e^{2})/(1+e\cos\nu)\).
+
+\[
+r = \frac{p}{1 + e\cos\nu} = \frac{a(1 - e^{2})}{1 + e\cos\nu}
+\]
+
+```formula
+## conic_radius
+family: flight
+expr: a*(1 - e**2)/(1 + e*cos(nu))
+symbols: a, e, nu
+```
+
+```formula
+## conic_radius_from_parameter
+family: flight
+expr: p/(1 + e*cos(nu))
+symbols: p, e, nu
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(r\) | Radial distance from the attracting focus | m |
+| \(p\) | Semi-latus rectum | m |
+| \(a\) | Semi-major axis | m |
+| \(e\) | Eccentricity | dimensionless |
+| \(\nu\) | True anomaly | rad |
+
+Assumptions: two-body inverse-square gravity. \(\nu = 0\) at periapsis. The form in \(a\) is for an ellipse, \(0 \le e < 1\). The form in \(p\) is the conic itself: \(e = 0\) a circle, \(0 < e < 1\) an ellipse, \(e = 1\) a parabola, and \(e > 1\) a hyperbola, provided the denominator stays positive.
+
+## Specific angular momentum
+
+Magnitude of the specific angular momentum on a Keplerian conic. NASA SP-325 defines the semi-latus rectum by \(p = h^{2}/\mu\).
+
+\[
+h = \sqrt{\mu p}
+\]
+
+```formula
+## specific_angular_momentum
+family: flight
+expr: (mu*p)**0.5
+symbols: mu, p
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(h\) | Specific angular momentum | m²/s |
+| \(\mu\) | Gravitational parameter | m³/s² |
+| \(p\) | Semi-latus rectum | m |
+
+Assumptions: planar two-body motion. \(h\) here is not altitude. The direction is normal to the orbit plane.
+
+## Mean motion
+
+Constant average angular rate of an elliptic orbit. NASA SP-325 defines \(n = 2\pi/T\) and the same rate from the semi-major axis. Plummer writes \(n^{2}a^{3} = \mu\).
+
+\[
+n = \sqrt{\frac{\mu}{a^{3}}} = \frac{2\pi}{T}
+\]
+
+```formula
+## mean_motion
+family: flight
+expr: (mu/a**3)**0.5
+symbols: mu, a
+```
+
+```formula
+## mean_motion_from_period
+family: flight
+expr: 2*pi/T
+symbols: pi, T
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(n\) | Mean motion | rad/s |
+| \(\mu\) | Gravitational parameter | m³/s² |
+| \(a\) | Semi-major axis | m |
+| \(T\) | Orbital period | s |
+| \(\pi\) | Circle constant | dimensionless |
+
+Assumptions: unperturbed elliptic two-body motion, \(a > 0\). The two expressions agree with `orbital_period`. For two comparable masses replace \(\mu\) by \(G(m_1+m_2)\).
+
+## Mean anomaly
+
+Angle that advances uniformly at the mean motion, zero at periapsis. NASA SP-325 and Plummer both write \(M = n(t - t_p)\).
+
+\[
+M = n(t - t_p)
+\]
+
+```formula
+## mean_anomaly
+family: flight
+expr: n*(t - tp)
+symbols: n, t, tp
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(M\) | Mean anomaly | rad |
+| \(n\) | Mean motion | rad/s |
+| \(t\) | Time | s |
+| \(t_p\) | Time of periapsis passage | s |
+
+Assumptions: \(M = 0\) at periapsis. If the epoch \(t_0\) is not periapsis, use \(M = M_0 + n(t - t_0)\) with \(M_0\) the mean anomaly at \(t_0\). In this record \(M\) is not mass and not Mach number.
+
+## Kepler's equation
+
+Relation between mean anomaly and eccentric anomaly on an ellipse. NASA SP-325 and NASA TN D-6712 state \(M = E - e\sin E\). The eccentric anomaly is defined by this equation; it is not an algebraic explicit function of \(M\).
+
+\[
+M = E - e\sin E
+\]
+
+```formula
+## kepler_equation
+family: flight
+expr: E - e*sin(E)
+symbols: E, e
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(M\) | Mean anomaly | rad |
+| \(E\) | Eccentric anomaly | rad |
+| \(e\) | Eccentricity | dimensionless |
+
+Assumptions: ellipse, \(0 \le e < 1\), with \(M\) and \(E\) in radians and in the same branch. The record evaluates \(M\) from a known \(E\). Given \(M\), solve the same equation for \(E\). At periapsis, \(M = E = 0\). A circular orbit has \(E = M = \nu\).
+
+## Radius from the eccentric anomaly
+
+Distance from the focus in terms of the eccentric anomaly. NASA SP-325 equation (1-81).
+
+\[
+r = a(1 - e\cos E)
+\]
+
+```formula
+## radius_from_eccentric_anomaly
+family: flight
+expr: a*(1 - e*cos(E))
+symbols: a, e, E
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(r\) | Radial distance from the attracting focus | m |
+| \(a\) | Semi-major axis | m |
+| \(e\) | Eccentricity | dimensionless |
+| \(E\) | Eccentric anomaly | rad |
+
+Assumptions: ellipse, \(0 \le e < 1\). \(E = 0\) gives periapsis \(r = a(1-e)\), and \(E = \pi\) gives apoapsis \(r = a(1+e)\).
+
+## True anomaly from the eccentric anomaly
+
+NASA SP-325 equations (1-90) and (1-91). Plummer’s half-angle relation, with his auxiliary angle removed, is the third formula. It returns \(\nu\) itself on \((-\pi, \pi)\).
+
+\[
+\cos\nu = \frac{\cos E - e}{1 - e\cos E} \qquad
+\sin\nu = \frac{\sqrt{1 - e^{2}}\,\sin E}{1 - e\cos E} \qquad
+\nu = 2\arctan\left(\sqrt{\frac{1+e}{1-e}}\tan\frac{E}{2}\right)
+\]
+
+```formula
+## true_anomaly_cosine
+family: flight
+expr: (cos(E) - e)/(1 - e*cos(E))
+symbols: E, e
+```
+
+```formula
+## true_anomaly_sine
+family: flight
+expr: ((1 - e**2)**0.5)*sin(E)/(1 - e*cos(E))
+symbols: E, e
+```
+
+```formula
+## true_anomaly
+family: flight
+expr: 2*atan(((1 + e)/(1 - e))**0.5*tan(E/2))
+symbols: e, E
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(\nu\) | True anomaly | rad |
+| \(E\) | Eccentric anomaly | rad |
+| \(e\) | Eccentricity | dimensionless |
+
+Assumptions: ellipse, \(0 \le e < 1\). The sine and cosine pair fixes the quadrant. `true_anomaly` is valid for \(-\pi < E < \pi\); \(\tan(E/2)\) is undefined at \(E = \pm\pi\), where \(\nu = \pm\pi\) as well. \(E = 0\) gives \(\nu = 0\).
+
+## Eccentric anomaly from the true anomaly
+
+The inverse of the previous trio. Plummer states the cosine form and the half-angle form.
+
+\[
+\cos E = \frac{e + \cos\nu}{1 + e\cos\nu} \qquad
+\sin E = \frac{\sqrt{1 - e^{2}}\,\sin\nu}{1 + e\cos\nu} \qquad
+E = 2\arctan\left(\sqrt{\frac{1-e}{1+e}}\tan\frac{\nu}{2}\right)
+\]
+
+```formula
+## eccentric_anomaly_cosine
+family: flight
+expr: (e + cos(nu))/(1 + e*cos(nu))
+symbols: e, nu
+```
+
+```formula
+## eccentric_anomaly_sine
+family: flight
+expr: ((1 - e**2)**0.5)*sin(nu)/(1 + e*cos(nu))
+symbols: e, nu
+```
+
+```formula
+## eccentric_anomaly_from_true
+family: flight
+expr: 2*atan(((1 - e)/(1 + e))**0.5*tan(nu/2))
+symbols: e, nu
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(E\) | Eccentric anomaly | rad |
+| \(\nu\) | True anomaly | rad |
+| \(e\) | Eccentricity | dimensionless |
+
+Assumptions: ellipse, \(0 \le e < 1\). `eccentric_anomaly_from_true` is valid for \(-\pi < \nu < \pi\). On a circle, \(E = \nu\).
+
+## Perifocal coordinates
+
+Position in the orbit plane, with \(x\) from the focus toward periapsis and \(y\) along the motion at periapsis. They follow from NASA SP-325 equation (1-80), \(ae + r\cos\nu = a\cos E\), together with the sine formula for \(\nu\).
+
+\[
+x = a(\cos E - e) \qquad y = a\sqrt{1 - e^{2}}\,\sin E
+\]
+
+```formula
+## perifocal_x
+family: flight
+expr: a*(cos(E) - e)
+symbols: a, E, e
+```
+
+```formula
+## perifocal_y
+family: flight
+expr: a*((1 - e**2)**0.5)*sin(E)
+symbols: a, e, E
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(x\) | Coordinate from the focus toward periapsis | m |
+| \(y\) | Coordinate completing the right-handed perifocal frame | m |
+| \(a\) | Semi-major axis | m |
+| \(e\) | Eccentricity | dimensionless |
+| \(E\) | Eccentric anomaly | rad |
+
+Assumptions: ellipse, \(0 \le e < 1\). Then \(r = \sqrt{x^{2} + y^{2}}\) and \(\nu = \operatorname{atan2}(y, x)\). Equivalently, \(x = r\cos\nu\) and \(y = r\sin\nu\).
+
+## Argument of latitude
+
+Angle in the orbit plane from the ascending node to the spacecraft. Plummer defines it as the sum of the argument of periapsis and the true anomaly.
+
+\[
+u = \omega + \nu
+\]
+
+```formula
+## argument_of_latitude
+family: flight
+expr: omega + nu
+symbols: omega, nu
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(u\) | Argument of latitude | rad |
+| \(\omega\) | Argument of periapsis | rad |
+| \(\nu\) | True anomaly | rad |
+
+Assumptions: angles in radians, measured in the direction of motion. In this record \(u\) is not specific internal energy.
 
 ## Liquid-propellant mixture ratio
 
