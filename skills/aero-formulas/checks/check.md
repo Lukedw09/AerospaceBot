@@ -5,7 +5,7 @@ A formula is listed when every identity named for it passed, or when it is a def
 A definition is exempt from the identity check.
 Use only these formula ids. Do not use a formula that is absent from this file.
 
-Passed: 186
+Passed: 204
 Failed: 0
 Unchecked: 0
 
@@ -215,12 +215,30 @@ Exempt from the identity check.
 - `drag_force` (aerodynamics): steady_load
 - `aspect_ratio` (aerodynamics): span_ten
 - `rectangular_aspect_ratio` (aerodynamics): span_ten
+- `taper_ratio` (aerodynamics): half, rectangular, pointed
+- `trapezoidal_wing_area` (aerodynamics): taper_half, rectangular, pointed
+- `mean_aerodynamic_chord` (aerodynamics): taper_half, rectangular, pointed
+- `mac_spanwise_station` (aerodynamics): taper_half, rectangular, pointed
+- `chord_fraction_sweep` (aerodynamics): quarter_unswept_le, trailing_unswept_le, rectangular, leading_edge
+- `leading_edge_from_chord_sweep` (aerodynamics): from_quarter, rectangular
+- `mac_leading_edge_x` (aerodynamics): unswept, forty_five
 - `induced_drag_coefficient` (aerodynamics): elliptic_unit_lift
 - `drag_polar` (aerodynamics): two_term
+- `section_lift_effective_angle` (aerodynamics): two_degrees_above_induced
+- `elliptic_induced_angle` (aerodynamics): unit_lift_aspect_five
+- `induced_angle` (aerodynamics): elliptic_unit_lift, efficiency_four_fifths
+- `wing_lift_curve_slope` (aerodynamics): thin_elliptic_aspect_six, efficiency_four_fifths
+- `wing_lift_coefficient` (aerodynamics): five_per_radian
+- `stall_angle` (aerodynamics): line_reaches_clmax
 - `lift_to_drag` (aerodynamics): twenty_to_one
 - `lift_to_drag_from_forces` (aerodynamics): twenty_to_one
 - `stall_speed` (aerodynamics): one_g_level
+- `equivalent_airspeed` (aerodynamics): same_dynamic_pressure
 - `load_factor` (aerodynamics): three_g
+- `stick_fixed_neutral_point` (aerodynamics): sample_tail, equal_slopes
+- `center_of_gravity_to_neutral_point` (aerodynamics): ahead
+- `neutral_distance_from_moment` (aerodynamics): five_percent_chord
+- `static_margin` (aerodynamics): five_percent
 
 ## Structures
 

@@ -7,7 +7,7 @@ The file is grouped so a search can start in one category:
 - Compressible flow: perfect-gas thermodynamics, isentropic flow, area-Mach, shocks, Prandtl-Meyer expansion, calorically imperfect air, Newtonian viscosity, and Reynolds number.
 - Atmosphere: the 1976 U.S. Standard Atmosphere from the surface to 1000 km, including geopotential and gravity, the seven hydrostatic layers below 86 km, kinetic temperature above 86 km, and the transport properties of that model. A three-zone NASA Glenn curve fit is recorded separately.
 - Rocket propulsion: thrust, impulse, mass ratio, nozzles, solid- and liquid-propellant relations, and two-body orbital speed, period, energy, anomalies, and mean motion.
-- Aerodynamics: incompressible Bernoulli, force and moment coefficients, wing aspect ratio, induced drag, stall speed, and load factor.
+- Aerodynamics: incompressible Bernoulli, force and moment coefficients, trapezoidal wing planform, aspect ratio, induced drag, finite-wing lift-curve slope and induced angle, stall speed, equivalent airspeed, load factor, and the stick-fixed neutral point and static margin.
 - Structures: thin-wall motor-case hoop stress, margin of safety, and longitudinal-weld radial mismatch.
 
 The rocket symbol \(k\) is the same ratio of specific heats as \(\gamma\). Standard sea-level gravitational acceleration is \(g_0 = 9.80665\,\mathrm{m/s}^2\).
@@ -2846,7 +2846,7 @@ Assumptions: the derivative is at constant \(K\).
 
 # Aerodynamics
 
-Incompressible flow and the dimensionless force and moment coefficients. Freestream dynamic pressure \(q_{\infty}\) is the dynamic-pressure relation in Compressible flow evaluated far ahead of the body. In this category \(V\) is flow speed. Wing geometry and induced drag follow NASA Glenn's Beginner's Guide (public-domain educational pages). Stall speed and load factor follow the usual force definitions used in FAA-H-8083 and NASA SP-367.
+Incompressible flow and the dimensionless force and moment coefficients. Freestream dynamic pressure \(q_{\infty}\) is the dynamic-pressure relation in Compressible flow evaluated far ahead of the body. In this category \(V\) is flow speed. Wing geometry and induced drag follow NASA Glenn's Beginner's Guide (public-domain educational pages). The finite-wing lift curve follows NASA TP-2414 and NACA TN 1862. Stall speed and load factor follow the usual force definitions used in FAA-H-8083 and NASA SP-367. The stick-fixed neutral point and static margin follow NACA TN 1670.
 
 ## Bernoulli's relation
 
@@ -3231,6 +3231,124 @@ symbols: b, c
 
 Assumptions: \(S\) is the reference planform area used with the force coefficients. The rectangular form requires constant chord.
 
+## Trapezoidal planform
+
+A straight-tapered wing. \(c_r\) and \(c_t\) are streamwise chords, not chords perpendicular to the leading edge. The taper ratio and the trapezoidal planform area are
+
+\[
+\lambda = \frac{c_t}{c_r} \qquad
+S = b\,\frac{c_r + c_t}{2}
+\]
+
+```formula
+## taper_ratio
+family: aerodynamics
+expr: ct/cr
+symbols: ct, cr
+```
+
+```formula
+## trapezoidal_wing_area
+family: aerodynamics
+expr: b*(cr + ct)/2
+symbols: b, cr, ct
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(\lambda\) | Taper ratio | dimensionless |
+| \(c_t\) | Streamwise tip chord | m |
+| \(c_r\) | Streamwise root chord | m |
+| \(S\) | Planform area | m² |
+| \(b\) | Span, tip to tip | m |
+
+Assumptions: the leading and trailing edges are straight. \(b > 0\), \(c_r > 0\), and \(c_t \ge 0\). A pointed tip has \(c_t = 0\). Aspect ratio is still \(AR = b^{2}/S\). These chords are the ones used with the lift and drag equations.
+
+The mean aerodynamic chord is the streamwise chord at the centroid of one half of that planform. For this linear taper
+
+\[
+\bar{c} = \frac{2}{3}\,c_r\,\frac{1 + \lambda + \lambda^{2}}{1 + \lambda}
+\]
+
+and the centroid lies outboard of the centerline at
+
+\[
+y_{\bar{c}} = \frac{b}{6}\,\frac{1 + 2\lambda}{1 + \lambda}
+\]
+
+```formula
+## mean_aerodynamic_chord
+family: aerodynamics
+expr: (2/3)*cr*(1 + lam + lam**2)/(1 + lam)
+symbols: cr, lam
+```
+
+```formula
+## mac_spanwise_station
+family: aerodynamics
+expr: (b/6)*(1 + 2*lam)/(1 + lam)
+symbols: b, lam
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(\bar{c}\) | Mean aerodynamic chord | m |
+| \(y_{\bar{c}}\) | Spanwise station of \(\bar{c}\), measured from the centerline | m |
+| \(\lambda\) | Taper ratio | dimensionless |
+| \(c_r\) | Streamwise root chord | m |
+| \(b\) | Span | m |
+
+Assumptions: \(\lambda \ge 0\). The same station on the other side is \(-y_{\bar{c}}\). For \(\lambda = 1\), \(\bar{c} = c_r\) and \(y_{\bar{c}} = b/4\). \(\bar{c}\) is also \((2/S)\int_0^{b/2} c(y)^{2}\,\mathrm{d}y\), and \(y_{\bar{c}}\) is \((2/S)\int_0^{b/2} y\,c(y)\,\mathrm{d}y\).
+
+Sweep \(\Lambda\) is the angle from the spanwise axis toward the rear, positive when the tip is aft of the root. On the line at fraction \(n\) of the local streamwise chord, \(n = 0\) is the leading edge, \(n = 1/4\) is the quarter chord, and \(n = 1\) is the trailing edge.
+
+\[
+\tan\Lambda_n = \tan\Lambda_{\mathrm{LE}} - \frac{4n}{AR}\,\frac{1 - \lambda}{1 + \lambda}
+\]
+
+\[
+\tan\Lambda_{\mathrm{LE}} = \tan\Lambda_n + \frac{4n}{AR}\,\frac{1 - \lambda}{1 + \lambda}
+\]
+
+```formula
+## chord_fraction_sweep
+family: aerodynamics
+expr: atan(tan(sweep_le) - 4*n*(1 - lam)/(AR*(1 + lam)))
+symbols: sweep_le, n, lam, AR
+```
+
+```formula
+## leading_edge_from_chord_sweep
+family: aerodynamics
+expr: atan(tan(sweep_n) + 4*n*(1 - lam)/(AR*(1 + lam)))
+symbols: sweep_n, n, lam, AR
+```
+
+The starboard leading edge at \(y_{\bar{c}}\) is aft of the root leading edge by
+
+\[
+x_{\mathrm{LE}} = y_{\bar{c}}\tan\Lambda_{\mathrm{LE}}
+\]
+
+```formula
+## mac_leading_edge_x
+family: aerodynamics
+expr: y*tan(sweep_le)
+symbols: y, sweep_le
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(\Lambda_n\) | Sweep of the constant-fraction chord line | rad |
+| \(\Lambda_{\mathrm{LE}}\) | Leading-edge sweep | rad |
+| \(n\) | Fraction of the local streamwise chord, from 0 to 1 | dimensionless |
+| \(AR\) | Aspect ratio | dimensionless |
+| \(\lambda\) | Taper ratio | dimensionless |
+| \(x_{\mathrm{LE}}\) | Streamwise station of the leading edge, positive aft | m |
+| \(y_{\bar{c}}\) | Spanwise station of the mean aerodynamic chord | m |
+
+Assumptions: \(0 \le n \le 1\), \(\lambda \ge 0\), and \(AR > 0\). Each sweep is strictly between \(-\pi/2\) and \(\pi/2\), so the tangent form has one result. \(x\) is zero at the root leading edge. A rectangular wing has the same sweep at every chord fraction.
+
 ## Induced drag and the drag polar
 
 Induced-drag coefficient and the two-term drag polar from NASA Glenn. \(e = 1\) for an elliptic spanwise lift distribution.
@@ -3264,6 +3382,148 @@ symbols: CD0, CDi
 | \(C_{D0}\) | Zero-lift drag coefficient | dimensionless |
 
 Assumptions: coefficients use the same wing area. \(0 < e \le 1\). NACA Report 408 includes non-elliptic loading and fuselage effects in \(e\). In this section \(e\) is efficiency, not eccentricity.
+
+## Finite-wing lift curve
+
+Straight-wing lifting line. NASA TP-2414, equation (4), writes the section lift coefficient at a spanwise station as the section slope times the section angle of attack minus the induced angle. Equation (3) of that paper defines the induced angle by \(\alpha_i \approx w_i/V\), so the angle is in radians and the slope is per radian.
+
+\[
+c_l = a_0\,(\alpha_s - \alpha_i)
+\]
+
+```formula
+## section_lift_effective_angle
+family: aerodynamics
+expr: a0*(alpha_s - alpha_i)
+symbols: a0, alpha_s, alpha_i
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(c_l\) | Section lift coefficient | dimensionless |
+| \(a_0\) | Section lift-curve slope, TP-2414's \(c_{l_\alpha}\) | 1/rad |
+| \(\alpha_s\) | Section angle of attack in TP-2414 equation (4) | rad |
+| \(\alpha_i\) | Induced angle of attack | rad |
+
+Assumptions: the flow at the station is treated as two-dimensional. \(\alpha_s\) is the argument of equation (4). It is zero at the section attitude that produces zero lift when \(\alpha_i = 0\). A geometric angle \(\alpha\) and a zero-lift angle \(\alpha_{L0}\) use that same origin through \(\alpha_s = \alpha - \alpha_{L0}\).
+
+For elliptic loading, TP-2414 substitutes its equation (6) into equation (3) and finds the induced angle constant along the span:
+
+\[
+\alpha_i = \frac{C_L}{\pi\, AR}
+\]
+
+```formula
+## elliptic_induced_angle
+family: aerodynamics
+expr: CL/(pi*AR)
+symbols: CL, AR, pi
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(\alpha_i\) | Induced angle, constant along an elliptic wing | rad |
+| \(C_L\) | Wing lift coefficient | dimensionless |
+| \(AR\) | Aspect ratio | dimensionless |
+| \(\pi\) | Circle constant | dimensionless |
+
+Assumptions: straight lifting line, elliptic loading, symmetric loading, and chord small relative to span, as stated for this result in TP-2414. The same paragraph says the local section lift coefficient is then constant along the span.
+
+The induced-drag formula already recorded replaces \(\pi\, AR\) by \(\pi\, AR\, e\), with \(e = 1\) on an elliptic wing. The induced angle that keeps \(C_{D_i} = C_L\alpha_i\) is therefore
+
+\[
+\alpha_i = \frac{C_L}{\pi\, AR\, e}
+\]
+
+```formula
+## induced_angle
+family: aerodynamics
+expr: CL/(pi*AR*e)
+symbols: CL, AR, e, pi
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(\alpha_i\) | Induced angle consistent with \(C_{D_i}=C_L\alpha_i\) | rad |
+| \(C_L\) | Wing lift coefficient | dimensionless |
+| \(AR\) | Aspect ratio | dimensionless |
+| \(e\) | Span efficiency in `induced_drag_coefficient` | dimensionless |
+| \(\pi\) | Circle constant | dimensionless |
+
+Assumptions: \(0 < e \le 1\), and \(\alpha_i\) is in radians so the product \(C_L\alpha_i\) is the induced-drag coefficient. At \(e = 1\) this is `elliptic_induced_angle`, the constant spanwise value from TP-2414. This record is that single angle, tied to the wing lift coefficient through the induced-drag formula.
+
+On the elliptic wing the section lift equals the wing lift coefficient. With \(\alpha_s = \alpha - \alpha_{L0}\) and \(\alpha_i = C_L/(\pi\, AR\, e)\),
+
+\[
+C_L = a_0\left(\alpha - \alpha_{L0} - \frac{C_L}{\pi\, AR\, e}\right)
+\]
+
+Solve for the slope \(a = C_L/(\alpha - \alpha_{L0})\):
+
+\[
+a = \frac{a_0}{1 + \dfrac{a_0}{\pi\, AR\, e}}
+\]
+
+```formula
+## wing_lift_curve_slope
+family: aerodynamics
+expr: a0/(1 + a0/(pi*AR*e))
+symbols: a0, AR, e, pi
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(a\) | Wing lift-curve slope | 1/rad |
+| \(a_0\) | Section lift-curve slope | 1/rad |
+| \(AR\) | Aspect ratio | dimensionless |
+| \(e\) | Span efficiency | dimensionless |
+| \(\pi\) | Circle constant | dimensionless |
+
+Assumptions: \(a_0 > 0\), \(AR > 0\), and \(0 < e \le 1\). The wing lift coefficient equals the section lift coefficient, which is the constant-section result TP-2414 states for elliptic loading. NACA TN 1862, equation (1), states the same elliptic slope for a section slope of \(2\pi\) per radian: the per-degree slope is \((2\pi/57.3)\, AR/(AR+2)\). Multiplying that per-degree slope by the same \(57.3\) gives \(2\pi\, AR/(AR+2)\) per radian. The record above equals that value at \(a_0 = 2\pi\) and \(e = 1\), because \(2\pi/(1+2/AR) = 2\pi\, AR/(AR+2)\). TN 1862 equation (3) is a separate low-aspect-ratio estimate and is not this lifting-line slope. TP-2414 limits the underlying angle to a chord that is small relative to the span.
+
+The straight lift line through the zero-lift angle is
+
+\[
+C_L = a\,(\alpha - \alpha_{L0})
+\]
+
+```formula
+## wing_lift_coefficient
+family: aerodynamics
+expr: a*(alpha - alpha_L0)
+symbols: a, alpha, alpha_L0
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(C_L\) | Wing lift coefficient on the straight line | dimensionless |
+| \(a\) | Wing lift-curve slope | 1/rad |
+| \(\alpha\) | Geometric angle of attack | rad |
+| \(\alpha_{L0}\) | Geometric angle at which section lift is zero when \(\alpha_i = 0\) | rad |
+
+Assumptions: \(\alpha - \alpha_{L0}\) is the section angle \(\alpha_s\) in `section_lift_effective_angle`. FAA-H-8083-25C, chapter 5, says the lift coefficient increases with angle of attack until \(C_{L,\max}\) and then falls. This straight line is the lift coefficient while \(C_L\) is below \(C_{L,\max}\).
+
+That peak is reached on the straight line at
+
+\[
+\alpha_{\mathrm{stall}} = \alpha_{L0} + \frac{C_{L,\max}}{a}
+\]
+
+```formula
+## stall_angle
+family: aerodynamics
+expr: alpha_L0 + CLmax/a
+symbols: alpha_L0, CLmax, a
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(\alpha_{\mathrm{stall}}\) | Geometric angle at which the straight line equals \(C_{L,\max}\) | rad |
+| \(\alpha_{L0}\) | Zero-lift angle | rad |
+| \(C_{L,\max}\) | Maximum lift coefficient | dimensionless |
+| \(a\) | Wing lift-curve slope | 1/rad |
+
+Assumptions: \(a > 0\). This is the angle on `wing_lift_coefficient` at which \(C_L = C_{L,\max}\). It is the critical angle in the sense of FAA-H-8083-25C chapter 5 when the lift curve follows the straight line up to that peak.
 
 ## Lift-to-drag ratio
 
@@ -3320,6 +3580,30 @@ symbols: W, rho, S, CLmax
 
 Assumptions: unaccelerated 1-g flight, \(L = W\), and incompressible dynamic pressure \(\frac{1}{2}\rho V^{2}\). Use the density at the altitude of interest. In a coordinated level turn at load factor \(n\), replace \(W\) by \(nW\).
 
+## Equivalent airspeed
+
+Speed at sea-level density with the same dynamic pressure as the true airspeed. `freestream_dynamic_pressure` is unchanged when \(\rho V^{2} = \rho_{\mathrm{sl}} V_e^{2}\), so
+
+\[
+V_e = V\sqrt{\frac{\rho}{\rho_{\mathrm{sl}}}}
+\]
+
+```formula
+## equivalent_airspeed
+family: aerodynamics
+expr: V*(rho/rho_sl)**0.5
+symbols: V, rho, rho_sl
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(V_e\) | Equivalent airspeed | m/s |
+| \(V\) | True airspeed | m/s |
+| \(\rho\) | Air density at the flight condition | kg/m³ |
+| \(\rho_{\mathrm{sl}}\) | Sea-level air density | kg/m³ |
+
+Assumptions: \(q = \frac{1}{2}\rho V^{2} = \frac{1}{2}\rho_{\mathrm{sl}} V_e^{2}\) from `freestream_dynamic_pressure`. Evaluating `stall_speed` at sea-level density is this speed for the 1-g stall: it equals the true stall speed times \(\sqrt{\rho/\rho_{\mathrm{sl}}}\). \(\rho_{\mathrm{sl}}\) is the 1976 sea-level density when the atmosphere is the 1976 standard. This is not calibrated airspeed.
+
 ## Load factor
 
 Lift divided by weight.
@@ -3342,6 +3626,89 @@ symbols: L, W
 | \(W\) | Weight | N |
 
 Assumptions: \(W\) is the vehicle weight, not mass times a local \(g\) different from the weight definition in use. Straight and level flight has \(n = 1\) when \(L = W\).
+
+## Stick-fixed neutral point
+
+For the simplified airplane in NACA TN 1670, drag and propeller forces are left out of the pitching moment. The wing-fuselage lift and a constant moment act at the aerodynamic center of that combination. The tail lift acts at the tail quarter-chord. With the elevator fixed, the distance from that aerodynamic center to the neutral point, divided by the wing mean aerodynamic chord, is
+
+\[
+\frac{x_0}{c}
+= \left(1 - \frac{\mathrm{d}\epsilon}{\mathrm{d}\alpha}\right)
+\frac{(\mathrm{d}C_L/\mathrm{d}\alpha)_T}{\mathrm{d}C_L/\mathrm{d}\alpha}
+\frac{q_T}{q}
+\frac{S_T}{S}
+\frac{l}{c}
+\]
+
+```formula
+## stick_fixed_neutral_point
+family: aerodynamics
+expr: (1 - deps)*(aT/a)*(qT/q)*(ST*l)/(S*c)
+symbols: deps, aT, a, qT, q, ST, l, S, c
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(x_0/c\) | Distance from the wing-fuselage aerodynamic center to the stick-fixed neutral point, positive aft | dimensionless |
+| \(\mathrm{d}\epsilon/\mathrm{d}\alpha\) | Downwash slope | dimensionless |
+| \((\mathrm{d}C_L/\mathrm{d}\alpha)_T\) | Tail lift-curve slope, elevator fixed | 1/rad |
+| \(\mathrm{d}C_L/\mathrm{d}\alpha\) | Wing-fuselage lift-curve slope | 1/rad |
+| \(q_T/q\) | Tail dynamic pressure divided by freestream dynamic pressure | dimensionless |
+| \(S_T\) | Horizontal-tail area | m² |
+| \(S\) | Wing area | m² |
+| \(l\) | Tail length from the center of gravity to the tail quarter-chord | m |
+| \(c\) | Wing mean aerodynamic chord | m |
+
+Assumptions: the two lift-curve slopes use the same angle measure, so their ratio is unchanged if both are taken per degree instead of per radian. \(\mathrm{d}\epsilon/\mathrm{d}\alpha\) uses that same measure. \(l\) and \(c\) use the same length unit. In equation (6) of TN 1670 the center of gravity is the neutral point, so \(l\) is measured from the neutral point to the tail quarter-chord. \(q_T/q\) is the dynamic-pressure ratio at the tail. The symbol \(\eta\) in that note is propeller efficiency, not this ratio. The same expression gives the stick-free neutral point when \((\mathrm{d}C_L/\mathrm{d}\alpha)_T\) is the elevator-free tail slope. The note states that this theory is approximate for gliding flight at low angle of attack, and that power-on flight or flight near stall can move the neutral point with angle of attack.
+
+The distance from the center of gravity to that neutral point follows by subtracting the center-of-gravity position from \(x_0\). Both distances are measured from the wing-fuselage aerodynamic center, positive aft.
+
+\[
+\frac{x}{c} = \frac{x_0}{c} - \frac{x'}{c}
+\]
+
+```formula
+## center_of_gravity_to_neutral_point
+family: aerodynamics
+expr: x0c - xpc
+symbols: x0c, xpc
+```
+
+TN 1670 also writes that distance from the pitching-moment slope. A positive value is the center of gravity ahead of the neutral point.
+
+\[
+\frac{x}{c} = -\frac{\mathrm{d}C_m}{\mathrm{d}C_L}
+\]
+
+```formula
+## neutral_distance_from_moment
+family: aerodynamics
+expr: -dCm_dCL
+symbols: dCm_dCL
+```
+
+The same distance, expressed in percent of the mean aerodynamic chord, is the static margin.
+
+\[
+\text{static margin} = 100\,\frac{x}{c}
+\]
+
+```formula
+## static_margin
+family: aerodynamics
+expr: 100*xc
+symbols: xc
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(x/c\) | Distance from the center of gravity to the neutral point, positive when the neutral point is aft | dimensionless |
+| \(x'/c\) | Distance from the wing-fuselage aerodynamic center to the center of gravity, positive aft | dimensionless |
+| \(x_0/c\) | Distance from that aerodynamic center to the neutral point, positive aft | dimensionless |
+| \(\mathrm{d}C_m/\mathrm{d}C_L\) | Pitching-moment slope with lift coefficient | dimensionless |
+| static margin | \(x\) in percent of the mean aerodynamic chord | percent |
+
+Assumptions: \(x'\) is the arm in TN 1670 equation (4). A positive \(x'\) adds a positive increment to \(\mathrm{d}C_m/\mathrm{d}\alpha\), which is the center of gravity aft of the wing-fuselage aerodynamic center. A positive \(x/c\), and therefore a positive static margin, is the arrangement in which the center of gravity is ahead of the neutral point and \(\mathrm{d}C_m/\mathrm{d}\alpha\) is negative. A static margin of 5 is five percent of the mean aerodynamic chord, so \(x/c = 0.05\).
 
 # Structures
 

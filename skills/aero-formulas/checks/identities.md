@@ -2259,6 +2259,169 @@ Then run `python check_formulas.py`.
     c: 2
   expected: 5
 
+### taper_ratio
+
+<!-- family: aerodynamics; symbols: ct, cr; expr: ct/cr; numeric: yes -->
+
+- name: half
+  inputs:
+    ct: 1
+    cr: 2
+  expected: 1/2
+
+- name: rectangular
+  inputs:
+    ct: 2
+    cr: 2
+  expected: 1
+
+- name: pointed
+  inputs:
+    ct: 0
+    cr: 2
+  expected: 0
+
+### trapezoidal_wing_area
+
+<!-- family: aerodynamics; symbols: b, cr, ct; expr: b*(cr + ct)/2; numeric: yes -->
+
+- name: taper_half
+  inputs:
+    b: 10
+    cr: 2
+    ct: 1
+  expected: 15
+
+- name: rectangular
+  inputs:
+    b: 10
+    cr: 2
+    ct: 2
+  expected: 20
+
+- name: pointed
+  inputs:
+    b: 10
+    cr: 2
+    ct: 0
+  expected: 10
+
+### mean_aerodynamic_chord
+
+<!-- family: aerodynamics; symbols: cr, lam; expr: (2/3)*cr*(1 + lam + lam**2)/(1 + lam); numeric: yes -->
+
+- name: taper_half
+  inputs:
+    cr: 2
+    lam: 1/2
+  expected: 14/9
+
+- name: rectangular
+  inputs:
+    cr: 2
+    lam: 1
+  expected: 2
+
+- name: pointed
+  inputs:
+    cr: 2
+    lam: 0
+  expected: 4/3
+
+### mac_spanwise_station
+
+<!-- family: aerodynamics; symbols: b, lam; expr: (b/6)*(1 + 2*lam)/(1 + lam); numeric: yes -->
+
+- name: taper_half
+  inputs:
+    b: 10
+    lam: 1/2
+  expected: 20/9
+
+- name: rectangular
+  inputs:
+    b: 10
+    lam: 1
+  expected: 5/2
+
+- name: pointed
+  inputs:
+    b: 10
+    lam: 0
+  expected: 5/3
+
+### chord_fraction_sweep
+
+<!-- family: aerodynamics; symbols: sweep_le, n, lam, AR; expr: atan(tan(sweep_le) - 4*n*(1 - lam)/(AR*(1 + lam))); numeric: yes -->
+
+- name: quarter_unswept_le
+  inputs:
+    sweep_le: 0
+    n: 1/4
+    lam: 1/2
+    AR: 20/3
+  expected: atan(-1/20)
+
+- name: trailing_unswept_le
+  inputs:
+    sweep_le: 0
+    n: 1
+    lam: 1/2
+    AR: 20/3
+  expected: atan(-1/5)
+
+- name: rectangular
+  inputs:
+    sweep_le: pi/6
+    n: 1/4
+    lam: 1
+    AR: 8
+  expected: pi/6
+
+- name: leading_edge
+  inputs:
+    sweep_le: pi/6
+    n: 0
+    lam: 1/2
+    AR: 6
+  expected: pi/6
+
+### leading_edge_from_chord_sweep
+
+<!-- family: aerodynamics; symbols: sweep_n, n, lam, AR; expr: atan(tan(sweep_n) + 4*n*(1 - lam)/(AR*(1 + lam))); numeric: yes -->
+
+- name: from_quarter
+  inputs:
+    sweep_n: atan(-1/20)
+    n: 1/4
+    lam: 1/2
+    AR: 20/3
+  expected: 0
+
+- name: rectangular
+  inputs:
+    sweep_n: pi/6
+    n: 1/4
+    lam: 1
+    AR: 8
+  expected: pi/6
+
+### mac_leading_edge_x
+
+<!-- family: aerodynamics; symbols: y, sweep_le; expr: y*tan(sweep_le); numeric: yes -->
+
+- name: unswept
+  inputs:
+    y: 20/9
+    sweep_le: 0
+  expected: 0
+
+- name: forty_five
+  inputs:
+    y: 2
+    sweep_le: pi/4
+  expected: 2
+
 ### induced_drag_coefficient
 
 <!-- family: aerodynamics; symbols: CL, AR, e, pi; expr: CL**2/(pi*AR*e); numeric: yes -->
@@ -2301,6 +2464,90 @@ Then run `python check_formulas.py`.
     D: 800
   expected: 20
 
+### section_lift_effective_angle
+
+<!-- family: aerodynamics; symbols: a0, alpha_s, alpha_i; expr: a0*(alpha_s - alpha_i); numeric: yes -->
+
+- name: two_degrees_above_induced
+  inputs:
+    a0: 2*pi
+    alpha_s: pi/18
+    alpha_i: pi/36
+  expected: pi**2/18
+
+### elliptic_induced_angle
+
+<!-- family: aerodynamics; symbols: CL, AR, pi; expr: CL/(pi*AR); numeric: yes -->
+
+- name: unit_lift_aspect_five
+  inputs:
+    CL: 1
+    AR: 5
+    pi: pi
+  expected: 1/(5*pi)
+
+### induced_angle
+
+<!-- family: aerodynamics; symbols: CL, AR, e, pi; expr: CL/(pi*AR*e); numeric: yes -->
+
+- name: elliptic_unit_lift
+  inputs:
+    CL: 1
+    AR: 5
+    e: 1
+    pi: pi
+  expected: 1/(5*pi)
+
+- name: efficiency_four_fifths
+  inputs:
+    CL: 1
+    AR: 5
+    e: 4/5
+    pi: pi
+  expected: 1/(4*pi)
+
+### wing_lift_curve_slope
+
+<!-- family: aerodynamics; symbols: a0, AR, e, pi; expr: a0/(1 + a0/(pi*AR*e)); numeric: yes -->
+
+- name: thin_elliptic_aspect_six
+  inputs:
+    a0: 2*pi
+    AR: 6
+    e: 1
+    pi: pi
+  expected: 3*pi/2
+
+- name: efficiency_four_fifths
+  inputs:
+    a0: 5
+    AR: 8
+    e: 4/5
+    pi: pi
+  expected: 160*pi/(32*pi + 25)
+
+### wing_lift_coefficient
+
+<!-- family: aerodynamics; symbols: a, alpha, alpha_L0; expr: a*(alpha - alpha_L0); numeric: yes -->
+
+- name: five_per_radian
+  inputs:
+    a: 5
+    alpha: 1/10
+    alpha_L0: 1/50
+  expected: 2/5
+
+### stall_angle
+
+<!-- family: aerodynamics; symbols: alpha_L0, CLmax, a; expr: alpha_L0 + CLmax/a; numeric: yes -->
+
+- name: line_reaches_clmax
+  inputs:
+    alpha_L0: 1/50
+    CLmax: 2/5
+    a: 5
+  expected: 1/10
+
 ### stall_speed
 
 <!-- family: aerodynamics; symbols: W, rho, S, CLmax; expr: (2*W/(rho*S*CLmax))**0.5; numeric: yes -->
@@ -2313,6 +2560,17 @@ Then run `python check_formulas.py`.
     CLmax: 1
   expected: 50
 
+### equivalent_airspeed
+
+<!-- family: aerodynamics; symbols: V, rho, rho_sl; expr: V*(rho/rho_sl)**0.5; numeric: yes -->
+
+- name: same_dynamic_pressure
+  inputs:
+    V: 100
+    rho: 1/4
+    rho_sl: 1
+  expected: 50
+
 ### load_factor
 
 <!-- family: aerodynamics; symbols: L, W; expr: L/W; numeric: yes -->
@@ -2322,6 +2580,64 @@ Then run `python check_formulas.py`.
     L: 24000
     W: 8000
   expected: 3
+
+### stick_fixed_neutral_point
+
+<!-- family: aerodynamics; symbols: deps, aT, a, qT, q, ST, l, S, c; expr: (1 - deps)*(aT/a)*(qT/q)*(ST*l)/(S*c); numeric: yes -->
+
+- name: sample_tail
+  inputs:
+    deps: 2/5
+    aT: 4
+    a: 5
+    qT: 9
+    q: 10
+    ST: 2
+    l: 5
+    S: 10
+    c: 1
+  expected: 54/125
+
+- name: equal_slopes
+  inputs:
+    deps: 0
+    aT: 1
+    a: 1
+    qT: 1
+    q: 1
+    ST: 1
+    l: 4
+    S: 8
+    c: 2
+  expected: 1/4
+
+### center_of_gravity_to_neutral_point
+
+<!-- family: aerodynamics; symbols: x0c, xpc; expr: x0c - xpc; numeric: yes -->
+
+- name: ahead
+  inputs:
+    x0c: 54/125
+    xpc: 1/10
+  expected: 83/250
+
+### neutral_distance_from_moment
+
+<!-- family: aerodynamics; symbols: dCm_dCL; expr: -dCm_dCL; numeric: yes -->
+
+- name: five_percent_chord
+  inputs:
+    dCm_dCL: -1/20
+  expected: 1/20
+
+### static_margin
+
+<!-- family: aerodynamics; symbols: xc; expr: 100*xc; numeric: yes -->
+
+- name: five_percent
+  inputs:
+    xc: 1/20
+  expected: 5
 
 ## Structures
 
