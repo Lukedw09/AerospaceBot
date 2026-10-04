@@ -33,7 +33,7 @@ def hosted_zone_id(site_domain: str) -> str:
     raise SystemExit(f"No public Route 53 zone contains {site_domain}")
 
 
-def delete_failed_stack(stack_name: str) -> None:
+def stack_status(stack_name: str) -> str:
     result = subprocess.run(
         [
             "aws",
@@ -50,13 +50,30 @@ def delete_failed_stack(stack_name: str) -> None:
         capture_output=True,
     )
     if result.returncode != 0:
+        return ""
+    return result.stdout.strip()
+
+
+def prepare_stack(stack_name: str) -> None:
+    status = stack_status(stack_name)
+    if not status:
         return
-    status = result.stdout.strip()
-    if status not in {"ROLLBACK_COMPLETE", "ROLLBACK_FAILED"}:
-        return
-    print(f"Deleting failed stack {stack_name} ({status})")
-    run(["aws", "cloudformation", "delete-stack", "--stack-name", stack_name])
-    run(["aws", "cloudformation", "wait", "stack-delete-complete", "--stack-name", stack_name])
+    if status.endswith("_IN_PROGRESS"):
+        print(f"Waiting for stack {stack_name} ({status})")
+        if status.startswith("DELETE"):
+            waiter = "stack-delete-complete"
+        elif "ROLLBACK" in status:
+            waiter = "stack-rollback-complete"
+        elif status.startswith("UPDATE"):
+            waiter = "stack-update-complete"
+        else:
+            waiter = "stack-create-complete"
+        run(["aws", "cloudformation", "wait", waiter, "--stack-name", stack_name])
+        status = stack_status(stack_name)
+    if status in {"ROLLBACK_COMPLETE", "ROLLBACK_FAILED"}:
+        print(f"Deleting failed stack {stack_name} ({status})")
+        run(["aws", "cloudformation", "delete-stack", "--stack-name", stack_name])
+        run(["aws", "cloudformation", "wait", "stack-delete-complete", "--stack-name", stack_name])
 
 
 def stack_output(stack_name: str, key: str) -> str:
@@ -105,7 +122,7 @@ def main() -> None:
             f"HostedZoneId={zone_id}",
         ]
     )
-    delete_failed_stack(stack_name)
+    prepare_stack(stack_name)
     run(["sam", "build", "--template-file", "app/template.yaml"])
     run(
         [

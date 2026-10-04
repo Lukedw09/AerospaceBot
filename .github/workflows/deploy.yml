@@ -42,6 +42,7 @@ jobs:
       - uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          role-duration-seconds: 7200
           aws-region: us-east-1
       - uses: aws-actions/setup-sam@v2
       - name: Deploy the stack, publish the account pages, and clear the cache
