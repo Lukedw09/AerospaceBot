@@ -25,7 +25,7 @@ jobs:
     permissions:
       id-token: write
       contents: read
-    timeout-minutes: 90
+    timeout-minutes: 110
     concurrency:
       group: deploy-aerospace
       cancel-in-progress: false

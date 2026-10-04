@@ -6,6 +6,7 @@ import json
 import os
 import subprocess
 import sys
+import time
 
 
 def run(argv: list[str], *, capture: bool = False) -> str:
@@ -54,22 +55,40 @@ def stack_status(stack_name: str) -> str:
     return result.stdout.strip()
 
 
+def print_pending(stack_name: str) -> None:
+    text = run(
+        [
+            "aws",
+            "cloudformation",
+            "describe-stack-resources",
+            "--stack-name",
+            stack_name,
+            "--query",
+            "StackResources[?ResourceStatus!='CREATE_COMPLETE' && ResourceStatus!='UPDATE_COMPLETE'].[LogicalResourceId,ResourceStatus,ResourceStatusReason]",
+            "--output",
+            "text",
+        ],
+        capture=True,
+    ).strip()
+    print(text or "(no pending resources)")
+
+
 def prepare_stack(stack_name: str) -> None:
     status = stack_status(stack_name)
     if not status:
         return
     if status.endswith("_IN_PROGRESS"):
         print(f"Waiting for stack {stack_name} ({status})")
-        if status.startswith("DELETE"):
-            waiter = "stack-delete-complete"
-        elif "ROLLBACK" in status:
-            waiter = "stack-rollback-complete"
-        elif status.startswith("UPDATE"):
-            waiter = "stack-update-complete"
+        deadline = time.time() + 75 * 60
+        while time.time() < deadline:
+            print_pending(stack_name)
+            status = stack_status(stack_name)
+            print(f"stack status: {status}")
+            if not status.endswith("_IN_PROGRESS"):
+                break
+            time.sleep(60)
         else:
-            waiter = "stack-create-complete"
-        run(["aws", "cloudformation", "wait", waiter, "--stack-name", stack_name])
-        status = stack_status(stack_name)
+            raise SystemExit(f"stack {stack_name} is still {status}")
     if status in {"ROLLBACK_COMPLETE", "ROLLBACK_FAILED"}:
         print(f"Deleting failed stack {stack_name} ({status})")
         run(["aws", "cloudformation", "delete-stack", "--stack-name", stack_name])
