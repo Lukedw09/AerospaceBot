@@ -33,6 +33,32 @@ def hosted_zone_id(site_domain: str) -> str:
     raise SystemExit(f"No public Route 53 zone contains {site_domain}")
 
 
+def delete_failed_stack(stack_name: str) -> None:
+    result = subprocess.run(
+        [
+            "aws",
+            "cloudformation",
+            "describe-stacks",
+            "--stack-name",
+            stack_name,
+            "--query",
+            "Stacks[0].StackStatus",
+            "--output",
+            "text",
+        ],
+        text=True,
+        capture_output=True,
+    )
+    if result.returncode != 0:
+        return
+    status = result.stdout.strip()
+    if status not in {"ROLLBACK_COMPLETE", "ROLLBACK_FAILED"}:
+        return
+    print(f"Deleting failed stack {stack_name} ({status})")
+    run(["aws", "cloudformation", "delete-stack", "--stack-name", stack_name])
+    run(["aws", "cloudformation", "wait", "stack-delete-complete", "--stack-name", stack_name])
+
+
 def stack_output(stack_name: str, key: str) -> str:
     query = f"Stacks[0].Outputs[?OutputKey=='{key}'].OutputValue"
     value = run(
@@ -79,6 +105,7 @@ def main() -> None:
             f"HostedZoneId={zone_id}",
         ]
     )
+    delete_failed_stack(stack_name)
     run(["sam", "build", "--template-file", "app/template.yaml"])
     run(
         [
