@@ -79,12 +79,13 @@ def main() -> None:
             f"HostedZoneId={zone_id}",
         ]
     )
+    run(["sam", "build", "--template-file", "app/template.yaml"])
     run(
         [
             "sam",
             "deploy",
             "--template-file",
-            "app/template.yaml",
+            ".aws-sam/build/template.yaml",
             "--stack-name",
             stack_name,
             "--region",
