@@ -149,7 +149,7 @@ Resources:
           COGNITO_USER_POOL_ID: !Ref UserPool
           COGNITO_CLIENT_ID: !Ref UserPoolClient
           COGNITO_REGION: !Ref AWS::Region
-          COGNITO_DOMAIN: !Sub "https://${UserPoolDomain.Domain}.auth.${AWS::Region}.amazoncognito.com"
+          COGNITO_DOMAIN: !Sub "https://${UserPoolDomain}.auth.${AWS::Region}.amazoncognito.com"
           PUBLIC_BASE_URL: !Sub "https://mcp.${SiteDomain}"
           ACCOUNT_SITE_URL: !Sub "https://${SiteDomain}"
           DAILY_TOOL_CAP: "20"
