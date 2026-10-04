@@ -4,10 +4,10 @@ Units below are SI unless a section says otherwise. Any single consistent unit s
 
 The file is grouped so a search can start in one category:
 
-- Compressible flow: perfect-gas thermodynamics, isentropic flow, area-Mach, shocks, Prandtl-Meyer expansion, calorically imperfect air, Newtonian viscosity, and Reynolds number.
-- Atmosphere: the 1976 U.S. Standard Atmosphere from the surface to 1000 km, including geopotential and gravity, the seven hydrostatic layers below 86 km, kinetic temperature above 86 km, and the transport properties of that model. A three-zone NASA Glenn curve fit is recorded separately.
-- Rocket propulsion: thrust, impulse, mass ratio, nozzles, solid- and liquid-propellant relations, and two-body orbital speed, period, energy, anomalies, mean motion, and the conversion between classical elements and an inertial state.
-- Aerodynamics: incompressible Bernoulli, force and moment coefficients, trapezoidal wing planform, aspect ratio, induced drag, finite-wing lift-curve slope and induced angle, stall speed, equivalent airspeed, load factor, Breguet range and endurance for jet and propeller cruise, and the stick-fixed neutral point and static margin.
+- Compressible flow: perfect-gas thermodynamics, isentropic flow, area-Mach, shocks, Prandtl-Meyer expansion, Taylor–Maccoll flow on a circular cone, calorically imperfect air, Newtonian viscosity, and Reynolds number.
+- Atmosphere: the 1976 U.S. Standard Atmosphere from the surface to 1000 km, including geopotential and gravity, the seven hydrostatic layers below 86 km, kinetic temperature above 86 km, and the transport properties of that model. Moist-air point properties (saturation vapor pressure, humidity, and the density of one dry-air-plus-water parcel) are recorded separately from those dry hydrostatic layers and from the Glenn fit. A three-zone NASA Glenn curve fit is recorded separately.
+- Rocket propulsion: thrust, impulse, mass ratio, nozzles, solid- and liquid-propellant relations, two-body orbital speed, period, energy, plane-change impulse, anomalies, mean motion, the conversion between classical elements and an inertial state, Greenwich angle, Earth-fixed axes, and geodetic latitude on an oblate spheroid.
+- Aerodynamics: incompressible Bernoulli, force and moment coefficients, the two-dimensional Prandtl–Glauert compressibility correction, the isentropic critical pressure coefficient and critical Mach number, trapezoidal wing planform, aspect ratio, induced drag, finite-wing lift-curve slope and induced angle, NACA four-digit mean-line and thickness ordinates, thin-section lift and quarter-chord moment, stall speed, equivalent airspeed, load factor, coordinated level-turn bank, radius, and rate, the sustained-turn load factor from a parabolic polar with thrust equal to drag, ideal actuator-disk propeller thrust, induced velocity, and propulsive efficiency, Breguet range and endurance for jet and propeller cruise, and the stick-fixed neutral point and static margin.
 - Structures: thin-wall motor-case hoop stress, margin of safety, and longitudinal-weld radial mismatch.
 
 The rocket symbol \(k\) is the same ratio of specific heats as \(\gamma\). Standard sea-level gravitational acceleration is \(g_0 = 9.80665\,\mathrm{m/s}^2\).
@@ -16,7 +16,7 @@ Each formula is also written as a script record. In those records \(\gamma\) is 
 
 # Compressible flow
 
-Perfect-gas and shock relations for steady inviscid flow, from NACA Report 1135. Numerical Mach-number tables and charts in that report are not copied here. In this category \(V\) is flow speed and \(v\) is specific volume. \(\gamma\) and the rocket-propulsion symbol \(k\) are the same ratio of specific heats. For air as a calorically perfect gas, use \(\gamma = 1.4 = 7/5\) unless the user gives another value. Above roughly \(550\,\text{K}\), use the air \(\gamma(T)\) table at the end of this category.
+Perfect-gas and shock relations for steady inviscid flow, from NACA Report 1135. Circular-cone Taylor–Maccoll flow is from NASA SP-3004 and NACA TN 3485. Numerical Mach-number tables and charts in those reports are not copied here. In this category \(V\) is flow speed and \(v\) is specific volume. \(\gamma\) and the rocket-propulsion symbol \(k\) are the same ratio of specific heats. For air as a calorically perfect gas, use \(\gamma = 1.4 = 7/5\) unless the user gives another value. Above roughly \(550\,\text{K}\), use the air \(\gamma(T)\) table at the end of this category.
 
 ## Perfect-gas equation of state
 
@@ -883,6 +883,142 @@ For air with \(\gamma = 7/5\), \(\nu_{\max} = 130.45^\circ\).
 
 Assumptions: isentropic supersonic expansion of a perfect gas. The turning from an upstream Mach \(M_1\) to a downstream Mach \(M_2\) is \(\nu(M_2) - \nu(M_1)\). Static-to-total pressure still follows the isentropic stagnation relation.
 
+## Conical shock on a circular cone
+
+Steady, inviscid, calorically perfect flow over a right circular cone at zero angle of attack, with an attached conical shock. NASA SP-3004 (Sims) writes the Taylor–Maccoll problem in spherical coordinates. Velocities \(u\) and \(v\) are divided by the limiting speed reached by adiabatic expansion into a vacuum. \(u\) is along a ray from the vertex; \(v\) is normal to that ray, positive with increasing polar angle \(\theta\) from the cone axis.
+
+NACA TN 3485 states the same second-order equation as the first-order system \(\mathrm{d}u/\mathrm{d}\theta = v\) together with the polar resolution of the axial and cylindrical-radial speeds.
+
+\[
+v = \frac{\mathrm{d}u}{\mathrm{d}\theta}
+\]
+
+```formula
+## conical_ray_normal_speed
+family: conical_shock
+expr: partial(u, theta)
+symbols: u, theta
+```
+
+\[
+a^{2} = \frac{\gamma - 1}{2}\left(1 - u^{2} - v^{2}\right)
+\]
+
+```formula
+## conical_vacuum_sound_speed_sq
+family: conical_shock
+expr: ((g - 1)/2)*(1 - u**2 - v**2)
+symbols: g, u, v
+```
+
+\[
+\frac{\mathrm{d}^{2}u}{\mathrm{d}\theta^{2}} + u = \frac{a^{2}(u + v\cot\theta)}{v^{2} - a^{2}}
+\]
+
+The recorded quantity is \(\mathrm{d}^{2}u/\mathrm{d}\theta^{2}\).
+
+```formula
+## taylor_maccoll_radial_acceleration
+family: conical_shock
+expr: ((g - 1)/2*(1 - u**2 - v**2))*(u + v*cot(theta))/(v**2 - (g - 1)/2*(1 - u**2 - v**2)) - u
+symbols: g, u, v, theta
+```
+
+On the cone surface, \(v_{s} = 0\) and the flow follows the generator. Immediately behind the shock the Rankine–Hugoniot condition of SP-3004 is
+
+\[
+\tan\theta = \frac{\gamma - 1}{\gamma + 1}\frac{u^{2} - 1}{u v}
+\]
+
+```formula
+## conical_shock_wave_tangent
+family: conical_shock
+expr: ((g - 1)/(g + 1))*(u**2 - 1)/(u*v)
+symbols: g, u, v
+```
+
+When that shock condition holds, the freestream Mach number on the shock ray is
+
+\[
+M_{\infty}^{2} = \frac{2}{\gamma - 1}\frac{u^{2}}{\cos^{2}\theta - u^{2}}
+\]
+
+```formula
+## conical_freestream_mach_sq
+family: conical_shock
+expr: (2/(g - 1))*u**2/(cos(theta)**2 - u**2)
+symbols: g, u, theta
+```
+
+The local Mach number and the critical Mach number \(M^{*} = V/a^{*}\) are
+
+\[
+M^{2} = \frac{2(u^{2} + v^{2})}{(\gamma - 1)(1 - u^{2} - v^{2})} \qquad
+M^{*} = \sqrt{\frac{\gamma + 1}{\gamma - 1}\left(u^{2} + v^{2}\right)}
+\]
+
+```formula
+## conical_resultant_mach
+family: conical_shock
+expr: (2*(u**2 + v**2)/((g - 1)*(1 - u**2 - v**2)))**0.5
+symbols: u, v, g
+```
+
+```formula
+## conical_critical_mach
+family: conical_shock
+expr: ((g + 1)/(g - 1)*(u**2 + v**2))**0.5
+symbols: g, u, v
+```
+
+The same vacuum normalization from the adiabatic energy equation is
+
+\[
+\frac{V}{V_{\max}} = \sqrt{\frac{\frac{\gamma - 1}{2}M^{2}}{1 + \frac{\gamma - 1}{2}M^{2}}}
+\]
+
+```formula
+## limiting_speed_ratio
+family: conical_shock
+expr: (((g - 1)/2)*M**2/(1 + ((g - 1)/2)*M**2))**0.5
+symbols: g, M
+```
+
+TN 3485 resolves the polar components from the axial speed \(V_{x}\) and the cylindrical-radial speed \(V_{r}\), both divided by \(V_{\max}\):
+
+\[
+u = V_{x}\cos\theta + V_{r}\sin\theta \qquad
+v = -V_{x}\sin\theta + V_{r}\cos\theta
+\]
+
+```formula
+## conical_radial_speed
+family: conical_shock
+expr: Vx*cos(theta) + Vr*sin(theta)
+symbols: Vx, theta, Vr
+```
+
+```formula
+## conical_normal_speed
+family: conical_shock
+expr: -Vx*sin(theta) + Vr*cos(theta)
+symbols: Vx, theta, Vr
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(u, v\) | Polar velocity components divided by \(V_{\max}\) | dimensionless |
+| \(V_{x}, V_{r}\) | Axial and cylindrical-radial speeds divided by \(V_{\max}\) | dimensionless |
+| \(a\) | Local sound speed divided by \(V_{\max}\) | dimensionless |
+| \(\theta\) | Polar angle from the cone axis | rad |
+| \(M_{\infty}\) | Freestream Mach number | dimensionless |
+| \(M\) | Local Mach number | dimensionless |
+| \(M^{*}\) | Speed divided by the critical sound speed | dimensionless |
+| \(V_{\max}\) | Limiting speed of adiabatic expansion into vacuum | m/s |
+| \(\gamma\) | Ratio of specific heats | dimensionless |
+
+Assumptions: calorically perfect gas; steady axisymmetric conical flow; attached conical shock; zero incidence. The shock layer is irrotational and isentropic because the conical shock has uniform strength. SP-3004 tables use \(\gamma = 1.4\). Sine, cosine, cotangent, and tangent expect radians. Do not replace the cone half-angle by the two-dimensional wedge deflection in `oblique_shock_deflection`. The isolated cone takes the weaker attached shock.
+
 ## Calorically imperfect isentropic flow
 
 First-order vibrational correction for a thermally perfect gas, such as air at hypersonic temperature. \(\gamma_{\mathrm{perf}}\) is the perfect-gas ratio. The local ratio \(\gamma\) includes vibration. For air, \(\gamma_{\mathrm{perf}} = 1.4\) and \(\theta = 5500^\circ\mathrm{R} = 3055.6\,\mathrm{K}\). Use the same temperature unit for \(T\), \(T_t\), and \(\theta\).
@@ -1009,9 +1145,9 @@ Assumptions: these values are the NACA Report 1135 engineering approximation for
 
 # Atmosphere
 
-Defining relations of the U.S. Standard Atmosphere, 1976 (NASA TM-X-74335 / NOAA-S/T-76-1562), with the same closed-form layer equations as NASA TR R-459. Do not mix this model with the NASA Glenn three-zone curve fit at the end of the category. In this category \(R^{*}\) is the universal gas constant and \(M\) is molar mass. Geometric altitude is \(Z\); geopotential altitude is \(H\).
+Defining relations of the U.S. Standard Atmosphere, 1976 (NASA TM-X-74335 / NOAA-S/T-76-1562), with the same closed-form layer equations as NASA TR R-459. Moist-air saturation pressure and humidity of one parcel follow NASA TN D-8401, combined with the 1976 mixture sums. Keep both of those apart from the NASA Glenn three-zone curve fit at the end of the category. In this category \(R^{*}\) is the universal gas constant and \(M\) is molar mass. Geometric altitude is \(Z\); geopotential altitude is \(H\).
 
-The air is dry and, below about 80 km, homogeneously mixed at constant mean molar mass \(M_0\). Hydrostatic balance and the perfect-gas law then give pressure and density from a piecewise-linear molecular-scale temperature in \(H\). That hydrostatic argument runs to \(Z = 86\,\mathrm{km}\) (\(H = 84.8520\,\mathrm{km}\)). Above 86 km the model switches to geometric altitude, a four-segment kinetic-temperature profile, and species number densities; total pressure is then the sum of partial pressures. Species diffusion above 86 km is not reduced to a single algebraic script here.
+The 1976 model air is dry and, below about 80 km, homogeneously mixed at constant mean molar mass \(M_0\). Hydrostatic balance and the perfect-gas law then give pressure and density from a piecewise-linear molecular-scale temperature in \(H\). That hydrostatic argument runs to \(Z = 86\,\mathrm{km}\) (\(H = 84.8520\,\mathrm{km}\)). Above 86 km the model switches to geometric altitude, a four-segment kinetic-temperature profile, and species number densities; total pressure is then the sum of partial pressures. Species diffusion above 86 km is not reduced to a single algebraic script here. Moist-parcel relations recorded after the Dalton section apply at one pressure and temperature and leave these dry layer integrals on \(M_0\).
 
 Adopted 1976 constants, unless the user gives others: \(g_0 = 9.80665\,\mathrm{m/s}^2\), \(T_0 = 288.15\,\mathrm{K}\), \(p_0 = 1.01325\times 10^{5}\,\mathrm{Pa}\), \(\rho_0 = 1.2250\,\mathrm{kg/m}^3\), \(r_0 = 6.356766\times 10^{6}\,\mathrm{m}\), \(M_0 = 28.9644\,\mathrm{kg/kmol}\), \(R^{*} = 8.31432\times 10^{3}\,\mathrm{N\cdot m/(kmol\cdot K)}\), \(\gamma = 1.4\), Boltzmann \(k = 1.380622\times 10^{-23}\,\mathrm{J/K}\), Avogadro \(N_A = 6.022169\times 10^{26}\,\mathrm{kmol}^{-1}\), collision diameter \(\sigma = 3.65\times 10^{-10}\,\mathrm{m}\). The 1976 \(R^{*}\) is the value adopted then; NIST CODATA 2022 lists the molar gas constant as exactly \(8.314462618\,\mathrm{J/(mol\cdot K)}\). Do not mix the two in one calculation.
 
@@ -1339,6 +1475,153 @@ Sea-level volume fractions of the 1976 dry-air mixture include \(F(\mathrm{N}_2)
 
 Assumptions: ideal mixture. \(n_i = F_i N\) applies in the mixed region below about 80 km.
 
+## Moist-air point properties
+
+Saturation vapor pressure, humidity, and the density of one parcel of dry air plus water vapor. Saturation pressure is from NASA TN D-8401 (Parish and Putnam, 1977). The mixture molar mass and density use the 1976 Dalton partial pressure, the 1976 mean-molar-mass sum, and `atmosphere_density` on each partial pressure. The 1976 hydrostatic layers stay dry air at \(M_0\).
+
+The note gives saturation pressure in millibars on an absolute temperature that places the ice point at 273. In thermodynamic kelvin that argument is \(T - 0.15\), and the pressure in pascals is 100 times the millibar value. Use the water coefficients when \(T > 273.15\,\mathrm{K}\) and the ice coefficients when \(T \le 273.15\,\mathrm{K}\). The note assigns the water coefficients above freezing and the ice coefficients at and below freezing. Its comparison ranges are \(-50^\circ\mathrm{C}\) to \(100^\circ\mathrm{C}\) over water and \(-50^\circ\mathrm{C}\) to \(0^\circ\mathrm{C}\) over ice.
+
+\[
+e_{s,w} = 100 \times 10^{-4.9283\,\log_{10}(T - 0.15) - 2937.4/(T - 0.15) + 23.5518}
+\]
+
+\[
+e_{s,i} = 100 \times 10^{-0.32286\,\log_{10}(T - 0.15) - 2705.21/(T - 0.15) + 11.4816}
+\]
+
+```formula
+## saturation_vapor_pressure_water
+family: atmosphere
+expr: 100*10**(-4.9283*log(T - 0.15)/log(10) - 2937.4/(T - 0.15) + 23.5518)
+symbols: T
+```
+
+```formula
+## saturation_vapor_pressure_ice
+family: atmosphere
+expr: 100*10**(-0.32286*log(T - 0.15)/log(10) - 2705.21/(T - 0.15) + 11.4816)
+symbols: T
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(e_{s,w}\) | Saturation vapor pressure over liquid water | Pa |
+| \(e_{s,i}\) | Saturation vapor pressure over ice | Pa |
+| \(T\) | Thermodynamic temperature | K |
+
+Assumptions: NASA TN D-8401, with that note’s evaluated coefficients. \(T > 0.15\,\mathrm{K}\) so the logarithm argument stays positive. Water script above \(273.15\,\mathrm{K}\); ice script at and below \(273.15\,\mathrm{K}\). The scripts use the SI coefficients from the note. The note’s U.S. customary-unit coefficients are a unit conversion of those values and are omitted here.
+
+Relative humidity in the note is the vapor partial pressure divided by the saturation vapor pressure at the same temperature, as a fraction from 0 to 1. The vapor partial pressure that belongs to a stated relative humidity is the product.
+
+\[
+\phi = \frac{e}{e_s} \qquad
+e = \phi\, e_s
+\]
+
+```formula
+## relative_humidity
+family: atmosphere
+expr: e/es
+symbols: e, es
+```
+
+```formula
+## vapor_partial_pressure
+family: atmosphere
+expr: phi*es
+symbols: phi, es
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(\phi\) | Relative humidity | dimensionless, \(0 \le \phi \le 1\) |
+| \(e\) | Partial pressure of water vapor | Pa |
+| \(e_s\) | Saturation vapor pressure at the same temperature | Pa |
+
+Assumptions: NASA TN D-8401. \(e_s\) is `saturation_vapor_pressure_water` or `saturation_vapor_pressure_ice` at the parcel temperature, chosen with the freeze split above. When the known temperature is the dewpoint, \(e\) is that saturation pressure evaluated at the dewpoint, with the ice script when the dewpoint is at or below freezing.
+
+Absolute humidity is the mass of water vapor in a unit volume. The note writes it from the perfect-gas law for the vapor and takes the compressibility factor as 1 over ordinary atmospheric temperatures and pressures.
+
+\[
+H = \frac{e}{R_v T}
+\]
+
+```formula
+## absolute_humidity
+family: atmosphere
+expr: e/(Rv*T)
+symbols: e, Rv, T
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(H\) | Absolute humidity | kg/m³ |
+| \(e\) | Partial pressure of water vapor | Pa |
+| \(R_v\) | Specific gas constant of water vapor | J/(kg·K) |
+| \(T\) | Thermodynamic temperature | K |
+
+Assumptions: NASA TN D-8401, compressibility factor 1. \(R_v = R^{*}/M_w\) from `specific_gas_constant` with the water molar mass below and the 1976 \(R^{*}\). \(T > 0\).
+
+Water is not a constituent in the 1976 dry-air list. That list does give \(M(\mathrm{H}_2) = 2.01594\,\mathrm{kg/kmol}\) and \(M(\mathrm{O}_2) = 31.9988\,\mathrm{kg/kmol}\) on the carbon-12 scale. The molar mass of water on that same list is
+
+\[
+M_w = M(\mathrm{H}_2) + \frac{1}{2} M(\mathrm{O}_2) = 18.01534\,\mathrm{kg/kmol}
+\]
+
+```formula
+## water_molar_mass
+family: atmosphere
+expr: MH2 + MO2/2
+symbols: MH2, MO2
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(M_w\) | Molar mass of water | kg/kmol |
+| \(M(\mathrm{H}_2)\) | Molar mass of hydrogen in the 1976 dry-air list | kg/kmol |
+| \(M(\mathrm{O}_2)\) | Molar mass of oxygen in the 1976 dry-air list | kg/kmol |
+
+Assumptions: U.S. Standard Atmosphere, 1976, Table 3. Use \(M(\mathrm{H}_2) = 2.01594\,\mathrm{kg/kmol}\) and \(M(\mathrm{O}_2) = 31.9988\,\mathrm{kg/kmol}\) unless the user gives other values from that table’s scale.
+
+The 1976 mean molar mass of a mixture is the mole-fraction sum of the species molar masses. Dalton’s law makes the mole fraction of each ideal-gas constituent equal to its partial-pressure fraction. Dry air is one constituent at partial pressure \(p - e\) with molar mass \(M_0\); water is the other at partial pressure \(e\).
+
+\[
+M = \frac{(p - e)\,M_0 + e\,M_w}{p}
+\]
+
+```formula
+## moist_mean_molar_mass
+family: atmosphere
+expr: ((p - e)*M0 + e*Mw)/p
+symbols: p, e, M0, Mw
+```
+
+Mass density is `atmosphere_density` on each partial pressure, which is the 1976 species sum \(\rho = \sum n_i M_i / N_A\).
+
+\[
+\rho = \frac{(p - e)\,M_0}{R^{*} T} + \frac{e\,M_w}{R^{*} T}
+\]
+
+```formula
+## moist_density
+family: atmosphere
+expr: (p - e)*M0/(Rstar*T) + e*Mw/(Rstar*T)
+symbols: p, e, M0, Rstar, T, Mw
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(M\) | Mean molar mass of the moist parcel | kg/kmol |
+| \(\rho\) | Mass density of the moist parcel | kg/m³ |
+| \(p\) | Total pressure | Pa |
+| \(e\) | Partial pressure of water vapor | Pa |
+| \(T\) | Kinetic temperature of the parcel | K |
+| \(M_0\) | Sea-level mean molar mass of dry air | kg/kmol |
+| \(M_w\) | Molar mass of water | kg/kmol |
+| \(R^{*}\) | Universal gas constant | J/(kmol·K) |
+
+Assumptions: U.S. Standard Atmosphere, 1976, ideal mixture at one temperature, with \(0 \le e < p\) and \(T > 0\). \(M_0 = 28.9644\,\mathrm{kg/kmol}\) and \(R^{*} = 8.31432\times 10^{3}\,\mathrm{J/(kmol\cdot K)}\) are the 1976 constants. \(M_w\) is `water_molar_mass`. The dry-air term is `atmosphere_density` at partial pressure \(p - e\). The water term is `atmosphere_density` at partial pressure \(e\), and it equals `absolute_humidity` when \(R_v = R^{*}/M_w\). This parcel calculation leaves the 1976 layer pressure and density integrals on dry air.
+
 ## Pressure scale height
 
 Geometric and geopotential pressure scale heights of the mixture.
@@ -1608,7 +1891,7 @@ Assumptions: altitude-only curve fit for FoilSim-type estimates. Temperature and
 
 # Rocket propulsion
 
-Vehicle and motor performance. In this category \(k\) is the ratio of specific heats. Nozzle area ratio and isentropic exit state use the Area-Mach and stagnation relations in Compressible flow. In the mass-flow section, \(V\) is specific volume.
+Vehicle and motor performance. In this category \(k\) is the ratio of specific heats. Nozzle area ratio and isentropic exit state use the Area-Mach and stagnation relations in Compressible flow. In the mass-flow section, \(V\) is specific volume. Circular-port grain area, web, and sliver fraction follow NASA SP-8076.
 
 ## Average exhaust velocity
 
@@ -2191,6 +2474,29 @@ symbols: mu, r, a
 | \(a\) | Semi-major axis | m |
 
 Assumptions: two-body inverse-square gravity and no drag or thrust. \(a > 0\) on an ellipse, \(1/a = 0\) on a parabola, and \(a < 0\) on a hyperbola. A circular orbit has \(a = r\), which recovers \(v = \sqrt{\mu/r}\). Escape speed is the parabolic case \(v = \sqrt{2\mu/r}\).
+
+## Plane-change impulse
+
+Impulsive cost of a pure inclination change that turns the velocity through an angle \(\Delta i\) at constant speed. Mesarch, Navigation and Mission Design Branch, NASA Goddard, *GDC Orbit Primer* (10 October 2018).
+
+\[
+\Delta v = 2 v \sin(\Delta i / 2)
+\]
+
+```formula
+## plane_change_impulse
+family: flight
+expr: 2*v*sin(di/2)
+symbols: v, di
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(\Delta v\) | Plane-change impulse | m/s |
+| \(v\) | Speed at the burn | m/s |
+| \(\Delta i\) | Inclination change | rad |
+
+Assumptions: the burn is impulsive and the speed is unchanged, so the turn is an equal-speed heading change. \(\Delta i\) is in radians. This record is only that pure inclination change. It does not combine a plane change with a radius change, and it does not include the primer’s J2 precession or combined inclination-and-node cost.
 
 ## Specific orbital energy
 
@@ -3159,6 +3465,233 @@ symbols: Vr, r, z, Vp, i, u
 
 Assumptions: \(r > 0\), and \(V_p\) is positive in the direction of increasing \(u\). On an ellipse, take \(V_r\) and \(V_p\) from the eccentric-anomaly records. On a parabola or a hyperbola, take them from the flight-path records.
 
+## Mean anomaly from an epoch
+
+Mean anomaly at a later time when the value at epoch is known. NASA SP-325 and Plummer write \(M = n(t-t_p)\). Shifting the zero from periapsis to an epoch \(t_0\) with mean anomaly \(M_0\) gives the same uniform rate.
+
+\[
+M = M_0 + n(t - t_0)
+\]
+
+```formula
+## mean_anomaly_from_epoch
+family: flight
+expr: M0 + n*(t - t0)
+symbols: M0, n, t, t0
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(M\) | Mean anomaly at time \(t\) | rad |
+| \(M_0\) | Mean anomaly at epoch | rad |
+| \(n\) | Mean motion | rad/s |
+| \(t\) | Time | s |
+| \(t_0\) | Epoch | s |
+
+Assumptions: unperturbed elliptic two-body motion. \(n\) is `mean_motion`.
+
+## Greenwich angle
+
+Location of the Greenwich meridian east of the inertial \(+X\) axis (the vernal equinox in NASA RP-1204). With a constant Earth rotation rate the angle at a later time is the epoch value plus that rate times elapsed time. The WGS 84 nominal mean angular velocity is \(\omega_E = 7.292115\times 10^{-5}\,\mathrm{rad/s}\) (NIMA TR 8350.2 / NGA.STND.0036).
+
+\[
+\theta_G = \theta_{G0} + \omega_E(t - t_0)
+\]
+
+```formula
+## greenwich_angle
+family: flight
+expr: theta0 + omega_e*(t - t0)
+symbols: theta0, omega_e, t, t0
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(\theta_G\) | Greenwich angle at time \(t\) | rad |
+| \(\theta_{G0}\) | Greenwich angle at epoch | rad |
+| \(\omega_E\) | Nominal mean Earth angular velocity | rad/s |
+| \(t\) | Time | s |
+| \(t_0\) | Epoch | s |
+
+Assumptions: uniform sidereal rotation about \(+Z\). The user supplies \(\theta_{G0}\). Do not take \(J_2\) or polar motion from this record.
+
+## Earth-fixed position
+
+Inertial position rotated about \(+Z\) by the Greenwich angle so that Earth-fixed \(+X\) lies in the Greenwich meridian. NASA RP-1204 relates the Earth-fixed axes to the inertial equator–equinox frame by that angle. The inverse of \(x = x_E\cos\theta_G - y_E\sin\theta_G\), \(y = x_E\sin\theta_G + y_E\cos\theta_G\) is
+
+\[
+\begin{aligned}
+x_E &= x\cos\theta_G + y\sin\theta_G \\
+y_E &= -x\sin\theta_G + y\cos\theta_G \\
+z_E &= z
+\end{aligned}
+\]
+
+```formula
+## earth_fixed_x
+family: flight
+expr: x*cos(theta) + y*sin(theta)
+symbols: x, y, theta
+```
+
+```formula
+## earth_fixed_y
+family: flight
+expr: -x*sin(theta) + y*cos(theta)
+symbols: x, y, theta
+```
+
+```formula
+## earth_fixed_z
+family: flight
+expr: z
+symbols: z
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(x_E, y_E, z_E\) | Earth-fixed position | m |
+| \(x, y, z\) | Inertial position | m |
+| \(\theta_G\) | Greenwich angle | rad |
+
+Assumptions: the same \(+Z\) polar axis in both frames. \(\theta_G\) is `greenwich_angle`.
+
+## Geocentric latitude and longitude
+
+NASA RP-1204: geocentric latitude is the angle from the equatorial plane to the radius. Longitude is measured east from Greenwich in the Earth-fixed equator. NASA TM X-58153 uses the same longitude sense.
+
+\[
+\sin\phi_c = \frac{z_E}{r} \qquad
+\cos\phi_c = \frac{\rho}{r} \qquad
+\tan\phi_c = \frac{z_E}{\rho}
+\]
+
+\[
+\sin\lambda = \frac{y_E}{\rho} \qquad
+\cos\lambda = \frac{x_E}{\rho}
+\]
+
+```formula
+## geocentric_latitude_sine
+family: flight
+expr: z/r
+symbols: z, r
+```
+
+```formula
+## geocentric_latitude_cosine
+family: flight
+expr: rho/r
+symbols: rho, r
+```
+
+```formula
+## geocentric_latitude_tangent
+family: flight
+expr: z/rho
+symbols: z, rho
+```
+
+```formula
+## longitude_sine
+family: flight
+expr: y/rho
+symbols: y, rho
+```
+
+```formula
+## longitude_cosine
+family: flight
+expr: x/rho
+symbols: x, rho
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(\phi_c\) | Geocentric latitude | rad |
+| \(\lambda\) | East longitude from Greenwich | rad |
+| \(r\) | Geocentric distance | m |
+| \(\rho\) | Distance from the polar axis, \(\sqrt{x_E^2+y_E^2}\) | m |
+| \(x_E, y_E, z_E\) | Earth-fixed position | m |
+
+Assumptions: \(r > 0\). The tangent and the longitude pair need \(\rho > 0\). Two-argument reading of sine and cosine places \(\phi_c\) in \([-\pi/2,\pi/2]\) and \(\lambda\) in \((-\pi,\pi]\).
+
+## Oblate spheroid flattening
+
+NASA TN D-7522 equations (2)–(4). The WGS 84 ellipsoid uses equatorial radius \(a_e = 6378137.0\,\mathrm{m}\) and flattening \(1/f = 298.257223563\) (NIMA TR 8350.2).
+
+\[
+f = \frac{a_e - b}{a_e} \qquad b = a_e(1 - f) \qquad e^2 = f(2 - f)
+\]
+
+```formula
+## flattening_from_radii
+family: flight
+expr: (ae - b)/ae
+symbols: ae, b
+```
+
+```formula
+## polar_radius_from_flattening
+family: flight
+expr: ae*(1 - f)
+symbols: ae, f
+```
+
+```formula
+## ellipsoid_eccentricity_squared
+family: flight
+expr: f*(2 - f)
+symbols: f
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(f\) | Flattening | dimensionless |
+| \(a_e\) | Equatorial radius of the spheroid | m |
+| \(b\) | Polar radius of the spheroid | m |
+| \(e^2\) | Square of the spheroid eccentricity | dimensionless |
+
+Assumptions: \(a_e > b > 0\), so \(0 \le f < 1\). This \(e\) is spheroid eccentricity, not orbital eccentricity. These records do not change two-body \(\mu\).
+
+## Geodetic latitude of the subsatellite point
+
+NASA RP-1204: the subsatellite point is the foot of the local vertical on the spheroid. Geodetic latitude is the angle between the equatorial plane and that vertical. NASA TN D-7522 equation (8) on the surface, and equation (36) at geocentric distance \(r\), with \(p = r/a_e\) restored to dimensioned symbols, give
+
+\[
+\tan\phi_g = \frac{\tan\phi_c}{(1-f)^2}
+\]
+
+\[
+\phi_g = \phi_c + f\frac{a_e}{r}\sin 2\phi_c + f^{2}\left(\frac{a_e^{2}}{r^{2}} - \frac{a_e}{4r}\right)\sin 4\phi_c
+\]
+
+The tangent form is exact for a point on the ellipsoid. The series is the altitude form of equation (36); third-order terms in \(f\) are omitted (order \(1\) in \(3\times 10^{7}\)).
+
+```formula
+## geodetic_latitude_tangent_surface
+family: flight
+expr: tan(phic)/(1 - f)**2
+symbols: phic, f
+```
+
+```formula
+## geodetic_latitude_from_geocentric
+family: flight
+expr: phic + f*(ae/r)*sin(2*phic) + f**2*((ae/r)**2 - ae/(4*r))*sin(4*phic)
+symbols: phic, f, ae, r
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(\phi_g\) | Geodetic latitude | rad |
+| \(\phi_c\) | Geocentric latitude | rad |
+| \(f\) | Flattening | dimensionless |
+| \(a_e\) | Equatorial radius | m |
+| \(r\) | Geocentric distance | m |
+
+Assumptions: the series is NASA TN D-7522 equation (36) through order \(f^{2}\). Use it at the satellite radius; the resulting \(\phi_g\) is the geodetic latitude of the subsatellite point. A sphere has \(f = 0\) and \(\phi_g = \phi_c\). Longitude of the subsatellite point is the Earth-fixed longitude. Motion remains spherical two-body; flattening does not enter \(\mu\).
+
 ## Liquid-propellant mixture ratio
 
 Oxidizer flow divided by fuel flow, and the split of a known total flow.
@@ -3360,6 +3893,186 @@ symbols: K, a, rho_b, cstar, n
 
 Assumptions: quasi-steady mass balance (no free-volume accumulation), uniform regression at \(r = a p_1^{n}\), constant \(a\), \(n\), \(\rho_b\), and \(c^{*}\), and no erosive burning. Requires \(n < 1\) for a stable finite equilibrium. The script symbol for \(c^{*}\) is `cstar`.
 
+## Circular-port burning area
+
+Internal-burning circular perforation with inhibited ends. The burning surface is the cylindrical port wall.
+
+\[
+A_b = 2\pi r L
+\]
+
+```formula
+## circular_port_burning_area
+family: rocket
+expr: 2*pi*r*L
+symbols: r, L, pi
+```
+
+The same surface inverted for port radius or grain length:
+
+\[
+r = \frac{A_b}{2\pi L} \qquad L = \frac{A_b}{2\pi r}
+\]
+
+```formula
+## circular_port_radius
+family: rocket
+expr: Ab/(2*pi*L)
+symbols: Ab, L, pi
+```
+
+```formula
+## circular_grain_length
+family: rocket
+expr: Ab/(2*pi*r)
+symbols: Ab, r, pi
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(A_b\) | Burning surface area | m² |
+| \(r\) | Instantaneous port radius | m |
+| \(L\) | Grain length | m |
+| \(\pi\) | Circle constant | dimensionless |
+
+Assumptions: concentric circular port, uniform length, ends inhibited so they do not burn. The outer radius does not enter \(A_b\) until the web is gone. In these records \(r\) is port radius, not burning rate.
+
+## Web of a circular grain
+
+Propellant thickness from the port to the outer radius. Initial web is the value at the starting port. Remaining web is the value at the current port.
+
+\[
+w_0 = R_o - R_p \qquad w_{\mathrm{rem}} = R_o - r \qquad r = R_o - w_{\mathrm{rem}}
+\]
+
+```formula
+## initial_web
+family: rocket
+expr: Ro - Rp
+symbols: Ro, Rp
+```
+
+```formula
+## remaining_web
+family: rocket
+expr: Ro - r
+symbols: Ro, r
+```
+
+```formula
+## circular_port_from_remaining_web
+family: rocket
+expr: Ro - wrem
+symbols: Ro, wrem
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(w_0\) | Initial web | m |
+| \(w_{\mathrm{rem}}\) | Remaining web | m |
+| \(R_o\) | Outer propellant radius | m |
+| \(R_p\) | Initial port radius | m |
+| \(r\) | Instantaneous port radius | m |
+
+Assumptions: concentric circular port inside a circular outer radius. \(R_o > r \ge R_p > 0\). Web burnout with no sliver is \(r = R_o\) and \(w_{\mathrm{rem}} = 0\). The script symbol for remaining web is `wrem`.
+
+## Circular-grain propellant volume
+
+Loaded volume of a circular tube, and the volume still unburned at port radius \(r\).
+
+\[
+V_0 = \pi(R_o^{2} - R_p^{2})L \qquad V = \pi(R_o^{2} - r^{2})L
+\]
+
+```formula
+## circular_grain_volume
+family: rocket
+expr: pi*(Ro**2 - Rp**2)*L
+symbols: Ro, Rp, L, pi
+```
+
+```formula
+## circular_remaining_volume
+family: rocket
+expr: pi*(Ro**2 - r**2)*L
+symbols: Ro, r, L, pi
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(V_0\) | Initial propellant volume | m³ |
+| \(V\) | Remaining propellant volume | m³ |
+| \(R_o\) | Outer propellant radius | m |
+| \(R_p\) | Initial port radius | m |
+| \(r\) | Instantaneous port radius | m |
+| \(L\) | Grain length | m |
+| \(\pi\) | Circle constant | dimensionless |
+
+Assumptions: concentric circular port, inhibited ends, no voids. Ends stay the same length.
+
+## Sliver volume fraction
+
+Unburned propellant volume after web burnout, divided by the loaded grain volume. NASA SP-8076 calls that remainder the sliver.
+
+\[
+s = \frac{V_{\mathrm{sliver}}}{V_0}
+\]
+
+```formula
+## sliver_volume_fraction
+family: rocket
+expr: Vsliver/V0
+symbols: Vsliver, V0
+```
+
+For a circular grain the port radius at that leftover volume is
+
+\[
+r_s = \sqrt{R_o^{2} - s(R_o^{2} - R_p^{2})}
+\]
+
+```formula
+## sliver_port_radius
+family: rocket
+expr: (Ro**2 - s*(Ro**2 - Rp**2))**0.5
+symbols: Ro, s, Rp
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(s\) | Sliver volume fraction | dimensionless |
+| \(V_{\mathrm{sliver}}\) | Sliver volume | m³ |
+| \(V_0\) | Initial propellant volume | m³ |
+| \(r_s\) | Port radius at the sliver volume | m |
+| \(R_o\) | Outer propellant radius | m |
+| \(R_p\) | Initial port radius | m |
+
+Assumptions: \(0 \le s < 1\). A concentric circular port in a circular case has geometric sliver \(s = 0\) at \(r = R_o\). A prescribed \(s > 0\) stops the web history when the remaining volume fraction is \(s\). The script symbols are `Vsliver`, `V0`, and `s`. Percent sliver is \(100s\).
+
+## Remaining-web time
+
+Time for remaining web to fall from \(w_0\) to \(w_{\mathrm{rem}}\) at the local regression rate.
+
+\[
+t = \int_{w_{\mathrm{rem}}}^{w_0} \frac{\mathrm{d}w}{r}
+\]
+
+```formula
+## remaining_web_time
+family: rocket
+expr: integral(wrem, w0, 1/rburn)
+symbols: wrem, w0, rburn
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(t\) | Time from ignition | s |
+| \(w_{\mathrm{rem}}\) | Remaining web | m |
+| \(w_0\) | Initial web | m |
+| \(r\) | Burning rate | m/s |
+
+Assumptions: remaining web decreases at the burning rate, \(\mathrm{d}w_{\mathrm{rem}}/\mathrm{d}t = -r\). The script symbol for that rate is `rburn` so it is not the port radius. When \(r\) varies, evaluate the integrand along the grain. A constant \(r\) recovers \(t = (w_0 - w_{\mathrm{rem}})/r\).
+
 ## Temperature sensitivity of burning rate at constant pressure
 
 Fractional change of burning rate with propellant temperature, holding chamber pressure fixed.
@@ -3411,7 +4124,7 @@ Assumptions: the derivative is at constant \(K\).
 
 # Aerodynamics
 
-Incompressible flow and the dimensionless force and moment coefficients. Freestream dynamic pressure \(q_{\infty}\) is the dynamic-pressure relation in Compressible flow evaluated far ahead of the body. In this category \(V\) is flow speed. Wing geometry and induced drag follow NASA Glenn's Beginner's Guide (public-domain educational pages). The finite-wing lift curve follows NASA TP-2414 and NACA TN 1862. Stall speed and load factor follow the usual force definitions used in FAA-H-8083 and NASA SP-367. Breguet propeller range and endurance follow NACA Report 234. Breguet jet range follows Guynn (NASA Langley) and the cruise derivation in NASA TN D-6707. The stick-fixed neutral point and static margin follow NACA TN 1670.
+Incompressible flow and the dimensionless force and moment coefficients. Freestream dynamic pressure \(q_{\infty}\) is the dynamic-pressure relation in Compressible flow evaluated far ahead of the body. In this category \(V\) is flow speed. The two-dimensional Prandtl–Glauert factor follows NACA TN 1127. The isentropic critical pressure coefficient is `pressure_coefficient_from_mach` at local Mach 1 on the same stagnation streamline as NACA Report 1135. Critical Mach number follows NACA TN 1813: the freestream Mach at which that critical coefficient equals the Prandtl–Glauert correction of the incompressible minimum pressure coefficient. Wing geometry and induced drag follow NASA Glenn's Beginner's Guide (public-domain educational pages). The finite-wing lift curve follows NASA TP-2414 and NACA TN 1862. NACA four-digit thickness and mean-line ordinates follow NACA Report 460 and NASA TM X-3284. Thin-section lift, zero-lift angle, and quarter-chord moment follow Munk, NACA Report 142, applied to that mean line. Stall speed and load factor follow the usual force definitions used in FAA-H-8083 and NASA SP-367. Coordinated level-turn bank, radius, and rate follow FAA-H-8083-25C Chapter 5. The sustained-turn load factor is that level-turn \(n\) with `drag_polar` when thrust equals drag. Ideal propeller thrust, disk speed, induced velocity, and propulsive efficiency follow NASA Glenn's actuator-disk pages, with the incompressible ideal-efficiency definition of NACA RM L53A07. Breguet propeller range and endurance follow NACA Report 234. Breguet jet range follows Guynn (NASA Langley) and the cruise derivation in NASA TN D-6707. The stick-fixed neutral point and static margin follow NACA TN 1670.
 
 ## Bernoulli's relation
 
@@ -3593,6 +4306,124 @@ symbols: p, p_inf, q_inf
 | \(q_{\infty}\) | Freestream dynamic pressure | Pa |
 
 Assumptions: \(p_{\infty}\) and \(q_{\infty}\) are freestream values far ahead of the body.
+
+With freestream dynamic pressure \(q_{\infty} = \gamma p_{\infty} M_{\infty}^{2}/2\) from `dynamic_pressure`,
+
+\[
+C_p = \frac{2}{\gamma M_{\infty}^{2}}\left(\frac{p}{p_{\infty}} - 1\right)
+\]
+
+```formula
+## pressure_coefficient_from_mach
+family: aerodynamics
+expr: 2*(p/p_inf - 1)/(g*M**2)
+symbols: p, p_inf, g, M
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(C_p\) | Pressure coefficient | dimensionless |
+| \(p\) | Local static pressure | Pa |
+| \(p_{\infty}\) | Freestream static pressure | Pa |
+| \(M_{\infty}\) | Freestream Mach number | dimensionless |
+| \(\gamma\) | Ratio of specific heats | dimensionless |
+
+Assumptions: perfect-gas dynamic pressure \(q_{\infty} = \gamma p_{\infty} M_{\infty}^{2}/2\). On a circular cone, \(p\) is the surface static pressure after the conical shock and the isentropic shock-layer compression.
+
+## Prandtl–Glauert factor
+
+Two-dimensional linearized subsonic similarity factor from NACA TN 1127. For two-dimensional flow the surface pressures, and the lift coefficient they integrate to, are larger than the incompressible values by \(1/\beta\). That factor is not a universal three-dimensional correction.
+
+\[
+\beta = \sqrt{1 - M_{\infty}^{2}}
+\]
+
+```formula
+## prandtl_glauert_factor
+family: aerodynamics
+expr: (1 - M**2)**0.5
+symbols: M
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(\beta\) | Prandtl–Glauert factor | dimensionless |
+| \(M_{\infty}\) | Freestream Mach number | dimensionless |
+
+Assumptions: steady, inviscid, shock-free subsonic flow, \(0 \le M_{\infty} < 1\). Disturbances are small. Two-dimensional flow only.
+
+## Prandtl–Glauert coefficient
+
+Incompressible pressure or lift coefficient corrected to a subsonic Mach number. NACA TN 1127 states that, in two-dimensional flow, the pressures on a thin cylindrical body at a given small angle of attack are increased by \(1/\beta\) over the incompressible values. The same factor applies to the lift coefficient obtained by integrating those pressures.
+
+\[
+C = \frac{C_{0}}{\sqrt{1 - M_{\infty}^{2}}}
+\]
+
+```formula
+## prandtl_glauert_coefficient
+family: aerodynamics
+expr: C0/(1 - M**2)**0.5
+symbols: C0, M
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(C\) | Compressible pressure or lift coefficient | dimensionless |
+| \(C_{0}\) | Incompressible pressure or lift coefficient | dimensionless |
+| \(M_{\infty}\) | Freestream Mach number | dimensionless |
+
+Assumptions: two-dimensional linearized subsonic flow, \(0 \le M_{\infty} < 1\). \(C_{0}\) is the incompressible value on the same geometry and angle of attack. The record is `prandtl_glauert_coefficient` \(= C_{0}/\)`prandtl_glauert_factor`. It is not the Göthert three-dimensional rule. The linearized correction fails as \(M_{\infty}\) approaches 1.
+
+## Critical pressure coefficient
+
+Pressure coefficient at a surface point where the local Mach number is 1, on an isentropic streamline from the freestream. Combine `sonic_pressure` and `stagnation_temperature` with `stagnation_pressure` to form \(p^{*}/p_{\infty}\), then `pressure_coefficient_from_mach`.
+
+\[
+C_{p,\mathrm{crit}} = \frac{2}{\gamma M_{\infty}^{2}}\left[\left(\frac{2}{\gamma + 1}\left(1 + \frac{\gamma - 1}{2}M_{\infty}^{2}\right)\right)^{\gamma/(\gamma - 1)} - 1\right]
+\]
+
+```formula
+## critical_pressure_coefficient
+family: aerodynamics
+expr: 2*(((2/(g + 1))*(1 + ((g - 1)/2)*M**2))**(g/(g - 1)) - 1)/(g*M**2)
+symbols: g, M
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(C_{p,\mathrm{crit}}\) | Pressure coefficient at local Mach 1 | dimensionless |
+| \(M_{\infty}\) | Freestream Mach number | dimensionless |
+| \(\gamma\) | Ratio of specific heats | dimensionless |
+
+Assumptions: calorically perfect gas; isentropic flow from the freestream to the sonic point. \(C_{p,\mathrm{crit}} < 0\) for \(0 < M_{\infty} < 1\). At \(M_{\infty} = 1\), \(C_{p,\mathrm{crit}} = 0\). This is the exact isentropic coefficient, not the small-perturbation \(C_{p}^{*}\).
+
+## Critical Mach number
+
+Freestream Mach number at which sonic speed is first reached on the surface. NACA TN 1813 defines that Mach number and estimates it by applying the Prandtl–Glauert factor to a low-speed pressure distribution. Equate `prandtl_glauert_coefficient` of the incompressible minimum pressure coefficient to `critical_pressure_coefficient`. There is no closed algebraic inverse. The record is zero at the critical Mach number. Given \(C_{p0,\min}\), solve that equation for \(M_{\mathrm{cr}}\).
+
+\[
+\frac{C_{p0,\min}}{\sqrt{1 - M_{\mathrm{cr}}^{2}}}
+-
+\frac{2}{\gamma M_{\mathrm{cr}}^{2}}\left[\left(\frac{2}{\gamma + 1}\left(1 + \frac{\gamma - 1}{2}M_{\mathrm{cr}}^{2}\right)\right)^{\gamma/(\gamma - 1)} - 1\right]
+= 0
+\]
+
+```formula
+## critical_mach
+family: aerodynamics
+expr: C0/(1 - M**2)**0.5 - 2*(((2/(g + 1))*(1 + ((g - 1)/2)*M**2))**(g/(g - 1)) - 1)/(g*M**2)
+symbols: C0, M, g
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(M_{\mathrm{cr}}\) | Critical Mach number | dimensionless |
+| \(C_{p0,\min}\) | Incompressible minimum pressure coefficient | dimensionless |
+| \(M\) | Script Mach; \(M_{\mathrm{cr}}\) when the record is zero | dimensionless |
+| \(\gamma\) | Ratio of specific heats | dimensionless |
+
+Assumptions: two-dimensional Prandtl–Glauert correction of a suction peak, \(C_{p0,\min} < 0\), and isentropic local sonic flow. The first surface point to reach Mach 1 is taken as the minimum-pressure point. NACA TN 1813 also discusses a crest-sonic estimate of drag-divergence Mach number; that crest station is not this record. A positive \(C_{p0}\) is not a suction peak and does not define \(M_{\mathrm{cr}}\).
 
 ## Skin friction coefficient
 
@@ -4190,7 +5021,245 @@ symbols: L, W
 | \(L\) | Lift | N |
 | \(W\) | Weight | N |
 
-Assumptions: \(W\) is the vehicle weight, not mass times a local \(g\) different from the weight definition in use. Straight and level flight has \(n = 1\) when \(L = W\).
+Assumptions: \(W\) is the vehicle weight, not mass times a local \(g\) different from the weight definition in use. Straight and level flight has \(n = 1\) when \(L = W\). In a coordinated level turn, \(n = 1/\cos\phi\) from `level_turn_load_factor`.
+
+## Coordinated level turn
+
+Steady, coordinated, constant-altitude turn. The lift vector is tilted by the bank angle \(\phi\). The vertical component balances weight, \(L\cos\phi = W\), so the load factor is \(n = L/W = 1/\cos\phi\). The horizontal component \(L\sin\phi\) is the centripetal force \(m V^{2}/R\) with \(m = W/g\). FAA-H-8083-25C Chapter 5 states that load factor, and the radius and rate of turn (there with knot, foot, and degree conversion constants 11.26 and 1091). The records below are the same relations in SI.
+
+\[
+n = \frac{1}{\cos\phi}
+\]
+
+```formula
+## level_turn_load_factor
+family: aerodynamics
+expr: 1/cos(phi)
+symbols: phi
+```
+
+\[
+R = \frac{V^{2}}{g\tan\phi}
+\]
+
+```formula
+## level_turn_radius
+family: aerodynamics
+expr: V**2/(g*tan(phi))
+symbols: V, g, phi
+```
+
+\[
+\omega = \frac{g\tan\phi}{V}
+\]
+
+```formula
+## level_turn_rate
+family: aerodynamics
+expr: g*tan(phi)/V
+symbols: g, phi, V
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(n\) | Load factor | dimensionless |
+| \(\phi\) | Bank angle | rad |
+| \(R\) | Turn radius | m |
+| \(\omega\) | Turn rate | rad/s |
+| \(V\) | True airspeed | m/s |
+| \(g\) | Gravitational acceleration | m/s² |
+
+Assumptions: coordinated, constant-altitude turn with \(L\cos\phi = W\) and no sideslip. \(0 < \phi < \pi/2\) so \(n > 1\) and \(\tan\phi\) is finite and positive. \(\omega = V/R\). Equivalently \(\tan\phi = \sqrt{n^{2}-1}\), \(R = V^{2}/(g\sqrt{n^{2}-1})\), and \(\omega = g\sqrt{n^{2}-1}/V\). Use \(g = 9.80665\,\mathrm{m/s}^{2}\) unless the user gives another value. Incompressible dynamic pressure \(\frac{1}{2}\rho V^{2}\) sets the stall limit: the steepest bank at a speed is `level_turn_load_factor` at the `load_factor` from `lift_force` with \(C_{L,\max}\). That is the same speed–stall relation as `stall_speed` with \(W\) replaced by \(nW\). The bank the engine can hold at a speed is a different load factor: `sustained_turn_load_factor`, with thrust equal to drag at \(L = nW\).
+
+Useful power delivered to the airplane is thrust times speed, so the constant-power case uses \(T = P/V\).
+
+\[
+T = \frac{P}{V}
+\]
+
+```formula
+## useful_thrust
+family: aerodynamics
+expr: P/V
+symbols: P, V
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(T\) | Useful thrust | N |
+| \(P\) | Useful power | W |
+| \(V\) | True airspeed | m/s |
+
+Assumptions: \(P\) is the power that becomes \(T V\), after propeller efficiency if the user started from shaft power. For the ideal actuator disk that efficiency is `ideal_propulsive_efficiency` and the thrust is `ideal_propeller_thrust`. Jet thrust that does not change with speed is not this record; pass that thrust directly.
+
+On `drag_polar`, \(C_D = C_{D0} + k C_L^{2}\) with \(k = 1/(\pi\, AR\, e)\) from `induced_drag_coefficient`. A coordinated level turn has \(L = nW\), so \(C_L = nW/(q S)\) at `freestream_dynamic_pressure` \(q\). Setting thrust equal to drag and solving for the load factor gives
+
+\[
+n = \sqrt{\frac{q S\,(T - q S C_{D0})\,\pi\, AR\, e}{W^{2}}}
+\]
+
+```formula
+## sustained_turn_load_factor
+family: aerodynamics
+expr: ((q*S*(T - q*S*CD0)*pi*AR*e)/(W**2))**0.5
+symbols: q, S, T, CD0, pi, AR, e, W
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(n\) | Sustained load factor at thrust equal to drag | dimensionless |
+| \(q\) | Freestream dynamic pressure | Pa |
+| \(S\) | Wing planform area | m² |
+| \(T\) | Available thrust | N |
+| \(C_{D0}\) | Zero-lift drag coefficient | dimensionless |
+| \(\pi\) | Circle constant | dimensionless |
+| \(AR\) | Aspect ratio | dimensionless |
+| \(e\) | Oswald efficiency | dimensionless |
+| \(W\) | Weight | N |
+
+Assumptions: steady, coordinated, constant-altitude flight so \(L\cos\phi = W\) and \(T = D\). \(T > q S C_{D0}\) or \(n\) is not real. \(0 < e \le 1\). This \(n\) is the bank the engine can hold at that speed. It is not the stall limit. A turn still needs \(n > 1\). For constant useful power, replace \(T\) by `useful_thrust`. At the maximum-\(L/D\) condition \(C_D = 2 C_{D0}\), constant thrust gives the peak \(n = (T/W)(L/D)_{\max}\).
+
+## Ideal actuator-disk propeller
+
+Incompressible Rankine–Froude momentum theory. NASA Glenn treats the spinning propeller as a disk of area \(A\) through which the air passes. Subscripts \(0\), \(p\), and \(e\) are freestream, the disk, and the far wake. There is no pressure-area term because the far-wake static pressure returns to freestream. Combining the momentum thrust with Bernoulli applied upstream and downstream of the disk, but not through it, gives the disk speed as the average of the freestream and far-wake speeds. NACA RM L53A07 records the same uniformly loaded disk with a constant axial interference velocity and no slipstream rotation. Shaft power in this model is the power added to the slipstream. Blade profile drag, tip loss, swirl, and compressibility are omitted, so the thrust and the efficiency are ideal.
+
+\[
+A = \frac{\pi D^{2}}{4}
+\]
+
+```formula
+## propeller_disk_area
+family: aerodynamics
+expr: pi*D**2/4
+symbols: pi, D
+```
+
+\[
+V_p = \frac{1}{2}(V_e + V_0)
+\]
+
+```formula
+## actuator_disk_speed
+family: aerodynamics
+expr: 0.5*(Ve + V0)
+symbols: Ve, V0
+```
+
+The axial induced velocity at the disk is the interference velocity of the simple momentum theory, half the far-wake increment.
+
+\[
+v_i = V_p - V_0 = \frac{1}{2}(V_e - V_0)
+\]
+
+```formula
+## propeller_induced_velocity
+family: aerodynamics
+expr: Vp - V0
+symbols: Vp, V0
+```
+
+```formula
+## propeller_far_wake_speed
+family: aerodynamics
+expr: V0 + 2*vi
+symbols: V0, vi
+```
+
+Glenn's two expressions for ideal thrust are identical once \(V_p\) is the average. With \(v_i\) they are \(T = 2\rho A v_i(V_0 + v_i)\).
+
+\[
+T = \rho V_p A(V_e - V_0) = \frac{1}{2}\rho A(V_e^{2} - V_0^{2})
+\]
+
+```formula
+## ideal_propeller_thrust
+family: aerodynamics
+expr: rho*Vp*A*(Ve - V0)
+symbols: rho, Vp, A, Ve, V0
+```
+
+```formula
+## ideal_propeller_thrust_bernoulli
+family: aerodynamics
+expr: 0.5*rho*A*(Ve**2 - V0**2)
+symbols: rho, A, Ve, V0
+```
+
+```formula
+## ideal_propeller_thrust_from_induced
+family: aerodynamics
+expr: 2*rho*A*vi*(V0 + vi)
+symbols: rho, A, vi, V0
+```
+
+Given thrust, the physical root of that quadratic is
+
+\[
+v_i = \frac{1}{2}\left(-V_0 + \sqrt{V_0^{2} + \frac{2T}{\rho A}}\right).
+\]
+
+```formula
+## propeller_induced_velocity_from_thrust
+family: aerodynamics
+expr: 0.5*(-V0 + (V0**2 + 2*T/(rho*A))**0.5)
+symbols: V0, T, rho, A
+```
+
+The power added to the slipstream is the thrust times the speed through the disk. That is the ideal shaft power: the kinetic-energy rise \(\frac12\dot m(V_e^{2}-V_0^{2})\) equals \(T V_p\).
+
+\[
+P = T V_p = 2\rho A v_i(V_0 + v_i)^{2}
+\]
+
+```formula
+## ideal_actuator_power
+family: aerodynamics
+expr: T*Vp
+symbols: T, Vp
+```
+
+```formula
+## ideal_actuator_power_from_induced
+family: aerodynamics
+expr: 2*rho*A*vi*(V0 + vi)**2
+symbols: rho, A, vi, V0
+```
+
+Ideal propulsive efficiency is thrust power over that shaft power, \(\eta = T_c/P_c\) in RM L53A07.
+
+\[
+\eta = \frac{T V_0}{P} = \frac{V_0}{V_p}
+\]
+
+```formula
+## ideal_propulsive_efficiency
+family: aerodynamics
+expr: T*V0/P
+symbols: T, V0, P
+```
+
+```formula
+## ideal_propulsive_efficiency_from_speeds
+family: aerodynamics
+expr: V0/Vp
+symbols: V0, Vp
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(A\) | Propeller disk area | m² |
+| \(D\) | Propeller diameter | m |
+| \(\pi\) | Circle constant | dimensionless |
+| \(V_0\) | True airspeed, far ahead of the disk | m/s |
+| \(V_p\) | Axial speed through the disk | m/s |
+| \(V_e\) | Far-wake axial speed | m/s |
+| \(v_i\) | Axial induced velocity at the disk | m/s |
+| \(T\) | Ideal thrust | N |
+| \(\rho\) | Freestream density | kg/m³ |
+| \(P\) | Ideal shaft power added to the slipstream | W |
+| \(\eta\) | Ideal propulsive efficiency | dimensionless |
+
+Assumptions: incompressible, inviscid, uniformly loaded actuator disk of zero thickness. No swirl, no tip loss, and no blade profile drag. \(D > 0\), \(A > 0\), \(\rho > 0\), \(V_0 > 0\), \(V_e > V_0\), and \(v_i > 0\). Then \(0 < \eta < 1\). \(P\) is shaft power in this ideal model, not the useful power \(T V_0\). Useful power is `useful_thrust` times speed after this \(\eta\), or equivalently \(T V_0\). Static hover \(V_0 = 0\) makes \(\eta = 0\) and is not these flight records. Compressible actuator-disk solutions in RM L53A07 are not these records.
 
 ## Breguet range and endurance
 
@@ -4353,6 +5422,238 @@ symbols: xc
 | static margin | \(x\) in percent of the mean aerodynamic chord | percent |
 
 Assumptions: \(x'\) is the arm in TN 1670 equation (4). A positive \(x'\) adds a positive increment to \(\mathrm{d}C_m/\mathrm{d}\alpha\), which is the center of gravity aft of the wing-fuselage aerodynamic center. A positive \(x/c\), and therefore a positive static margin, is the arrangement in which the center of gravity is ahead of the neutral point and \(\mathrm{d}C_m/\mathrm{d}\alpha\) is negative. A static margin of 5 is five percent of the mean aerodynamic chord, so \(x/c = 0.05\).
+
+## NACA four-digit thickness and mean line
+
+The four-digit family of NACA Report 460. The first digit is maximum camber in percent of chord, the second is the chordwise station of that camber in tenths of chord, and the last two digits are maximum thickness in percent of chord. Chordwise station \(\xi = x/c\) runs from the leading edge to the trailing edge. NASA TM X-3284 records the same thickness polynomial and the same two-parabola camber line.
+
+The basic thickness is a 20-percent-chord section. Any other thickness scales those ordinates by \(t/0.20\):
+
+\[
+\frac{y_t}{c} = \frac{t}{0.20}\left(0.2969\,\xi^{1/2} - 0.1260\,\xi - 0.3516\,\xi^{2} + 0.2843\,\xi^{3} - 0.1015\,\xi^{4}\right)
+\]
+
+```formula
+## naca4_thickness
+family: aerodynamics
+expr: (t/0.2)*(0.2969*xi**0.5 - 0.1260*xi - 0.3516*xi**2 + 0.2843*xi**3 - 0.1015*xi**4)
+symbols: t, xi
+```
+
+Forward of maximum camber, and aft of it,
+
+\[
+\frac{y_c}{c} = \frac{m}{p^{2}}\left(2p\xi - \xi^{2}\right)
+\qquad 0 \le \xi \le p
+\]
+
+```formula
+## naca4_camber_forward
+family: aerodynamics
+expr: (m/p**2)*(2*p*xi - xi**2)
+symbols: m, p, xi
+```
+
+\[
+\frac{y_c}{c} = \frac{m}{(1-p)^{2}}\left((1-2p) + 2p\xi - \xi^{2}\right)
+\qquad p \le \xi \le 1
+\]
+
+```formula
+## naca4_camber_aft
+family: aerodynamics
+expr: (m/(1-p)**2)*((1 - 2*p) + 2*p*xi - xi**2)
+symbols: m, p, xi
+```
+
+The mean-line slopes that set the surface normal are
+
+\[
+\frac{\mathrm{d}(y_c/c)}{\mathrm{d}\xi} = \frac{2m}{p^{2}}(p - \xi)
+\qquad 0 \le \xi \le p
+\]
+
+```formula
+## naca4_camber_slope_forward
+family: aerodynamics
+expr: (2*m/p**2)*(p - xi)
+symbols: m, p, xi
+```
+
+\[
+\frac{\mathrm{d}(y_c/c)}{\mathrm{d}\xi} = \frac{2m}{(1-p)^{2}}(p - \xi)
+\qquad p \le \xi \le 1
+\]
+
+```formula
+## naca4_camber_slope_aft
+family: aerodynamics
+expr: (2*m/(1-p)**2)*(p - xi)
+symbols: m, p, xi
+```
+
+Thickness is laid off along the local normal. \(\theta = \tan^{-1}(\mathrm{d}y_c/\mathrm{d}x)\).
+
+\[
+\frac{x_u}{c} = \xi - \frac{y_t}{c}\sin\theta
+\qquad
+\frac{y_u}{c} = \frac{y_c}{c} + \frac{y_t}{c}\cos\theta
+\]
+
+```formula
+## naca4_upper_x
+family: aerodynamics
+expr: xi - yt*sin(theta)
+symbols: xi, yt, theta
+```
+
+```formula
+## naca4_upper_y
+family: aerodynamics
+expr: yc + yt*cos(theta)
+symbols: yc, yt, theta
+```
+
+\[
+\frac{x_l}{c} = \xi + \frac{y_t}{c}\sin\theta
+\qquad
+\frac{y_l}{c} = \frac{y_c}{c} - \frac{y_t}{c}\cos\theta
+\]
+
+```formula
+## naca4_lower_x
+family: aerodynamics
+expr: xi + yt*sin(theta)
+symbols: xi, yt, theta
+```
+
+```formula
+## naca4_lower_y
+family: aerodynamics
+expr: yc - yt*cos(theta)
+symbols: yc, yt, theta
+```
+
+The leading-edge radius of the thickness form follows the \(a_0\sqrt{\xi}\) term in NASA TM X-3284, with \(a_0\) scaled from the 20-percent model:
+
+\[
+\frac{R_{\mathrm{le}}}{c} = \frac{1}{2}\left(0.2969\,\frac{t}{0.20}\right)^{2}
+\]
+
+```formula
+## naca4_leading_edge_radius
+family: aerodynamics
+expr: 0.5*(0.2969*t/0.2)**2*c
+symbols: t, c
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(y_t\) | Half-thickness, measured normal to the mean line | m |
+| \(y_c\) | Mean-line ordinate above the chord | m |
+| \(t\) | Maximum thickness divided by chord | dimensionless |
+| \(m\) | Maximum camber divided by chord | dimensionless |
+| \(p\) | Chord fraction of maximum camber | dimensionless |
+| \(\xi\) | Chord fraction from the leading edge | dimensionless |
+| \(\theta\) | Mean-line slope angle | rad |
+| \(x_u, y_u\) | Upper-surface station and ordinate | m |
+| \(x_l, y_l\) | Lower-surface station and ordinate | m |
+| \(R_{\mathrm{le}}\) | Leading-edge radius of the thickness form | m |
+| \(c\) | Chord | m |
+
+Assumptions: \(\xi\) is the chordwise station at which the thickness polynomial is evaluated. \(0 \le t < 1\), \(0 \le m < 1\), and \(0 < p < 1\) when \(m > 0\). A symmetric section has \(m = 0\) and a straight mean line. The trailing-edge half-thickness is finite because \(a_4 = -0.1015\). Script symbols `yt` and `yc` in the surface records are already divided by \(c\). `naca4_leading_edge_radius` returns \(R_{\mathrm{le}}\), not the ratio.
+
+## Thin-section lift and moment of a NACA four-digit mean line
+
+Munk’s thin-wing result: the two-dimensional lift-curve slope is \(2\pi\) per radian. The geometric angle that produces zero lift, and the moment at zero geometric angle, come from the mean-line slope. Map the chord by \(\xi = (1-\cos\theta)/2\). The Glauert station of maximum camber is
+
+\[
+\theta_p = 2\tan^{-1}\sqrt{\frac{p}{1-p}}
+\]
+
+```formula
+## naca4_glauert_station
+family: aerodynamics
+expr: 2*atan((p/(1-p))**0.5)
+symbols: p
+```
+
+Zero-lift angle from the Fourier integral of \(\mathrm{d}y_c/\mathrm{d}x\) on that map, written with the two-parabola slope:
+
+\[
+\alpha_{L0} = \frac{1}{\pi}\left[f_f L(\theta_p) + f_a\bigl(L(\pi)-L(\theta_p)\bigr)\right]
+\]
+
+with \(f_f = m/p^{2}\), \(f_a = m/(1-p)^{2}\), \(B = 2p-1\), \(s=\sqrt{p(1-p)}\), and \(L(\theta) = (B-1/2)\theta + (1-B)\sin\theta - (\sin\theta\cos\theta)/2\).
+
+```formula
+## naca4_zero_lift_angle
+family: aerodynamics
+expr: (1/pi)*((m/p**2)*((2*p-1-0.5)*theta_p + 2*(p*(1-p))**0.5*(1-(2*p-1)) + (2*p-1)*(p*(1-p))**0.5) + (m/(1-p)**2)*((2*p-1-0.5)*pi - ((2*p-1-0.5)*theta_p + 2*(p*(1-p))**0.5*(1-(2*p-1)) + (2*p-1)*(p*(1-p))**0.5)))
+symbols: m, p, theta_p, pi
+```
+
+Section lift at a geometric angle of attack is then `section_lift_effective_angle` with slope \(2\pi\) and zero induced angle:
+
+\[
+c_l = 2\pi\,(\alpha - \alpha_{L0})
+\]
+
+```formula
+## thin_airfoil_section_lift
+family: aerodynamics
+expr: 2*pi*(alpha - alpha_L0)
+symbols: pi, alpha, alpha_L0
+```
+
+The first two Glauert cosine coefficients of the same slope are
+
+\[
+A_1 = \frac{2}{\pi}\left[f_f J(\theta_p) + f_a\bigl(\pi/2 - J(\theta_p)\bigr)\right]
+\]
+
+```formula
+## naca4_glauert_A1
+family: aerodynamics
+expr: (2/pi)*((m/p**2)*((2*p-1)*(p*(1-p))**0.5 + theta_p/2) + (m/(1-p)**2)*(pi/2 - ((2*p-1)*(p*(1-p))**0.5 + theta_p/2)))
+symbols: m, p, theta_p, pi
+```
+
+\[
+A_2 = \frac{2}{\pi}K(\theta_p)\,(f_f - f_a)
+\]
+
+```formula
+## naca4_glauert_A2
+family: aerodynamics
+expr: (2/pi)*(-2*(2*p-1)**2*(p*(1-p))**0.5 + 2*(p*(1-p))**0.5 - (16/3)*(p*(1-p))**1.5)*(m/p**2 - m/(1-p)**2)
+symbols: m, p, pi
+```
+
+The quarter-chord moment coefficient is independent of angle of attack:
+
+\[
+c_{m,c/4} = \frac{\pi}{4}(A_2 - A_1)
+\]
+
+```formula
+## naca4_quarter_chord_moment
+family: aerodynamics
+expr: (pi/4)*(A2 - A1)
+symbols: pi, A2, A1
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(\theta_p\) | Glauert angle at \(\xi = p\) | rad |
+| \(\alpha_{L0}\) | Geometric angle of attack for zero section lift | rad |
+| \(c_l\) | Section lift coefficient | dimensionless |
+| \(\alpha\) | Geometric angle of attack of the chord | rad |
+| \(A_1, A_2\) | Glauert cosine coefficients of mean-line slope | dimensionless |
+| \(c_{m,c/4}\) | Section pitching-moment coefficient about the quarter chord | dimensionless |
+| \(\pi\) | Circle constant | dimensionless |
+
+Assumptions: two-dimensional, inviscid, incompressible thin-section flow. Camber and angle of attack are small. Thickness does not enter \(\alpha_{L0}\), \(c_l\), or \(c_{m,c/4}\). Two-dimensional inviscid pressure drag is zero. Munk notes that a useful profile drag still requires an empirical friction estimate; that estimate is not this record. \(0 < p < 1\) and \(m \ge 0\). A symmetric mean line is \(m = 0\), so \(\alpha_{L0} = 0\) and \(c_{m,c/4} = 0\). Positive moment is pitch-up. Script `theta_p` is `naca4_glauert_station`. Script `s**1.5` in \(A_2\) is \(s^{3}\) with \(s=\sqrt{p(1-p)}\).
 
 # Structures
 

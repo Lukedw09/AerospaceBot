@@ -5,7 +5,7 @@ A formula is listed when every identity named for it passed, or when it is a def
 A definition is exempt from the identity check.
 Use only these formula ids. Do not use a formula that is absent from this file.
 
-Passed: 244
+Passed: 326
 Failed: 0
 Unchecked: 0
 
@@ -17,6 +17,7 @@ Exempt from the identity check.
 - `cv_definition` (thermo)
 - `gamma_definition` (thermo)
 - `enthalpy_definition` (thermo)
+- `conical_ray_normal_speed` (conical_shock)
 - `thrust_coefficient_definition` (rocket)
 - `total_impulse` (rocket)
 - `burn_rate_temperature_sensitivity` (rocket)
@@ -81,6 +82,16 @@ Exempt from the identity check.
 - `mach_angle` (expansion): sonic, mach_two
 - `prandtl_meyer` (expansion): mach_one, monatomic_mach_sqrt_two
 - `prandtl_meyer_max` (expansion): monatomic
+- `conical_ray_normal_speed` (conical_shock): definition, exempt from the identity check
+- `conical_vacuum_sound_speed_sq` (conical_shock): rest, mach_two_stream
+- `taylor_maccoll_radial_acceleration` (conical_shock): cone_surface
+- `conical_shock_wave_tangent` (conical_shock): mach_wave
+- `conical_freestream_mach_sq` (conical_shock): mach_two_wave
+- `conical_resultant_mach` (conical_shock): mach_two_stream
+- `conical_critical_mach` (conical_shock): mach_two_stream
+- `limiting_speed_ratio` (conical_shock): sonic, mach_two
+- `conical_radial_speed` (conical_shock): axis, ninety_degrees
+- `conical_normal_speed` (conical_shock): axis, ninety_degrees
 - `gamma_imperfect` (imperfect): half_excited_exponential
 - `speed_of_sound_imperfect` (imperfect): exact_square
 - `imperfect_mach` (imperfect): rest, temperature_ratio_two
@@ -109,6 +120,14 @@ Exempt from the identity check.
 - `number_density` (atmosphere): unit_thermal
 - `species_number_density` (atmosphere): nitrogen_fraction
 - `atmosphere_partial_pressure` (atmosphere): unit_thermal
+- `saturation_vapor_pressure_water` (atmosphere): ice_point
+- `saturation_vapor_pressure_ice` (atmosphere): ice_point
+- `relative_humidity` (atmosphere): quarter
+- `vapor_partial_pressure` (atmosphere): quarter
+- `absolute_humidity` (atmosphere): unit_vapor
+- `water_molar_mass` (atmosphere): standard_1976_table
+- `moist_mean_molar_mass` (atmosphere): one_quarter_vapor
+- `moist_density` (atmosphere): two_partial_pressures
 - `pressure_scale_height` (atmosphere): ten_kilometres
 - `geopotential_pressure_scale_height` (atmosphere): ten_kilometres
 - `atmosphere_sound_speed` (atmosphere): perfect_square
@@ -154,6 +173,7 @@ Exempt from the identity check.
 - `escape_velocity` (flight): altitude_equal_to_radius
 - `gravitational_parameter` (flight): product
 - `vis_viva` (flight): circular, periapsis_of_ellipse
+- `plane_change_impulse` (flight): half_turn, sixty_deg
 - `specific_orbital_energy` (flight): circular_energy
 - `specific_orbital_energy_from_speed` (flight): circular_energy
 - `orbital_period` (flight): unit_orbit
@@ -214,6 +234,21 @@ Exempt from the identity check.
 - `inertial_velocity_x` (flight): horizontal_at_periapsis
 - `inertial_velocity_y` (flight): horizontal_at_periapsis
 - `inertial_velocity_z` (flight): equatorial
+- `mean_anomaly_from_epoch` (flight): two_seconds, shifted_epoch
+- `greenwich_angle` (flight): quarter_turn, from_epoch
+- `earth_fixed_x` (flight): no_rotation, quarter_turn
+- `earth_fixed_y` (flight): no_rotation, quarter_turn
+- `earth_fixed_z` (flight): polar_component
+- `geocentric_latitude_sine` (flight): forty_five
+- `geocentric_latitude_cosine` (flight): forty_five
+- `geocentric_latitude_tangent` (flight): forty_five
+- `longitude_sine` (flight): on_plus_y
+- `longitude_cosine` (flight): on_plus_y
+- `flattening_from_radii` (flight): half
+- `polar_radius_from_flattening` (flight): half
+- `ellipsoid_eccentricity_squared` (flight): half
+- `geodetic_latitude_tangent_surface` (flight): sphere, flatten_half
+- `geodetic_latitude_from_geocentric` (flight): sphere, equator, forty_five_surface
 - `mixture_ratio` (rocket): oxidizer_six_to_one
 - `propellant_flow_sum` (rocket): same_split
 - `fuel_flow` (rocket): same_split
@@ -224,6 +259,17 @@ Exempt from the identity check.
 - `burning_rate` (rocket): square_root_pressure
 - `burning_area_ratio` (rocket): ratio_200
 - `equilibrium_chamber_pressure` (rocket): square_root_pressure
+- `circular_port_burning_area` (rocket): unit_cylinder
+- `circular_port_radius` (rocket): unit_cylinder
+- `circular_grain_length` (rocket): unit_cylinder
+- `initial_web` (rocket): two_centimetres
+- `remaining_web` (rocket): one_centimetre
+- `circular_port_from_remaining_web` (rocket): one_centimetre
+- `circular_grain_volume` (rocket): unit_tube
+- `circular_remaining_volume` (rocket): half_web
+- `sliver_volume_fraction` (rocket): five_percent
+- `sliver_port_radius` (rocket): no_sliver, all_sliver
+- `remaining_web_time` (rocket): constant_rate
 - `burn_rate_temperature_sensitivity` (rocket): definition, exempt from the identity check
 - `pressure_temperature_sensitivity` (rocket): definition, exempt from the identity check
 
@@ -240,6 +286,11 @@ Exempt from the identity check.
 - `section_drag_coefficient` (aerodynamics): per_unit_span
 - `section_moment_coefficient` (aerodynamics): per_unit_span
 - `pressure_coefficient` (aerodynamics): incompressible_stagnation, freestream
+- `pressure_coefficient_from_mach` (aerodynamics): freestream, unit_dynamic_pressure
+- `prandtl_glauert_factor` (aerodynamics): incompressible, three_fifths
+- `prandtl_glauert_coefficient` (aerodynamics): incompressible, three_fifths
+- `critical_pressure_coefficient` (aerodynamics): sonic_freestream, air_half
+- `critical_mach` (aerodynamics): air_half, air_four_fifths
 - `skin_friction_coefficient` (aerodynamics): wall_shear
 - `section_normal_coefficient` (aerodynamics): uniform_distributions
 - `section_axial_coefficient` (aerodynamics): uniform_distributions
@@ -271,6 +322,23 @@ Exempt from the identity check.
 - `stall_speed` (aerodynamics): one_g_level
 - `equivalent_airspeed` (aerodynamics): same_dynamic_pressure
 - `load_factor` (aerodynamics): three_g
+- `level_turn_load_factor` (aerodynamics): sixty_degrees, forty_five_degrees
+- `level_turn_radius` (aerodynamics): forty_five_degree_bank, sixty_degrees
+- `level_turn_rate` (aerodynamics): forty_five_degree_bank, sixty_degrees
+- `useful_thrust` (aerodynamics): unit_speed
+- `sustained_turn_load_factor` (aerodynamics): two_g
+- `propeller_disk_area` (aerodynamics): diameter_two
+- `actuator_disk_speed` (aerodynamics): wake_three
+- `propeller_induced_velocity` (aerodynamics): unit_induced
+- `propeller_far_wake_speed` (aerodynamics): unit_induced
+- `ideal_propeller_thrust` (aerodynamics): unit_disk
+- `ideal_propeller_thrust_bernoulli` (aerodynamics): unit_disk
+- `ideal_propeller_thrust_from_induced` (aerodynamics): unit_disk
+- `propeller_induced_velocity_from_thrust` (aerodynamics): unit_disk
+- `ideal_actuator_power` (aerodynamics): unit_disk
+- `ideal_actuator_power_from_induced` (aerodynamics): unit_disk
+- `ideal_propulsive_efficiency` (aerodynamics): half
+- `ideal_propulsive_efficiency_from_speeds` (aerodynamics): half
 - `breguet_range_jet` (aerodynamics): weight_ratio_two
 - `breguet_endurance_jet` (aerodynamics): weight_ratio_two
 - `breguet_range_prop` (aerodynamics): weight_ratio_two
@@ -279,6 +347,22 @@ Exempt from the identity check.
 - `center_of_gravity_to_neutral_point` (aerodynamics): ahead
 - `neutral_distance_from_moment` (aerodynamics): five_percent_chord
 - `static_margin` (aerodynamics): five_percent
+- `naca4_thickness` (aerodynamics): trailing_edge_twenty_percent, leading_edge
+- `naca4_camber_forward` (aerodynamics): at_maximum
+- `naca4_camber_aft` (aerodynamics): at_maximum, trailing_edge
+- `naca4_camber_slope_forward` (aerodynamics): at_maximum
+- `naca4_camber_slope_aft` (aerodynamics): at_maximum
+- `naca4_upper_x` (aerodynamics): flat_mean
+- `naca4_upper_y` (aerodynamics): flat_mean
+- `naca4_lower_x` (aerodynamics): flat_mean
+- `naca4_lower_y` (aerodynamics): flat_mean
+- `naca4_leading_edge_radius` (aerodynamics): twenty_percent_unit_chord
+- `naca4_glauert_station` (aerodynamics): mid_chord
+- `naca4_zero_lift_angle` (aerodynamics): circular_arc_two_percent
+- `thin_airfoil_section_lift` (aerodynamics): at_zero_lift, symmetric_unit_angle
+- `naca4_glauert_A1` (aerodynamics): circular_arc_two_percent
+- `naca4_glauert_A2` (aerodynamics): circular_arc
+- `naca4_quarter_chord_moment` (aerodynamics): circular_arc_two_percent
 
 ## Structures
 

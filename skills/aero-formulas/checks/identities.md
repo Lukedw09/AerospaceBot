@@ -761,6 +761,140 @@ Then run `python check_formulas.py`.
     pi: pi
   expected: pi/2
 
+#### conical_shock
+
+### conical_ray_normal_speed
+
+<!-- family: conical_shock; symbols: u, theta; expr: partial(u, theta); numeric: no (unevaluated derivative) -->
+
+<!-- No scalar identity: the script is the unevaluated derivative of radial speed with respect to polar angle. -->
+
+### conical_vacuum_sound_speed_sq
+
+<!-- family: conical_shock; symbols: g, u, v; expr: ((g - 1)/2)*(1 - u**2 - v**2); numeric: yes -->
+
+- name: rest
+  inputs:
+    g: 7/5
+    u: 0
+    v: 0
+  expected: 1/5
+
+- name: mach_two_stream
+  inputs:
+    g: 7/5
+    u: 1/3**0.5
+    v: -1/3
+  expected: 1/9
+
+### taylor_maccoll_radial_acceleration
+
+<!-- family: conical_shock; symbols: g, u, v, theta; expr: ((g - 1)/2*(1 - u**2 - v**2))*(u + v*cot(theta))/(v**2 - (g - 1)/2*(1 - u**2 - v**2)) - u; numeric: yes -->
+
+- name: cone_surface
+  inputs:
+    g: 7/5
+    u: 1/2
+    v: 0
+    theta: pi/4
+  expected: -1
+
+### conical_shock_wave_tangent
+
+<!-- family: conical_shock; symbols: g, u, v; expr: ((g - 1)/(g + 1))*(u**2 - 1)/(u*v); numeric: yes -->
+
+- name: mach_wave
+  inputs:
+    g: 7/5
+    u: 1/3**0.5
+    v: -1/3
+  expected: 1/3**0.5
+
+### conical_freestream_mach_sq
+
+<!-- family: conical_shock; symbols: g, u, theta; expr: (2/(g - 1))*u**2/(cos(theta)**2 - u**2); numeric: yes -->
+
+- name: mach_two_wave
+  inputs:
+    g: 7/5
+    u: 1/3**0.5
+    theta: pi/6
+  expected: 4
+
+### conical_resultant_mach
+
+<!-- family: conical_shock; symbols: u, v, g; expr: (2*(u**2 + v**2)/((g - 1)*(1 - u**2 - v**2)))**0.5; numeric: yes -->
+
+- name: mach_two_stream
+  inputs:
+    u: 1/3**0.5
+    v: -1/3
+    g: 7/5
+  expected: 2
+
+### conical_critical_mach
+
+<!-- family: conical_shock; symbols: g, u, v; expr: ((g + 1)/(g - 1)*(u**2 + v**2))**0.5; numeric: yes -->
+
+- name: mach_two_stream
+  inputs:
+    g: 7/5
+    u: 1/3**0.5
+    v: -1/3
+  expected: 2*(6**0.5)/3
+
+### limiting_speed_ratio
+
+<!-- family: conical_shock; symbols: g, M; expr: (((g - 1)/2)*M**2/(1 + ((g - 1)/2)*M**2))**0.5; numeric: yes -->
+
+- name: sonic
+  inputs:
+    g: 7/5
+    M: 1
+  expected: (1/6)**0.5
+
+- name: mach_two
+  inputs:
+    g: 7/5
+    M: 2
+  expected: 2/3
+
+### conical_radial_speed
+
+<!-- family: conical_shock; symbols: Vx, theta, Vr; expr: Vx*cos(theta) + Vr*sin(theta); numeric: yes -->
+
+- name: axis
+  inputs:
+    Vx: 3/5
+    theta: 0
+    Vr: 4/5
+  expected: 3/5
+
+- name: ninety_degrees
+  inputs:
+    Vx: 3/5
+    theta: pi/2
+    Vr: 4/5
+  expected: 4/5
+
+### conical_normal_speed
+
+<!-- family: conical_shock; symbols: Vx, theta, Vr; expr: -Vx*sin(theta) + Vr*cos(theta); numeric: yes -->
+
+- name: axis
+  inputs:
+    Vx: 3/5
+    theta: 0
+    Vr: 4/5
+  expected: 4/5
+
+- name: ninety_degrees
+  inputs:
+    Vx: 3/5
+    theta: pi/2
+    Vr: 4/5
+  expected: -3/5
+
 #### imperfect
 
 ### gamma_imperfect
@@ -1093,6 +1227,91 @@ Then run `python check_formulas.py`.
     kB: 2
     T: 50
   expected: 200
+
+### saturation_vapor_pressure_water
+
+<!-- family: atmosphere; symbols: T; expr: 100*10**(-4.9283*log(T - 0.15)/log(10) - 2937.4/(T - 0.15) + 23.5518); numeric: yes -->
+
+- name: ice_point
+  inputs:
+    T: 273.15
+  expected: 610.8754428597153
+
+### saturation_vapor_pressure_ice
+
+<!-- family: atmosphere; symbols: T; expr: 100*10**(-0.32286*log(T - 0.15)/log(10) - 2705.21/(T - 0.15) + 11.4816); numeric: yes -->
+
+- name: ice_point
+  inputs:
+    T: 273.15
+  expected: 610.7540964879718
+
+### relative_humidity
+
+<!-- family: atmosphere; symbols: e, es; expr: e/es; numeric: yes -->
+
+- name: quarter
+  inputs:
+    e: 1
+    es: 4
+  expected: 1/4
+
+### vapor_partial_pressure
+
+<!-- family: atmosphere; symbols: phi, es; expr: phi*es; numeric: yes -->
+
+- name: quarter
+  inputs:
+    phi: 1/4
+    es: 4
+  expected: 1
+
+### absolute_humidity
+
+<!-- family: atmosphere; symbols: e, Rv, T; expr: e/(Rv*T); numeric: yes -->
+
+- name: unit_vapor
+  inputs:
+    e: 20
+    Rv: 4
+    T: 5
+  expected: 1
+
+### water_molar_mass
+
+<!-- family: atmosphere; symbols: MH2, MO2; expr: MH2 + MO2/2; numeric: yes -->
+
+- name: standard_1976_table
+  inputs:
+    MH2: 2.01594
+    MO2: 31.9988
+  expected: 18.01534
+
+### moist_mean_molar_mass
+
+<!-- family: atmosphere; symbols: p, e, M0, Mw; expr: ((p - e)*M0 + e*Mw)/p; numeric: yes -->
+
+- name: one_quarter_vapor
+  inputs:
+    p: 4
+    e: 1
+    M0: 32
+    Mw: 16
+  expected: 28
+
+### moist_density
+
+<!-- family: atmosphere; symbols: p, e, M0, Rstar, T, Mw; expr: (p - e)*M0/(Rstar*T) + e*Mw/(Rstar*T); numeric: yes -->
+
+- name: two_partial_pressures
+  inputs:
+    p: 4
+    e: 1
+    M0: 20
+    Mw: 10
+    Rstar: 2
+    T: 5
+  expected: 7
 
 ### pressure_scale_height
 
@@ -1582,6 +1801,22 @@ Then run `python check_formulas.py`.
     r: 2
     a: 4
   expected: 12**0.5
+
+### plane_change_impulse
+
+<!-- family: flight; symbols: v, di; expr: 2*v*sin(di/2); numeric: yes -->
+
+- name: half_turn
+  inputs:
+    v: 1
+    di: pi
+  expected: 2
+
+- name: sixty_deg
+  inputs:
+    v: 1
+    di: pi/3
+  expected: 1
 
 ### specific_orbital_energy
 
@@ -2388,6 +2623,214 @@ Then run `python check_formulas.py`.
     u: 0
   expected: 0
 
+### mean_anomaly_from_epoch
+
+<!-- family: flight; symbols: M0, n, t, t0; expr: M0 + n*(t - t0); numeric: yes -->
+
+- name: two_seconds
+  inputs:
+    M0: 0
+    n: 1
+    t: 2
+    t0: 0
+  expected: 2
+
+- name: shifted_epoch
+  inputs:
+    M0: 1
+    n: 2
+    t: 3
+    t0: 1
+  expected: 5
+
+### greenwich_angle
+
+<!-- family: flight; symbols: theta0, omega_e, t, t0; expr: theta0 + omega_e*(t - t0); numeric: yes -->
+
+- name: quarter_turn
+  inputs:
+    theta0: 0
+    omega_e: 1
+    t: pi/2
+    t0: 0
+  expected: pi/2
+
+- name: from_epoch
+  inputs:
+    theta0: 1
+    omega_e: 2
+    t: 3
+    t0: 1
+  expected: 5
+
+### earth_fixed_x
+
+<!-- family: flight; symbols: x, y, theta; expr: x*cos(theta) + y*sin(theta); numeric: yes -->
+
+- name: no_rotation
+  inputs:
+    x: 3
+    y: 4
+    theta: 0
+  expected: 3
+
+- name: quarter_turn
+  inputs:
+    x: 0
+    y: 2
+    theta: pi/2
+  expected: 2
+
+### earth_fixed_y
+
+<!-- family: flight; symbols: x, y, theta; expr: -x*sin(theta) + y*cos(theta); numeric: yes -->
+
+- name: no_rotation
+  inputs:
+    x: 3
+    y: 4
+    theta: 0
+  expected: 4
+
+- name: quarter_turn
+  inputs:
+    x: 2
+    y: 0
+    theta: pi/2
+  expected: -2
+
+### earth_fixed_z
+
+<!-- family: flight; symbols: z; expr: z; numeric: yes -->
+
+- name: polar_component
+  inputs:
+    z: 5
+  expected: 5
+
+### geocentric_latitude_sine
+
+<!-- family: flight; symbols: z, r; expr: z/r; numeric: yes -->
+
+- name: forty_five
+  inputs:
+    z: 1
+    r: 2**0.5
+  expected: 1/2**0.5
+
+### geocentric_latitude_cosine
+
+<!-- family: flight; symbols: rho, r; expr: rho/r; numeric: yes -->
+
+- name: forty_five
+  inputs:
+    rho: 1
+    r: 2**0.5
+  expected: 1/2**0.5
+
+### geocentric_latitude_tangent
+
+<!-- family: flight; symbols: z, rho; expr: z/rho; numeric: yes -->
+
+- name: forty_five
+  inputs:
+    z: 3
+    rho: 3
+  expected: 1
+
+### longitude_sine
+
+<!-- family: flight; symbols: y, rho; expr: y/rho; numeric: yes -->
+
+- name: on_plus_y
+  inputs:
+    y: 4
+    rho: 4
+  expected: 1
+
+### longitude_cosine
+
+<!-- family: flight; symbols: x, rho; expr: x/rho; numeric: yes -->
+
+- name: on_plus_y
+  inputs:
+    x: 0
+    rho: 4
+  expected: 0
+
+### flattening_from_radii
+
+<!-- family: flight; symbols: ae, b; expr: (ae - b)/ae; numeric: yes -->
+
+- name: half
+  inputs:
+    ae: 2
+    b: 1
+  expected: 1/2
+
+### polar_radius_from_flattening
+
+<!-- family: flight; symbols: ae, f; expr: ae*(1 - f); numeric: yes -->
+
+- name: half
+  inputs:
+    ae: 2
+    f: 1/2
+  expected: 1
+
+### ellipsoid_eccentricity_squared
+
+<!-- family: flight; symbols: f; expr: f*(2 - f); numeric: yes -->
+
+- name: half
+  inputs:
+    f: 1/2
+  expected: 3/4
+
+### geodetic_latitude_tangent_surface
+
+<!-- family: flight; symbols: phic, f; expr: tan(phic)/(1 - f)**2; numeric: yes -->
+
+- name: sphere
+  inputs:
+    phic: pi/4
+    f: 0
+  expected: 1
+
+- name: flatten_half
+  inputs:
+    phic: pi/4
+    f: 1/2
+  expected: 4
+
+### geodetic_latitude_from_geocentric
+
+<!-- family: flight; symbols: phic, f, ae, r; expr: phic + f*(ae/r)*sin(2*phic) + f**2*((ae/r)**2 - ae/(4*r))*sin(4*phic); numeric: yes -->
+
+- name: sphere
+  inputs:
+    phic: pi/6
+    f: 0
+    ae: 1
+    r: 1
+  expected: pi/6
+
+- name: equator
+  inputs:
+    phic: 0
+    f: 1/100
+    ae: 1
+    r: 1
+  expected: 0
+
+- name: forty_five_surface
+  inputs:
+    phic: pi/4
+    f: 1/100
+    ae: 1
+    r: 1
+  expected: pi/4 + 1/100
+
 #### rocket
 
 ### mixture_ratio
@@ -2507,6 +2950,132 @@ Then run `python check_formulas.py`.
 <!-- family: rocket; symbols: p1, p, Tb; expr: (1/p1)*partial(p, Tb); numeric: no (unevaluated derivative) -->
 
 <!-- No scalar identity: the script is an unevaluated derivative of chamber pressure with respect to propellant temperature. -->
+
+### circular_port_burning_area
+
+<!-- family: rocket; symbols: r, L, pi; expr: 2*pi*r*L; numeric: yes -->
+
+- name: unit_cylinder
+  inputs:
+    r: 1
+    L: 1
+    pi: pi
+  expected: 2*pi
+
+### circular_port_radius
+
+<!-- family: rocket; symbols: Ab, L, pi; expr: Ab/(2*pi*L); numeric: yes -->
+
+- name: unit_cylinder
+  inputs:
+    Ab: 2*pi
+    L: 1
+    pi: pi
+  expected: 1
+
+### circular_grain_length
+
+<!-- family: rocket; symbols: Ab, r, pi; expr: Ab/(2*pi*r); numeric: yes -->
+
+- name: unit_cylinder
+  inputs:
+    Ab: 2*pi
+    r: 1
+    pi: pi
+  expected: 1
+
+### initial_web
+
+<!-- family: rocket; symbols: Ro, Rp; expr: Ro - Rp; numeric: yes -->
+
+- name: two_centimetres
+  inputs:
+    Ro: 1/20
+    Rp: 3/100
+  expected: 1/50
+
+### remaining_web
+
+<!-- family: rocket; symbols: Ro, r; expr: Ro - r; numeric: yes -->
+
+- name: one_centimetre
+  inputs:
+    Ro: 1/20
+    r: 2/50
+  expected: 1/100
+
+### circular_port_from_remaining_web
+
+<!-- family: rocket; symbols: Ro, wrem; expr: Ro - wrem; numeric: yes -->
+
+- name: one_centimetre
+  inputs:
+    Ro: 1/20
+    wrem: 1/100
+  expected: 2/50
+
+### circular_grain_volume
+
+<!-- family: rocket; symbols: Ro, Rp, L, pi; expr: pi*(Ro**2 - Rp**2)*L; numeric: yes -->
+
+- name: unit_tube
+  inputs:
+    Ro: 2
+    Rp: 1
+    L: 1
+    pi: pi
+  expected: 3*pi
+
+### circular_remaining_volume
+
+<!-- family: rocket; symbols: Ro, r, L, pi; expr: pi*(Ro**2 - r**2)*L; numeric: yes -->
+
+- name: half_web
+  inputs:
+    Ro: 2
+    r: 2**0.5
+    L: 1
+    pi: pi
+  expected: 2*pi
+
+### sliver_volume_fraction
+
+<!-- family: rocket; symbols: Vsliver, V0; expr: Vsliver/V0; numeric: yes -->
+
+- name: five_percent
+  inputs:
+    Vsliver: 1
+    V0: 20
+  expected: 1/20
+
+### sliver_port_radius
+
+<!-- family: rocket; symbols: Ro, s, Rp; expr: (Ro**2 - s*(Ro**2 - Rp**2))**0.5; numeric: yes -->
+
+- name: no_sliver
+  inputs:
+    Ro: 5
+    s: 0
+    Rp: 3
+  expected: 5
+
+- name: all_sliver
+  inputs:
+    Ro: 5
+    s: 1
+    Rp: 3
+  expected: 3
+
+### remaining_web_time
+
+<!-- family: rocket; symbols: wrem, w0, rburn; expr: integral(wrem, w0, 1/rburn); numeric: yes (definite integral) -->
+
+- name: constant_rate
+  inputs:
+    wrem: 1/100
+    w0: 1/20
+    rburn: 1/50
+  expected: 2
 
 ## Aerodynamics
 
@@ -2640,6 +3209,90 @@ Then run `python check_formulas.py`.
     p: 100000
     p_inf: 100000
     q_inf: 5000
+  expected: 0
+
+### pressure_coefficient_from_mach
+
+<!-- family: aerodynamics; symbols: p, p_inf, g, M; expr: 2*(p/p_inf - 1)/(g*M**2); numeric: yes -->
+
+- name: freestream
+  inputs:
+    p: 100000
+    p_inf: 100000
+    g: 7/5
+    M: 2
+  expected: 0
+
+- name: unit_dynamic_pressure
+  inputs:
+    p: 380000
+    p_inf: 100000
+    g: 7/5
+    M: 2
+  expected: 1
+
+### prandtl_glauert_factor
+
+<!-- family: aerodynamics; symbols: M; expr: (1 - M**2)**0.5; numeric: yes -->
+
+- name: incompressible
+  inputs:
+    M: 0
+  expected: 1
+
+- name: three_fifths
+  inputs:
+    M: 3/5
+  expected: 4/5
+
+### prandtl_glauert_coefficient
+
+<!-- family: aerodynamics; symbols: C0, M; expr: C0/(1 - M**2)**0.5; numeric: yes -->
+
+- name: incompressible
+  inputs:
+    C0: -2/5
+    M: 0
+  expected: -2/5
+
+- name: three_fifths
+  inputs:
+    C0: -2/5
+    M: 3/5
+  expected: -1/2
+
+### critical_pressure_coefficient
+
+<!-- family: aerodynamics; symbols: g, M; expr: 2*(((2/(g + 1))*(1 + ((g - 1)/2)*M**2))**(g/(g - 1)) - 1)/(g*M**2); numeric: yes -->
+
+- name: sonic_freestream
+  inputs:
+    g: 7/5
+    M: 1
+  expected: 0
+
+- name: air_half
+  inputs:
+    g: 7/5
+    M: 1/2
+  expected: (40/7)*((7/8)**(7/2) - 1)
+
+### critical_mach
+
+<!-- family: aerodynamics; symbols: C0, M, g; expr: C0/(1 - M**2)**0.5 - 2*(((2/(g + 1))*(1 + ((g - 1)/2)*M**2))**(g/(g - 1)) - 1)/(g*M**2); numeric: yes -->
+
+- name: air_half
+  inputs:
+    C0: (40/7)*((7/8)**(7/2) - 1)*(3/4)**0.5
+    M: 1/2
+    g: 7/5
+  expected: 0
+
+- name: air_four_fifths
+  inputs:
+    C0: (125/56)*((47/50)**(7/2) - 1)*(3/5)
+    M: 4/5
+    g: 7/5
   expected: 0
 
 ### skin_friction_coefficient
@@ -3096,6 +3749,214 @@ Then run `python check_formulas.py`.
     W: 8000
   expected: 3
 
+### level_turn_load_factor
+
+<!-- family: aerodynamics; symbols: phi; expr: 1/cos(phi); numeric: yes -->
+
+- name: sixty_degrees
+  inputs:
+    phi: pi/3
+  expected: 2
+
+- name: forty_five_degrees
+  inputs:
+    phi: pi/4
+  expected: 2**0.5
+
+### level_turn_radius
+
+<!-- family: aerodynamics; symbols: V, g, phi; expr: V**2/(g*tan(phi)); numeric: yes -->
+
+- name: forty_five_degree_bank
+  inputs:
+    V: 10
+    g: 10
+    phi: pi/4
+  expected: 10
+
+- name: sixty_degrees
+  inputs:
+    V: 30
+    g: 10
+    phi: pi/3
+  expected: 90/(3**0.5)
+
+### level_turn_rate
+
+<!-- family: aerodynamics; symbols: g, phi, V; expr: g*tan(phi)/V; numeric: yes -->
+
+- name: forty_five_degree_bank
+  inputs:
+    g: 10
+    phi: pi/4
+    V: 10
+  expected: 1
+
+- name: sixty_degrees
+  inputs:
+    g: 10
+    phi: pi/3
+    V: 30
+  expected: (3**0.5)/3
+
+### useful_thrust
+
+<!-- family: aerodynamics; symbols: P, V; expr: P/V; numeric: yes -->
+
+- name: unit_speed
+  inputs:
+    P: 20
+    V: 10
+  expected: 2
+
+### propeller_disk_area
+
+<!-- family: aerodynamics; symbols: pi, D; expr: pi*D**2/4; numeric: yes -->
+
+- name: diameter_two
+  inputs:
+    pi: pi
+    D: 2
+  expected: pi
+
+### actuator_disk_speed
+
+<!-- family: aerodynamics; symbols: Ve, V0; expr: 0.5*(Ve + V0); numeric: yes -->
+
+- name: wake_three
+  inputs:
+    Ve: 3
+    V0: 1
+  expected: 2
+
+### propeller_induced_velocity
+
+<!-- family: aerodynamics; symbols: Vp, V0; expr: Vp - V0; numeric: yes -->
+
+- name: unit_induced
+  inputs:
+    Vp: 2
+    V0: 1
+  expected: 1
+
+### propeller_far_wake_speed
+
+<!-- family: aerodynamics; symbols: V0, vi; expr: V0 + 2*vi; numeric: yes -->
+
+- name: unit_induced
+  inputs:
+    V0: 1
+    vi: 1
+  expected: 3
+
+### ideal_propeller_thrust
+
+<!-- family: aerodynamics; symbols: rho, Vp, A, Ve, V0; expr: rho*Vp*A*(Ve - V0); numeric: yes -->
+
+- name: unit_disk
+  inputs:
+    rho: 2
+    Vp: 2
+    A: 1
+    Ve: 3
+    V0: 1
+  expected: 8
+
+### ideal_propeller_thrust_bernoulli
+
+<!-- family: aerodynamics; symbols: rho, A, Ve, V0; expr: 0.5*rho*A*(Ve**2 - V0**2); numeric: yes -->
+
+- name: unit_disk
+  inputs:
+    rho: 2
+    A: 1
+    Ve: 3
+    V0: 1
+  expected: 8
+
+### ideal_propeller_thrust_from_induced
+
+<!-- family: aerodynamics; symbols: rho, A, vi, V0; expr: 2*rho*A*vi*(V0 + vi); numeric: yes -->
+
+- name: unit_disk
+  inputs:
+    rho: 2
+    A: 1
+    vi: 1
+    V0: 1
+  expected: 8
+
+### propeller_induced_velocity_from_thrust
+
+<!-- family: aerodynamics; symbols: V0, T, rho, A; expr: 0.5*(-V0 + (V0**2 + 2*T/(rho*A))**0.5); numeric: yes -->
+
+- name: unit_disk
+  inputs:
+    V0: 1
+    T: 8
+    rho: 2
+    A: 1
+  expected: 1
+
+### ideal_actuator_power
+
+<!-- family: aerodynamics; symbols: T, Vp; expr: T*Vp; numeric: yes -->
+
+- name: unit_disk
+  inputs:
+    T: 8
+    Vp: 2
+  expected: 16
+
+### ideal_actuator_power_from_induced
+
+<!-- family: aerodynamics; symbols: rho, A, vi, V0; expr: 2*rho*A*vi*(V0 + vi)**2; numeric: yes -->
+
+- name: unit_disk
+  inputs:
+    rho: 2
+    A: 1
+    vi: 1
+    V0: 1
+  expected: 16
+
+### ideal_propulsive_efficiency
+
+<!-- family: aerodynamics; symbols: T, V0, P; expr: T*V0/P; numeric: yes -->
+
+- name: half
+  inputs:
+    T: 8
+    V0: 1
+    P: 16
+  expected: 1/2
+
+### ideal_propulsive_efficiency_from_speeds
+
+<!-- family: aerodynamics; symbols: V0, Vp; expr: V0/Vp; numeric: yes -->
+
+- name: half
+  inputs:
+    V0: 1
+    Vp: 2
+  expected: 1/2
+
+### sustained_turn_load_factor
+
+<!-- family: aerodynamics; symbols: q, S, T, CD0, pi, AR, e, W; expr: ((q*S*(T - q*S*CD0)*pi*AR*e)/(W**2))**0.5; numeric: yes -->
+
+- name: two_g
+  inputs:
+    q: 4
+    S: 1
+    T: 2
+    CD0: 1/4
+    pi: pi
+    AR: 1/pi
+    e: 1
+    W: 1
+  expected: 2
+
 ### breguet_range_jet
 
 <!-- family: aerodynamics; symbols: V, ct, LD, Wi, Wf; expr: (V/ct)*LD*log(Wi/Wf); numeric: yes -->
@@ -3205,6 +4066,200 @@ Then run `python check_formulas.py`.
   inputs:
     xc: 1/20
   expected: 5
+
+### naca4_thickness
+
+<!-- family: aerodynamics; symbols: t, xi; expr: (t/0.2)*(0.2969*xi**0.5 - 0.1260*xi - 0.3516*xi**2 + 0.2843*xi**3 - 0.1015*xi**4); numeric: yes -->
+
+- name: trailing_edge_twenty_percent
+  inputs:
+    t: 1/5
+    xi: 1
+  expected: 0.0021
+
+- name: leading_edge
+  inputs:
+    t: 12/100
+    xi: 0
+  expected: 0
+
+### naca4_camber_forward
+
+<!-- family: aerodynamics; symbols: m, p, xi; expr: (m/p**2)*(2*p*xi - xi**2); numeric: yes -->
+
+- name: at_maximum
+  inputs:
+    m: 2/100
+    p: 4/10
+    xi: 4/10
+  expected: 2/100
+
+### naca4_camber_aft
+
+<!-- family: aerodynamics; symbols: m, p, xi; expr: (m/(1-p)**2)*((1 - 2*p) + 2*p*xi - xi**2); numeric: yes -->
+
+- name: at_maximum
+  inputs:
+    m: 2/100
+    p: 4/10
+    xi: 4/10
+  expected: 2/100
+
+- name: trailing_edge
+  inputs:
+    m: 4/100
+    p: 4/10
+    xi: 1
+  expected: 0
+
+### naca4_camber_slope_forward
+
+<!-- family: aerodynamics; symbols: m, p, xi; expr: (2*m/p**2)*(p - xi); numeric: yes -->
+
+- name: at_maximum
+  inputs:
+    m: 2/100
+    p: 4/10
+    xi: 4/10
+  expected: 0
+
+### naca4_camber_slope_aft
+
+<!-- family: aerodynamics; symbols: m, p, xi; expr: (2*m/(1-p)**2)*(p - xi); numeric: yes -->
+
+- name: at_maximum
+  inputs:
+    m: 2/100
+    p: 4/10
+    xi: 4/10
+  expected: 0
+
+### naca4_upper_x
+
+<!-- family: aerodynamics; symbols: xi, yt, theta; expr: xi - yt*sin(theta); numeric: yes -->
+
+- name: flat_mean
+  inputs:
+    xi: 3/10
+    yt: 1/10
+    theta: 0
+  expected: 3/10
+
+### naca4_upper_y
+
+<!-- family: aerodynamics; symbols: yc, yt, theta; expr: yc + yt*cos(theta); numeric: yes -->
+
+- name: flat_mean
+  inputs:
+    yc: 2/100
+    yt: 1/10
+    theta: 0
+  expected: 12/100
+
+### naca4_lower_x
+
+<!-- family: aerodynamics; symbols: xi, yt, theta; expr: xi + yt*sin(theta); numeric: yes -->
+
+- name: flat_mean
+  inputs:
+    xi: 3/10
+    yt: 1/10
+    theta: 0
+  expected: 3/10
+
+### naca4_lower_y
+
+<!-- family: aerodynamics; symbols: yc, yt, theta; expr: yc - yt*cos(theta); numeric: yes -->
+
+- name: flat_mean
+  inputs:
+    yc: 2/100
+    yt: 1/10
+    theta: 0
+  expected: -8/100
+
+### naca4_leading_edge_radius
+
+<!-- family: aerodynamics; symbols: t, c; expr: 0.5*(0.2969*t/0.2)**2*c; numeric: yes -->
+
+- name: twenty_percent_unit_chord
+  inputs:
+    t: 1/5
+    c: 1
+  expected: 0.5*0.2969**2
+
+### naca4_glauert_station
+
+<!-- family: aerodynamics; symbols: p; expr: 2*atan((p/(1-p))**0.5); numeric: yes -->
+
+- name: mid_chord
+  inputs:
+    p: 1/2
+  expected: pi/2
+
+### naca4_zero_lift_angle
+
+<!-- family: aerodynamics; symbols: m, p, theta_p, pi; expr: (1/pi)*((m/p**2)*((2*p-1-0.5)*theta_p + 2*(p*(1-p))**0.5*(1-(2*p-1)) + (2*p-1)*(p*(1-p))**0.5) + (m/(1-p)**2)*((2*p-1-0.5)*pi - ((2*p-1-0.5)*theta_p + 2*(p*(1-p))**0.5*(1-(2*p-1)) + (2*p-1)*(p*(1-p))**0.5))); numeric: yes -->
+
+- name: circular_arc_two_percent
+  inputs:
+    m: 1/50
+    p: 1/2
+    theta_p: pi/2
+    pi: pi
+  expected: -1/25
+
+### thin_airfoil_section_lift
+
+<!-- family: aerodynamics; symbols: pi, alpha, alpha_L0; expr: 2*pi*(alpha - alpha_L0); numeric: yes -->
+
+- name: at_zero_lift
+  inputs:
+    pi: pi
+    alpha: -1/25
+    alpha_L0: -1/25
+  expected: 0
+
+- name: symmetric_unit_angle
+  inputs:
+    pi: pi
+    alpha: 1
+    alpha_L0: 0
+  expected: 2*pi
+
+### naca4_glauert_A1
+
+<!-- family: aerodynamics; symbols: m, p, theta_p, pi; expr: (2/pi)*((m/p**2)*((2*p-1)*(p*(1-p))**0.5 + theta_p/2) + (m/(1-p)**2)*(pi/2 - ((2*p-1)*(p*(1-p))**0.5 + theta_p/2))); numeric: yes -->
+
+- name: circular_arc_two_percent
+  inputs:
+    m: 1/50
+    p: 1/2
+    theta_p: pi/2
+    pi: pi
+  expected: 4/50
+
+### naca4_glauert_A2
+
+<!-- family: aerodynamics; symbols: m, p, pi; expr: (2/pi)*(-2*(2*p-1)**2*(p*(1-p))**0.5 + 2*(p*(1-p))**0.5 - (16/3)*(p*(1-p))**1.5)*(m/p**2 - m/(1-p)**2); numeric: yes -->
+
+- name: circular_arc
+  inputs:
+    m: 1/50
+    p: 1/2
+    pi: pi
+  expected: 0
+
+### naca4_quarter_chord_moment
+
+<!-- family: aerodynamics; symbols: pi, A2, A1; expr: (pi/4)*(A2 - A1); numeric: yes -->
+
+- name: circular_arc_two_percent
+  inputs:
+    pi: pi
+    A2: 0
+    A1: 4/50
+  expected: -pi/50
 
 ## Structures
 
