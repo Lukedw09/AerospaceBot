@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "aerospace": {
+      "command": "python",
+      "args": ["-m", "app.server"],
+      "env": {
+        "AUTH_DISABLED": "1"
+      }
+    }
+  }
+}

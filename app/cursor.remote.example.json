@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "aerospace": {
+      "url": "https://mcp.astraeus.de-wet.com/mcp",
+      "auth": {
+        "CLIENT_ID": "<cognito-app-client-id>",
+        "scopes": ["openid", "email", "profile"]
+      }
+    }
+  }
+}

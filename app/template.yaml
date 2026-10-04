@@ -1,0 +1,368 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: Aerospace plugin. One Lambda function, Cognito, picture bucket, usage table, and account site.
+
+Parameters:
+  GoogleClientId:
+    Type: String
+  GoogleClientSecret:
+    Type: String
+    NoEcho: true
+  MetaAppId:
+    Type: String
+  MetaAppSecret:
+    Type: String
+    NoEcho: true
+  SiteDomain:
+    Type: String
+    Default: astraeus.de-wet.com
+    Description: Account site hostname. The plugin is served at mcp.<this name>.
+  HostedZoneId:
+    Type: AWS::Route53::HostedZone::Id
+    Description: Existing public Route 53 zone that already contains SiteDomain.
+
+Rules:
+  CertificateRegion:
+    Assertions:
+      - Assert: !Equals [!Ref "AWS::Region", "us-east-1"]
+        AssertDescription: Deploy this stack in us-east-1 so CloudFront can use the certificate.
+
+Resources:
+  UsageTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: pk
+          AttributeType: S
+        - AttributeName: sk
+          AttributeType: S
+      KeySchema:
+        - AttributeName: pk
+          KeyType: HASH
+        - AttributeName: sk
+          KeyType: RANGE
+
+  PictureBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+
+  SiteBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+
+  UserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      UserPoolName: !Sub "${AWS::StackName}-users"
+      Schema:
+        - Name: email
+          AttributeDataType: String
+          Mutable: true
+          Required: false
+
+  GoogleProvider:
+    Type: AWS::Cognito::UserPoolIdentityProvider
+    Properties:
+      ProviderName: Google
+      ProviderType: Google
+      UserPoolId: !Ref UserPool
+      AttributeMapping:
+        email: email
+      ProviderDetails:
+        client_id: !Ref GoogleClientId
+        client_secret: !Ref GoogleClientSecret
+        authorize_scopes: openid email profile
+
+  MetaProvider:
+    Type: AWS::Cognito::UserPoolIdentityProvider
+    Properties:
+      ProviderName: Facebook
+      ProviderType: Facebook
+      UserPoolId: !Ref UserPool
+      AttributeMapping:
+        email: email
+      ProviderDetails:
+        client_id: !Ref MetaAppId
+        client_secret: !Ref MetaAppSecret
+        authorize_scopes: email public_profile
+
+  UserPoolDomain:
+    Type: AWS::Cognito::UserPoolDomain
+    Properties:
+      Domain: !Sub "aerospace-${AWS::AccountId}"
+      UserPoolId: !Ref UserPool
+
+  UserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    DependsOn:
+      - GoogleProvider
+      - MetaProvider
+    Properties:
+      UserPoolId: !Ref UserPool
+      GenerateSecret: false
+      AllowedOAuthFlowsUserPoolClient: true
+      AllowedOAuthFlows:
+        - code
+      AllowedOAuthScopes:
+        - openid
+        - email
+        - profile
+      SupportedIdentityProviders:
+        - Google
+        - Facebook
+      CallbackURLs:
+        - !Sub "https://${SiteDomain}/"
+        - https://www.cursor.com/agents/mcp/oauth/callback
+        - http://localhost:8787/callback
+      LogoutURLs:
+        - !Sub "https://${SiteDomain}/"
+      AccessTokenValidity: 15
+      IdTokenValidity: 15
+      TokenValidityUnits:
+        AccessToken: minutes
+        IdToken: minutes
+      PreventUserExistenceErrors: ENABLED
+
+  PluginFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      PackageType: Image
+      MemorySize: 1024
+      Timeout: 90
+      FunctionUrlConfig:
+        AuthType: NONE
+      Environment:
+        Variables:
+          USAGE_TABLE: !Ref UsageTable
+          PICTURE_BUCKET: !Ref PictureBucket
+          COGNITO_USER_POOL_ID: !Ref UserPool
+          COGNITO_CLIENT_ID: !Ref UserPoolClient
+          COGNITO_REGION: !Ref AWS::Region
+          COGNITO_DOMAIN: !Sub "https://${UserPoolDomain.Domain}.auth.${AWS::Region}.amazoncognito.com"
+          PUBLIC_BASE_URL: !Sub "https://mcp.${SiteDomain}"
+          ACCOUNT_SITE_URL: !Sub "https://${SiteDomain}"
+          DAILY_TOOL_CAP: "20"
+          TOOL_TIMEOUT_SEC: "60"
+          RESULT_LINK_HOURS: "24"
+          USAGE_TIMEZONE: America/New_York
+          AEROSPACE_HTTP: "1"
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref UsageTable
+        - S3CrudPolicy:
+            BucketName: !Ref PictureBucket
+        - Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Action:
+                - cognito-idp:AdminGetUser
+                - cognito-idp:AdminLinkProviderForUser
+                - cognito-idp:AdminDisableProviderForUser
+                - cognito-idp:AdminUserGlobalSignOut
+                - cognito-idp:AdminDeleteUser
+              Resource: !GetAtt UserPool.Arn
+    Metadata:
+      Dockerfile: app/Dockerfile
+      DockerContext: ..
+      DockerTag: aerospace-plugin
+
+  ForwardHost:
+    Type: AWS::CloudFront::Function
+    Properties:
+      Name: !Sub "${AWS::StackName}-forward-host"
+      AutoPublish: true
+      FunctionConfig:
+        Comment: Pass the site host through to the function
+        Runtime: cloudfront-js-2.0
+      FunctionCode: |
+        function handler(event) {
+          var request = event.request;
+          var host = request.headers.host && request.headers.host.value;
+          if (host) {
+            request.headers["x-forwarded-host"] = {value: host};
+            request.headers["x-forwarded-proto"] = {value: "https"};
+          }
+          return request;
+        }
+
+  SiteOAC:
+    Type: AWS::CloudFront::OriginAccessControl
+    Properties:
+      OriginAccessControlConfig:
+        Name: !Sub "${AWS::StackName}-site"
+        OriginAccessControlOriginType: s3
+        SigningBehavior: always
+        SigningProtocol: sigv4
+
+  Certificate:
+    Type: AWS::CertificateManager::Certificate
+    Properties:
+      DomainName: !Ref SiteDomain
+      SubjectAlternativeNames:
+        - !Sub "mcp.${SiteDomain}"
+      ValidationMethod: DNS
+      DomainValidationOptions:
+        - DomainName: !Ref SiteDomain
+          HostedZoneId: !Ref HostedZoneId
+        - DomainName: !Sub "mcp.${SiteDomain}"
+          HostedZoneId: !Ref HostedZoneId
+
+  AccountDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Enabled: true
+        IPV6Enabled: true
+        Aliases:
+          - !Ref SiteDomain
+        ViewerCertificate:
+          AcmCertificateArn: !Ref Certificate
+          SslSupportMethod: sni-only
+          MinimumProtocolVersion: TLSv1.2_2021
+        DefaultRootObject: index.html
+        Origins:
+          - Id: site
+            DomainName: !GetAtt SiteBucket.RegionalDomainName
+            OriginAccessControlId: !GetAtt SiteOAC.Id
+            S3OriginConfig:
+              OriginAccessIdentity: ""
+          - Id: api
+            DomainName: !Select
+              - 2
+              - !Split
+                - "/"
+                - !GetAtt PluginFunctionUrl.FunctionUrl
+            CustomOriginConfig:
+              HTTPSPort: 443
+              OriginProtocolPolicy: https-only
+        DefaultCacheBehavior:
+          TargetOriginId: site
+          ViewerProtocolPolicy: redirect-to-https
+          Compress: true
+          CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6
+        CacheBehaviors:
+          - PathPattern: /account*
+            TargetOriginId: api
+            ViewerProtocolPolicy: https-only
+            AllowedMethods: [GET, HEAD, OPTIONS, PUT, PATCH, POST, DELETE]
+            CachePolicyId: 4135ea2d-6df8-44a3-9df3-4b5a84be39ad
+            OriginRequestPolicyId: b689b0a8-53d0-40ab-baf2-68738e2966ac
+            FunctionAssociations:
+              - EventType: viewer-request
+                FunctionARN: !GetAtt ForwardHost.FunctionARN
+
+  McpDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Enabled: true
+        IPV6Enabled: true
+        Aliases:
+          - !Sub "mcp.${SiteDomain}"
+        ViewerCertificate:
+          AcmCertificateArn: !Ref Certificate
+          SslSupportMethod: sni-only
+          MinimumProtocolVersion: TLSv1.2_2021
+        Origins:
+          - Id: api
+            DomainName: !Select
+              - 2
+              - !Split
+                - "/"
+                - !GetAtt PluginFunctionUrl.FunctionUrl
+            CustomOriginConfig:
+              HTTPSPort: 443
+              OriginProtocolPolicy: https-only
+        DefaultCacheBehavior:
+          TargetOriginId: api
+          ViewerProtocolPolicy: https-only
+          AllowedMethods: [GET, HEAD, OPTIONS, PUT, PATCH, POST, DELETE]
+          CachePolicyId: 4135ea2d-6df8-44a3-9df3-4b5a84be39ad
+          OriginRequestPolicyId: b689b0a8-53d0-40ab-baf2-68738e2966ac
+          FunctionAssociations:
+            - EventType: viewer-request
+              FunctionARN: !GetAtt ForwardHost.FunctionARN
+
+  AccountDns:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      HostedZoneId: !Ref HostedZoneId
+      Name: !Sub "${SiteDomain}."
+      Type: A
+      AliasTarget:
+        DNSName: !GetAtt AccountDistribution.DomainName
+        HostedZoneId: Z2FDTNDATAQYW2
+        EvaluateTargetHealth: false
+
+  AccountDnsV6:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      HostedZoneId: !Ref HostedZoneId
+      Name: !Sub "${SiteDomain}."
+      Type: AAAA
+      AliasTarget:
+        DNSName: !GetAtt AccountDistribution.DomainName
+        HostedZoneId: Z2FDTNDATAQYW2
+        EvaluateTargetHealth: false
+
+  McpDns:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      HostedZoneId: !Ref HostedZoneId
+      Name: !Sub "mcp.${SiteDomain}."
+      Type: A
+      AliasTarget:
+        DNSName: !GetAtt McpDistribution.DomainName
+        HostedZoneId: Z2FDTNDATAQYW2
+        EvaluateTargetHealth: false
+
+  McpDnsV6:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      HostedZoneId: !Ref HostedZoneId
+      Name: !Sub "mcp.${SiteDomain}."
+      Type: AAAA
+      AliasTarget:
+        DNSName: !GetAtt McpDistribution.DomainName
+        HostedZoneId: Z2FDTNDATAQYW2
+        EvaluateTargetHealth: false
+
+  SiteBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref SiteBucket
+      PolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: cloudfront.amazonaws.com
+            Action: s3:GetObject
+            Resource: !Sub "${SiteBucket.Arn}/*"
+            Condition:
+              StringEquals:
+                AWS:SourceArn: !Sub "arn:aws:cloudfront::${AWS::AccountId}:distribution/${AccountDistribution}"
+
+Outputs:
+  AccountSite:
+    Value: !Sub "https://${SiteDomain}/"
+  McpUrl:
+    Value: !Sub "https://mcp.${SiteDomain}/mcp"
+  CognitoClientId:
+    Value: !Ref UserPoolClient
+  SiteBucketName:
+    Value: !Ref SiteBucket
+  AccountDistributionId:
+    Value: !Ref AccountDistribution
+  FunctionUrl:
+    Value: !GetAtt PluginFunctionUrl.FunctionUrl

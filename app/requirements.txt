@@ -1,0 +1,9 @@
+mcp>=2.0
+boto3
+PyJWT
+cryptography
+uvicorn
+starlette
+numpy
+matplotlib
+tzdata
