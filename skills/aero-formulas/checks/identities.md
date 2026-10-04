@@ -1886,6 +1886,508 @@ Then run `python check_formulas.py`.
     nu: 7/10
   expected: 1
 
+### parameter_from_angular_momentum
+
+<!-- family: flight; symbols: h, mu; expr: h**2/mu; numeric: yes -->
+
+- name: parameter_nine
+  inputs:
+    h: 6
+    mu: 4
+  expected: 9
+
+### semimajor_axis_from_energy
+
+<!-- family: flight; symbols: mu, eps; expr: -mu/(2*eps); numeric: yes -->
+
+- name: ellipse_axis_four
+  inputs:
+    mu: 8
+    eps: -1
+  expected: 4
+
+- name: hyperbola_axis
+  inputs:
+    mu: 8
+    eps: 1
+  expected: -4
+
+### semimajor_axis_from_state
+
+<!-- family: flight; symbols: mu, r, v; expr: mu*r/(2*mu - r*v**2); numeric: yes -->
+
+- name: circular_radius
+  inputs:
+    mu: 4
+    r: 4
+    v: 1
+  expected: 4
+
+- name: periapsis_of_ellipse
+  inputs:
+    mu: 4
+    r: 2
+    v: 3**0.5
+  expected: 4
+
+### eccentricity_from_energy
+
+<!-- family: flight; symbols: eps, h, mu; expr: (1 + 2*eps*h**2/mu**2)**0.5; numeric: yes -->
+
+- name: parabola
+  inputs:
+    eps: 0
+    h: 1
+    mu: 1
+  expected: 1
+
+- name: eccentricity_one_half
+  inputs:
+    eps: -3/8
+    h: 1
+    mu: 1
+  expected: 1/2
+
+### eccentricity_from_axis
+
+<!-- family: flight; symbols: mu, a, h; expr: ((mu*a - h**2)/(mu*a))**0.5; numeric: yes -->
+
+- name: eccentricity_one_half
+  inputs:
+    mu: 4
+    a: 4
+    h: 12**0.5
+  expected: 1/2
+
+- name: hyperbola
+  inputs:
+    mu: 1
+    a: -1
+    h: 3**0.5
+  expected: 2
+
+### specific_angular_momentum_x
+
+<!-- family: flight; symbols: y, vz, z, vy; expr: y*vz - z*vy; numeric: yes -->
+
+- name: along_x
+  inputs:
+    y: 1
+    vz: 1
+    z: 0
+    vy: 0
+  expected: 1
+
+### specific_angular_momentum_y
+
+<!-- family: flight; symbols: z, vx, x, vz; expr: z*vx - x*vz; numeric: yes -->
+
+- name: zero_for_xy_motion
+  inputs:
+    z: 0
+    vx: 0
+    x: 1
+    vz: 0
+  expected: 0
+
+### specific_angular_momentum_z
+
+<!-- family: flight; symbols: x, vy, y, vx; expr: x*vy - y*vx; numeric: yes -->
+
+- name: unit_xy
+  inputs:
+    x: 1
+    vy: 1
+    y: 0
+    vx: 0
+  expected: 1
+
+### specific_angular_momentum_magnitude
+
+<!-- family: flight; symbols: hx, hy, hz; expr: (hx**2 + hy**2 + hz**2)**0.5; numeric: yes -->
+
+- name: unit_polar
+  inputs:
+    hx: 0
+    hy: 0
+    hz: 1
+  expected: 1
+
+### position_velocity_dot
+
+<!-- family: flight; symbols: x, vx, y, vy, z, vz; expr: x*vx + y*vy + z*vz; numeric: yes -->
+
+- name: radial_climb
+  inputs:
+    x: 0
+    vx: 0
+    y: 0
+    vy: 0
+    z: 3
+    vz: 4
+  expected: 12
+
+### inclination
+
+<!-- family: flight; symbols: pi, hz, h; expr: pi/2 - asin(hz/h); numeric: yes -->
+
+- name: equatorial
+  inputs:
+    pi: pi
+    hz: 1
+    h: 1
+  expected: 0
+
+- name: polar
+  inputs:
+    pi: pi
+    hz: 0
+    h: 1
+  expected: pi/2
+
+- name: retrograde_equatorial
+  inputs:
+    pi: pi
+    hz: -1
+    h: 1
+  expected: pi
+
+### ascending_node_sine
+
+<!-- family: flight; symbols: hx, hy; expr: hx/(hx**2 + hy**2)**0.5; numeric: yes -->
+
+- name: quarter_turn
+  inputs:
+    hx: 1
+    hy: 0
+  expected: 1
+
+- name: third_quadrant
+  inputs:
+    hx: -1
+    hy: 1
+  expected: -(1/2)**0.5
+
+### ascending_node_cosine
+
+<!-- family: flight; symbols: hy, hx; expr: -hy/(hx**2 + hy**2)**0.5; numeric: yes -->
+
+- name: on_plus_x
+  inputs:
+    hy: -1
+    hx: 0
+  expected: 1
+
+- name: third_quadrant
+  inputs:
+    hy: 1
+    hx: -1
+  expected: -(1/2)**0.5
+
+### true_anomaly_cosine_from_state
+
+<!-- family: flight; symbols: h, r, mu, e; expr: (h**2/r - mu)/(mu*e); numeric: yes -->
+
+- name: periapsis
+  inputs:
+    h: 12**0.5
+    r: 2
+    mu: 4
+    e: 1/2
+  expected: 1
+
+- name: past_quadrant
+  inputs:
+    h: 4/5
+    r: 1
+    mu: 1
+    e: 3/5
+  expected: -3/5
+
+### true_anomaly_tangent_from_state
+
+<!-- family: flight; symbols: h, rdv, mu, r; expr: (h*rdv)/(h**2 - mu*r); numeric: yes -->
+
+- name: periapsis
+  inputs:
+    h: 12**0.5
+    rdv: 0
+    mu: 4
+    r: 2
+  expected: 0
+
+- name: eccentric_quadrant
+  inputs:
+    h: 4/5
+    rdv: 3/5
+    mu: 1
+    r: 1
+  expected: -4/3
+
+### argument_of_latitude_cosine
+
+<!-- family: flight; symbols: x, Omega, y, r; expr: (x*cos(Omega) + y*sin(Omega))/r; numeric: yes -->
+
+- name: at_the_node
+  inputs:
+    x: 2
+    Omega: 0
+    y: 0
+    r: 2
+  expected: 1
+
+### argument_of_latitude_sine
+
+<!-- family: flight; symbols: z, r, i; expr: z/(r*sin(i)); numeric: yes -->
+
+- name: polar_quarter
+  inputs:
+    z: 2
+    r: 2
+    i: pi/2
+  expected: 1
+
+### equatorial_argument_cosine
+
+<!-- family: flight; symbols: x, r; expr: x/r; numeric: yes -->
+
+- name: on_plus_y
+  inputs:
+    x: 0
+    r: 3
+  expected: 0
+
+### equatorial_argument_sine
+
+<!-- family: flight; symbols: y, r; expr: y/r; numeric: yes -->
+
+- name: on_plus_y
+  inputs:
+    y: 3
+    r: 3
+  expected: 1
+
+### argument_of_periapsis
+
+<!-- family: flight; symbols: u, nu; expr: u - nu; numeric: yes -->
+
+- name: difference
+  inputs:
+    u: 1
+    nu: 1/4
+  expected: 3/4
+
+### perifocal_x_true
+
+<!-- family: flight; symbols: r, nu; expr: r*cos(nu); numeric: yes -->
+
+- name: periapsis
+  inputs:
+    r: 2
+    nu: 0
+  expected: 2
+
+- name: quarter_turn
+  inputs:
+    r: 2
+    nu: pi/2
+  expected: 0
+
+### perifocal_y_true
+
+<!-- family: flight; symbols: r, nu; expr: r*sin(nu); numeric: yes -->
+
+- name: periapsis
+  inputs:
+    r: 2
+    nu: 0
+  expected: 0
+
+- name: quarter_turn
+  inputs:
+    r: 2
+    nu: pi/2
+  expected: 2
+
+### node_frame_x
+
+<!-- family: flight; symbols: r, omega, nu; expr: r*cos(omega + nu); numeric: yes -->
+
+- name: periapsis_at_quarter
+  inputs:
+    r: 2
+    omega: pi/2
+    nu: 0
+  expected: 0
+
+### node_frame_y
+
+<!-- family: flight; symbols: r, omega, nu; expr: r*sin(omega + nu); numeric: yes -->
+
+- name: periapsis_at_quarter
+  inputs:
+    r: 2
+    omega: pi/2
+    nu: 0
+  expected: 2
+
+### inertial_position_x
+
+<!-- family: flight; symbols: r, Omega, u, i; expr: r*(cos(Omega)*cos(u) - sin(Omega)*cos(i)*sin(u)); numeric: yes -->
+
+- name: on_plus_x
+  inputs:
+    r: 5
+    Omega: 0
+    u: 0
+    i: 0
+  expected: 5
+
+- name: node_on_y
+  inputs:
+    r: 3
+    Omega: pi/2
+    u: 0
+    i: pi/2
+  expected: 0
+
+### inertial_position_y
+
+<!-- family: flight; symbols: r, Omega, u, i; expr: r*(sin(Omega)*cos(u) + cos(Omega)*cos(i)*sin(u)); numeric: yes -->
+
+- name: on_plus_x
+  inputs:
+    r: 5
+    Omega: 0
+    u: 0
+    i: 0
+  expected: 0
+
+- name: node_on_y
+  inputs:
+    r: 3
+    Omega: pi/2
+    u: 0
+    i: pi/2
+  expected: 3
+
+### inertial_position_z
+
+<!-- family: flight; symbols: r, i, u; expr: r*sin(i)*sin(u); numeric: yes -->
+
+- name: polar_quarter
+  inputs:
+    r: 2
+    i: pi/2
+    u: pi/2
+  expected: 2
+
+### radial_velocity_eccentric
+
+<!-- family: flight; symbols: mu, a, e, E, r; expr: ((mu*a)**0.5)*e*sin(E)/r; numeric: yes -->
+
+- name: eccentric_quadrant
+  inputs:
+    mu: 1
+    a: 1
+    e: 3/5
+    E: pi/2
+    r: 1
+  expected: 3/5
+
+### transverse_velocity_eccentric
+
+<!-- family: flight; symbols: mu, a, e, r; expr: ((mu*a)**0.5)*((1 - e**2)**0.5)/r; numeric: yes -->
+
+- name: matches_h_over_r
+  inputs:
+    mu: 1
+    a: 1
+    e: 3/5
+    r: 1
+  expected: 4/5
+
+### radial_velocity
+
+<!-- family: flight; symbols: v, gamma; expr: v*sin(gamma); numeric: yes -->
+
+- name: horizontal
+  inputs:
+    v: 2
+    gamma: 0
+  expected: 0
+
+- name: vertical
+  inputs:
+    v: 2
+    gamma: pi/2
+  expected: 2
+
+### transverse_velocity
+
+<!-- family: flight; symbols: v, gamma; expr: v*cos(gamma); numeric: yes -->
+
+- name: horizontal
+  inputs:
+    v: 2
+    gamma: 0
+  expected: 2
+
+### specific_angular_momentum_flight_path
+
+<!-- family: flight; symbols: r, v, gamma; expr: r*v*cos(gamma); numeric: yes -->
+
+- name: horizontal
+  inputs:
+    r: 3
+    v: 2
+    gamma: 0
+  expected: 6
+
+### inertial_velocity_x
+
+<!-- family: flight; symbols: Vr, r, x, Vp, Omega, u, i; expr: (Vr/r)*x - Vp*(cos(Omega)*sin(u) + sin(Omega)*cos(i)*cos(u)); numeric: yes -->
+
+- name: horizontal_at_periapsis
+  inputs:
+    Vr: 0
+    r: 2
+    x: 2
+    Vp: 2
+    Omega: 0
+    u: 0
+    i: 0
+  expected: 0
+
+### inertial_velocity_y
+
+<!-- family: flight; symbols: Vr, r, y, Vp, Omega, u, i; expr: (Vr/r)*y + Vp*(-sin(Omega)*sin(u) + cos(Omega)*cos(i)*cos(u)); numeric: yes -->
+
+- name: horizontal_at_periapsis
+  inputs:
+    Vr: 0
+    r: 2
+    y: 0
+    Vp: 2
+    Omega: 0
+    u: 0
+    i: 0
+  expected: 2
+
+### inertial_velocity_z
+
+<!-- family: flight; symbols: Vr, r, z, Vp, i, u; expr: (Vr/r)*z + Vp*sin(i)*cos(u); numeric: yes -->
+
+- name: equatorial
+  inputs:
+    Vr: 0
+    r: 2
+    z: 0
+    Vp: 2
+    i: 0
+    u: 0
+  expected: 0
+
 #### rocket
 
 ### mixture_ratio
@@ -1980,6 +2482,19 @@ Then run `python check_formulas.py`.
     Ab: 2/5
     At: 1/500
   expected: 200
+
+### equilibrium_chamber_pressure
+
+<!-- family: rocket; symbols: K, a, rho_b, cstar, n; expr: (K*a*rho_b*cstar)**(1/(1 - n)); numeric: yes -->
+
+- name: square_root_pressure
+  inputs:
+    K: 200
+    a: 1/100000
+    rho_b: 1800
+    cstar: 5000/9
+    n: 1/2
+  expected: 4000000
 
 ### burn_rate_temperature_sensitivity
 
@@ -2580,6 +3095,58 @@ Then run `python check_formulas.py`.
     L: 24000
     W: 8000
   expected: 3
+
+### breguet_range_jet
+
+<!-- family: aerodynamics; symbols: V, ct, LD, Wi, Wf; expr: (V/ct)*LD*log(Wi/Wf); numeric: yes -->
+
+- name: weight_ratio_two
+  inputs:
+    V: 1
+    ct: 1
+    LD: 1
+    Wi: 2
+    Wf: 1
+  expected: log(2)
+
+### breguet_endurance_jet
+
+<!-- family: aerodynamics; symbols: ct, LD, Wi, Wf; expr: (1/ct)*LD*log(Wi/Wf); numeric: yes -->
+
+- name: weight_ratio_two
+  inputs:
+    ct: 1
+    LD: 1
+    Wi: 2
+    Wf: 1
+  expected: log(2)
+
+### breguet_range_prop
+
+<!-- family: aerodynamics; symbols: eta, c, LD, Wi, Wf; expr: (eta/c)*LD*log(Wi/Wf); numeric: yes -->
+
+- name: weight_ratio_two
+  inputs:
+    eta: 1
+    c: 1
+    LD: 1
+    Wi: 2
+    Wf: 1
+  expected: log(2)
+
+### breguet_endurance_prop
+
+<!-- family: aerodynamics; symbols: eta, c, V, LD, Wi, Wf; expr: (eta/(c*V))*LD*log(Wi/Wf); numeric: yes -->
+
+- name: weight_ratio_two
+  inputs:
+    eta: 1
+    c: 1
+    V: 2
+    LD: 1
+    Wi: 2
+    Wf: 1
+  expected: log(2)/2
 
 ### stick_fixed_neutral_point
 

@@ -6,8 +6,8 @@ The file is grouped so a search can start in one category:
 
 - Compressible flow: perfect-gas thermodynamics, isentropic flow, area-Mach, shocks, Prandtl-Meyer expansion, calorically imperfect air, Newtonian viscosity, and Reynolds number.
 - Atmosphere: the 1976 U.S. Standard Atmosphere from the surface to 1000 km, including geopotential and gravity, the seven hydrostatic layers below 86 km, kinetic temperature above 86 km, and the transport properties of that model. A three-zone NASA Glenn curve fit is recorded separately.
-- Rocket propulsion: thrust, impulse, mass ratio, nozzles, solid- and liquid-propellant relations, and two-body orbital speed, period, energy, anomalies, and mean motion.
-- Aerodynamics: incompressible Bernoulli, force and moment coefficients, trapezoidal wing planform, aspect ratio, induced drag, finite-wing lift-curve slope and induced angle, stall speed, equivalent airspeed, load factor, and the stick-fixed neutral point and static margin.
+- Rocket propulsion: thrust, impulse, mass ratio, nozzles, solid- and liquid-propellant relations, and two-body orbital speed, period, energy, anomalies, mean motion, and the conversion between classical elements and an inertial state.
+- Aerodynamics: incompressible Bernoulli, force and moment coefficients, trapezoidal wing planform, aspect ratio, induced drag, finite-wing lift-curve slope and induced angle, stall speed, equivalent airspeed, load factor, Breguet range and endurance for jet and propeller cruise, and the stick-fixed neutral point and static margin.
 - Structures: thin-wall motor-case hoop stress, margin of safety, and longitudinal-weld radial mismatch.
 
 The rocket symbol \(k\) is the same ratio of specific heats as \(\gamma\). Standard sea-level gravitational acceleration is \(g_0 = 9.80665\,\mathrm{m/s}^2\).
@@ -2298,6 +2298,8 @@ Six quantities fix a Keplerian ellipse in space. NASA SP-325 and Plummer (1918) 
 
 The position in the orbit plane is the true anomaly \(\nu\), measured from periapsis in the direction of motion. The eccentric anomaly \(E\) is the angle at the centre of the auxiliary circle. The mean anomaly \(M\) grows uniformly with time. All three anomalies below are in radians. In these records \(M\) is mean anomaly, not mass or Mach number; \(n\) is mean motion; \(p\) is the semi-latus rectum, not pressure; and \(h\) is specific angular momentum, not altitude.
 
+Records after the argument of latitude convert an inertial position and velocity into these elements and convert the elements back into that state. The inertial frame has \(+Z\) along the reference polar axis and \(+X\) as the origin of node longitude. NASA TM X-58153 and the Goddard ELCONO routine state the singular cases: \(\Omega = 0\) when \(i = 0\), and \(\omega = 0\) when \(e = 0\). On a circle, ELCONO sets the mean anomaly equal to the argument of latitude. SP-325 and ELCONO give the scalar eccentricity. They do not print an eccentricity vector.
+
 ## Semi-latus rectum and semi-minor axis
 
 The parameter of the conic, and the semi-minor axis of an ellipse. NASA SP-325 writes \(p = a(1-e^{2})\) and \(p = h^{2}/\mu\).
@@ -2620,6 +2622,543 @@ symbols: omega, nu
 
 Assumptions: angles in radians, measured in the direction of motion. In this record \(u\) is not specific internal energy.
 
+## Parameter from specific angular momentum
+
+The semi-latus rectum from the specific angular momentum. NASA SP-325 equation (1-36) is the inverse of `specific_angular_momentum`.
+
+\[
+p = \frac{h^{2}}{\mu}
+\]
+
+```formula
+## parameter_from_angular_momentum
+family: flight
+expr: h**2/mu
+symbols: h, mu
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(p\) | Semi-latus rectum | m |
+| \(h\) | Specific angular momentum | m²/s |
+| \(\mu\) | Gravitational parameter | m³/s² |
+
+Assumptions: two-body inverse-square gravity. The relation holds for an ellipse, a parabola, and a hyperbola. \(h\) here is not altitude.
+
+## Semi-major axis from energy and from the state
+
+NASA SP-325 equation (1-47) rearranges the specific-energy relation for an ellipse. The Goddard ELCONO routine computes the same axis from radius and speed, \(a = \mu r/(2\mu - r v^{2})\).
+
+\[
+a = -\frac{\mu}{2\varepsilon} = \frac{\mu r}{2\mu - r v^{2}}
+\]
+
+```formula
+## semimajor_axis_from_energy
+family: flight
+expr: -mu/(2*eps)
+symbols: mu, eps
+```
+
+```formula
+## semimajor_axis_from_state
+family: flight
+expr: mu*r/(2*mu - r*v**2)
+symbols: mu, r, v
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(a\) | Semi-major axis | m |
+| \(\mu\) | Gravitational parameter | m³/s² |
+| \(\varepsilon\) | Specific orbital energy | J/kg |
+| \(r\) | Radial distance | m |
+| \(v\) | Relative orbital speed | m/s |
+
+Assumptions: \(\varepsilon \neq 0\), so the path is an ellipse or a hyperbola. A parabola has \(\varepsilon = 0\) and no finite \(a\). SP-325 derives \(a = -\mu/(2\varepsilon)\) for the ellipse. The same rearrangement gives \(a < 0\) when \(\varepsilon > 0\), which is the hyperbolic sign already used with vis-viva. ELCONO’s form in \(r\) and \(v\) has the same split: the denominator is positive on an ellipse and negative on a hyperbola.
+
+## Eccentricity from energy and from the axis
+
+Scalar eccentricity of a conic. NASA SP-325 equation (1-37) uses specific energy and specific angular momentum. ELCONO uses the semi-major axis and the same angular momentum. The magnitude of an eccentricity vector is not printed in either source.
+
+\[
+e = \left(1 + \frac{2\varepsilon h^{2}}{\mu^{2}}\right)^{1/2} = \left(\frac{\mu a - h^{2}}{\mu a}\right)^{1/2}
+\]
+
+```formula
+## eccentricity_from_energy
+family: flight
+expr: (1 + 2*eps*h**2/mu**2)**0.5
+symbols: eps, h, mu
+```
+
+```formula
+## eccentricity_from_axis
+family: flight
+expr: ((mu*a - h**2)/(mu*a))**0.5
+symbols: mu, a, h
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(e\) | Eccentricity | dimensionless |
+| \(\varepsilon\) | Specific orbital energy | J/kg |
+| \(h\) | Specific angular momentum | m²/s |
+| \(\mu\) | Gravitational parameter | m³/s² |
+| \(a\) | Semi-major axis | m |
+
+Assumptions: the energy form covers every conic. \(\varepsilon < 0\) gives \(e < 1\), \(\varepsilon = 0\) gives \(e = 1\), and \(\varepsilon > 0\) gives \(e > 1\). The axis form needs a finite \(a \neq 0\), so it excludes the parabola. On that domain it agrees with \(h^{2} = \mu a(1-e^{2})\). In this section \(e\) is eccentricity.
+
+## Specific angular momentum vector
+
+Plummer’s integrals of area are the components of angular momentum. For the specific angular momentum of one vehicle about the attracting centre they are the components of \(\mathbf{r}\times\mathbf{v}\). ELCONO writes that vector as \(\mathbf{h} = \mathbf{r}\times\dot{\mathbf{r}}\) and uses \(h^{2} = h_x^{2}+h_y^{2}+h_z^{2}\). The dot product \(\mathbf{r}\cdot\dot{\mathbf{r}}\) is the quantity ELCONO places in the true-anomaly formula.
+
+\[
+h_x = y v_z - z v_y \qquad
+h_y = z v_x - x v_z \qquad
+h_z = x v_y - y v_x
+\]
+
+\[
+h = \sqrt{h_x^{2}+h_y^{2}+h_z^{2}} \qquad
+\mathbf{r}\cdot\mathbf{v} = x v_x + y v_y + z v_z
+\]
+
+```formula
+## specific_angular_momentum_x
+family: flight
+expr: y*vz - z*vy
+symbols: y, vz, z, vy
+```
+
+```formula
+## specific_angular_momentum_y
+family: flight
+expr: z*vx - x*vz
+symbols: z, vx, x, vz
+```
+
+```formula
+## specific_angular_momentum_z
+family: flight
+expr: x*vy - y*vx
+symbols: x, vy, y, vx
+```
+
+```formula
+## specific_angular_momentum_magnitude
+family: flight
+expr: (hx**2 + hy**2 + hz**2)**0.5
+symbols: hx, hy, hz
+```
+
+```formula
+## position_velocity_dot
+family: flight
+expr: x*vx + y*vy + z*vz
+symbols: x, vx, y, vy, z, vz
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(h_x, h_y, h_z\) | Specific-angular-momentum components | m²/s |
+| \(h\) | Specific-angular-momentum magnitude | m²/s |
+| \(x, y, z\) | Inertial position components | m |
+| \(v_x, v_y, v_z\) | Inertial velocity components | m/s |
+| \(\mathbf{r}\cdot\mathbf{v}\) | Position-velocity dot product | m²/s |
+
+Assumptions: origin at the attracting centre, and \(+Z\) along the reference polar axis. The components are Plummer’s areal integrands for a single specific angular momentum. \(h = 0\) is a rectilinear path and does not define a plane.
+
+## Inclination
+
+Davis defines inclination as the angle between the north polar axis and the orbital angular-momentum vector. ELCONO writes the same angle as
+
+\[
+i = \tan^{-1}\left[\frac{(h_x^{2}+h_y^{2})^{1/2}}{h_z}\right]
+\]
+
+with \(0 \le i < \pi\). That two-argument angle is \(\cos^{-1}(h_z/h)\).
+
+\[
+i = \frac{\pi}{2} - \sin^{-1}\left(\frac{h_z}{h}\right)
+\]
+
+```formula
+## inclination
+family: flight
+expr: pi/2 - asin(hz/h)
+symbols: pi, hz, h
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(i\) | Inclination | rad |
+| \(h_z\) | Polar component of specific angular momentum | m²/s |
+| \(h\) | Specific-angular-momentum magnitude | m²/s |
+| \(\pi\) | Circle constant | dimensionless |
+
+Assumptions: \(h > 0\). The result lies on \([0, \pi]\). It is \(0\) when \(\mathbf{h}\) points along \(+Z\) and \(\pi\) when \(\mathbf{h}\) points along \(-Z\). ELCONO’s printed interval is \(0 \le i < \pi\).
+
+## Longitude of the ascending node
+
+ELCONO, for \(i \neq 0\),
+
+\[
+\Omega = \tan^{-1}\left[\frac{h_x}{-h_y}\right], \qquad 0 \le \Omega < 2\pi
+\]
+
+and \(\Omega = 0\) when \(i = 0\). Davis states the same equatorial convention: the ascending node is the reference \(X\) axis. The sine and cosine below are the two-argument reading of that ratio. They are undefined when \(h_x = h_y = 0\), which is \(i = 0\) or \(i = \pi\).
+
+\[
+\sin\Omega = \frac{h_x}{\sqrt{h_x^{2}+h_y^{2}}} \qquad
+\cos\Omega = \frac{-h_y}{\sqrt{h_x^{2}+h_y^{2}}}
+\]
+
+```formula
+## ascending_node_sine
+family: flight
+expr: hx/(hx**2 + hy**2)**0.5
+symbols: hx, hy
+```
+
+```formula
+## ascending_node_cosine
+family: flight
+expr: -hy/(hx**2 + hy**2)**0.5
+symbols: hy, hx
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(\Omega\) | Longitude of the ascending node | rad |
+| \(h_x, h_y\) | Equatorial components of specific angular momentum | m²/s |
+
+Assumptions: \(h_x^{2}+h_y^{2} > 0\). The pair fixes \(\Omega\) on \([0, 2\pi)\). When \(i = 0\), do not evaluate these records; set \(\Omega = 0\).
+
+## True anomaly from the state
+
+SP-325 equation (1-34) is the inverse cosine of the combination below, so \(\cos\nu = (h^{2}/r - \mu)/(\mu e)\). ELCONO gives the tangent from the radial momentum,
+
+\[
+\tan\nu = \frac{h\,(\mathbf{r}\cdot\mathbf{v})}{h^{2} - \mu r}.
+\]
+
+The numerator has the sign of \(\sin\nu\) and the denominator has the sign of \(\cos\nu\).
+
+```formula
+## true_anomaly_cosine_from_state
+family: flight
+expr: (h**2/r - mu)/(mu*e)
+symbols: h, r, mu, e
+```
+
+```formula
+## true_anomaly_tangent_from_state
+family: flight
+expr: (h*rdv)/(h**2 - mu*r)
+symbols: h, rdv, mu, r
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(\nu\) | True anomaly | rad |
+| \(h\) | Specific angular momentum | m²/s |
+| \(r\) | Radial distance | m |
+| \(\mu\) | Gravitational parameter | m³/s² |
+| \(e\) | Eccentricity | dimensionless |
+| \(\mathbf{r}\cdot\mathbf{v}\) | Position-velocity dot product | m²/s |
+
+Assumptions: \(e > 0\) for the cosine. The tangent denominator vanishes when \(\cos\nu = 0\). Together, the sign of \(\mathbf{r}\cdot\mathbf{v}\) and the cosine fix \(\nu\). On a circle, ELCONO does not separate \(\nu\) from the argument of latitude.
+
+## Argument of latitude from inertial position
+
+ELCONO, for \(i \neq 0\),
+
+\[
+u = \tan^{-1}\left[\frac{z}{\sin i\,(x\cos\Omega + y\sin\Omega)}\right].
+\]
+
+The sine and cosine are the two-argument reading of that ratio. On the equator, \(i = 0\), ELCONO uses \(u = \tan^{-1}(y/x)\).
+
+```formula
+## argument_of_latitude_cosine
+family: flight
+expr: (x*cos(Omega) + y*sin(Omega))/r
+symbols: x, Omega, y, r
+```
+
+```formula
+## argument_of_latitude_sine
+family: flight
+expr: z/(r*sin(i))
+symbols: z, r, i
+```
+
+```formula
+## equatorial_argument_cosine
+family: flight
+expr: x/r
+symbols: x, r
+```
+
+```formula
+## equatorial_argument_sine
+family: flight
+expr: y/r
+symbols: y, r
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(u\) | Argument of latitude | rad |
+| \(x, y, z\) | Inertial position | m |
+| \(r\) | Radial distance | m |
+| \(i\) | Inclination | rad |
+| \(\Omega\) | Longitude of the ascending node | rad |
+
+Assumptions: \(r > 0\). The inclined pair needs \(\sin i \neq 0\). The equatorial pair is the \(i = 0\) formula, with the spacecraft in the reference plane. In these records \(u\) is not specific internal energy.
+
+## Argument of periapsis
+
+ELCONO sets \(\omega = u - \nu\) when \(e \neq 0\), and \(\omega = 0\) when \(e = 0\). Davis states the circular convention as perigee at the ascending node.
+
+\[
+\omega = u - \nu
+\]
+
+```formula
+## argument_of_periapsis
+family: flight
+expr: u - nu
+symbols: u, nu
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(\omega\) | Argument of periapsis | rad |
+| \(u\) | Argument of latitude | rad |
+| \(\nu\) | True anomaly | rad |
+
+Assumptions: \(e \neq 0\), with \(u\) and \(\nu\) in radians on one common branch. ELCONO places \(\omega\) on \([0, 2\pi)\). When \(e = 0\), set \(\omega = 0\) and set the mean anomaly equal to \(u\).
+
+## Perifocal position on a general conic
+
+Rectangular coordinates in the orbit plane, with the origin at the focus and \(+x\) toward periapsis. They are the polar resolution of SP-325 equation (1-38), whose angle \(\theta-\theta_0\) is the true anomaly. Plummer’s node-frame coordinates reduce to the same pair when the angle is measured from periapsis.
+
+\[
+x = r\cos\nu \qquad y = r\sin\nu
+\]
+
+```formula
+## perifocal_x_true
+family: flight
+expr: r*cos(nu)
+symbols: r, nu
+```
+
+```formula
+## perifocal_y_true
+family: flight
+expr: r*sin(nu)
+symbols: r, nu
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(x\) | Perifocal coordinate toward periapsis | m |
+| \(y\) | Perifocal coordinate along the motion at periapsis | m |
+| \(r\) | Radial distance | m |
+| \(\nu\) | True anomaly | rad |
+
+Assumptions: every conic with a defined periapsis, so \(e > 0\). The existing `perifocal_x` and `perifocal_y` remain the ellipse formulas in the eccentric anomaly. SP-325 and ELCONO do not print the compact perifocal velocity \(\sqrt{\mu/p}(-\sin\nu,\ e+\cos\nu,\ 0)\).
+
+## Node-frame position
+
+Plummer, section 65: axes with \(x_1\) through the ascending node and \(y_1\) in the orbit plane.
+
+\[
+x_1 = r\cos(\omega+\nu) \qquad y_1 = r\sin(\omega+\nu)
+\]
+
+The out-of-plane node-frame coordinate is \(0\).
+
+```formula
+## node_frame_x
+family: flight
+expr: r*cos(omega + nu)
+symbols: r, omega, nu
+```
+
+```formula
+## node_frame_y
+family: flight
+expr: r*sin(omega + nu)
+symbols: r, omega, nu
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(x_1, y_1\) | Position in the node frame | m |
+| \(r\) | Radial distance | m |
+| \(\omega\) | Argument of periapsis | rad |
+| \(\nu\) | True anomaly | rad |
+
+Assumptions: \(\omega+\nu\) is the argument of latitude. The same expressions are the inertial coordinates of a zero-inclination orbit whose node lies on \(+X\).
+
+## Inertial position
+
+ELCONO and Plummer’s section 65, with \(u = \omega+\nu\) and \(+Z\) toward the reference pole:
+
+\[
+\begin{aligned}
+x &= r[\cos\Omega\cos u - \sin\Omega\cos i\sin u] \\
+y &= r[\sin\Omega\cos u + \cos\Omega\cos i\sin u] \\
+z &= r\sin i\sin u
+\end{aligned}
+\]
+
+```formula
+## inertial_position_x
+family: flight
+expr: r*(cos(Omega)*cos(u) - sin(Omega)*cos(i)*sin(u))
+symbols: r, Omega, u, i
+```
+
+```formula
+## inertial_position_y
+family: flight
+expr: r*(sin(Omega)*cos(u) + cos(Omega)*cos(i)*sin(u))
+symbols: r, Omega, u, i
+```
+
+```formula
+## inertial_position_z
+family: flight
+expr: r*sin(i)*sin(u)
+symbols: r, i, u
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(x, y, z\) | Inertial position | m |
+| \(r\) | Radial distance | m |
+| \(u\) | Argument of latitude | rad |
+| \(i\) | Inclination | rad |
+| \(\Omega\) | Longitude of the ascending node | rad |
+
+Assumptions: angles in radians. SP-325 equation (1-100) is a different frame: its polar axis is \(+Y\). Use these three records for the \(+Z\) polar frame.
+
+## Radial and transverse speed
+
+ELCONO’s ellipse formulas, from the eccentric anomaly. NASA SP-325 equations (2-4) and (2-5) give the same split on any conic from the flight-path angle \(\gamma\) above the local horizontal. Specific angular momentum is then \(h = r V\cos\gamma\), from SP-325 equations (1-23) and (2-4).
+
+\[
+V_r = \frac{\sqrt{\mu a}}{r}\,e\sin E \qquad
+V_p = \frac{\sqrt{\mu a}}{r}\sqrt{1-e^{2}}
+\]
+
+\[
+\dot r = V\sin\gamma \qquad r\dot\theta = V\cos\gamma \qquad h = r V\cos\gamma
+\]
+
+```formula
+## radial_velocity_eccentric
+family: flight
+expr: ((mu*a)**0.5)*e*sin(E)/r
+symbols: mu, a, e, E, r
+```
+
+```formula
+## transverse_velocity_eccentric
+family: flight
+expr: ((mu*a)**0.5)*((1 - e**2)**0.5)/r
+symbols: mu, a, e, r
+```
+
+```formula
+## radial_velocity
+family: flight
+expr: v*sin(gamma)
+symbols: v, gamma
+```
+
+```formula
+## transverse_velocity
+family: flight
+expr: v*cos(gamma)
+symbols: v, gamma
+```
+
+```formula
+## specific_angular_momentum_flight_path
+family: flight
+expr: r*v*cos(gamma)
+symbols: r, v, gamma
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(V_r\) | Radial speed | m/s |
+| \(V_p\) | Transverse speed | m/s |
+| \(\dot r\) | Radial speed | m/s |
+| \(r\dot\theta\) | Transverse speed | m/s |
+| \(h\) | Specific angular momentum | m²/s |
+| \(\mu\) | Gravitational parameter | m³/s² |
+| \(a\) | Semi-major axis | m |
+| \(e\) | Eccentricity | dimensionless |
+| \(E\) | Eccentric anomaly | rad |
+| \(r\) | Radial distance | m |
+| \(V\) | Orbital speed | m/s |
+| \(\gamma\) | Flight-path angle above the local horizontal | rad |
+
+Assumptions: the eccentric-anomaly pair is an ellipse, \(a > 0\) and \(0 \le e < 1\). The flight-path trio holds for an ellipse, a parabola, and a hyperbola. \(\gamma = 0\) is horizontal flight. Those radial and transverse speeds are the \(V_r\) and \(V_p\) used in the inertial velocity below.
+
+## Inertial velocity
+
+ELCONO rotates the radial and transverse speeds into the inertial frame. Here \(u = \omega+\nu\), and \(x, y, z\) are the inertial position.
+
+\[
+\begin{aligned}
+\dot x &= \frac{V_r}{r} x - V_p[\cos\Omega\sin u + \sin\Omega\cos i\cos u] \\
+\dot y &= \frac{V_r}{r} y + V_p[-\sin\Omega\sin u + \cos\Omega\cos i\cos u] \\
+\dot z &= \frac{V_r}{r} z + V_p\sin i\cos u
+\end{aligned}
+\]
+
+```formula
+## inertial_velocity_x
+family: flight
+expr: (Vr/r)*x - Vp*(cos(Omega)*sin(u) + sin(Omega)*cos(i)*cos(u))
+symbols: Vr, r, x, Vp, Omega, u, i
+```
+
+```formula
+## inertial_velocity_y
+family: flight
+expr: (Vr/r)*y + Vp*(-sin(Omega)*sin(u) + cos(Omega)*cos(i)*cos(u))
+symbols: Vr, r, y, Vp, Omega, u, i
+```
+
+```formula
+## inertial_velocity_z
+family: flight
+expr: (Vr/r)*z + Vp*sin(i)*cos(u)
+symbols: Vr, r, z, Vp, i, u
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(\dot x, \dot y, \dot z\) | Inertial velocity | m/s |
+| \(V_r\) | Radial speed | m/s |
+| \(V_p\) | Transverse speed | m/s |
+| \(x, y, z\) | Inertial position | m |
+| \(r\) | Radial distance | m |
+| \(u\) | Argument of latitude | rad |
+| \(i\) | Inclination | rad |
+| \(\Omega\) | Longitude of the ascending node | rad |
+
+Assumptions: \(r > 0\), and \(V_p\) is positive in the direction of increasing \(u\). On an ellipse, take \(V_r\) and \(V_p\) from the eccentric-anomaly records. On a parabola or a hyperbola, take them from the flight-path records.
+
 ## Liquid-propellant mixture ratio
 
 Oxidizer flow divided by fuel flow, and the split of a known total flow.
@@ -2795,6 +3334,32 @@ symbols: Ab, At
 
 Assumptions: \(A_b\) and \(A_t\) are the instantaneous values used for the motor balance.
 
+## Equilibrium chamber pressure
+
+Steady solid-motor mass balance with Saint Robert's burning law. Grain generation \(\dot{m} = A_b r \rho_b\) equals nozzle throughput \(\dot{m} = p_1 A_t / c^{*}\), with \(r = a p_1^{n}\) and \(K = A_b/A_t\).
+
+\[
+p_1 = \left(K\, a\, \rho_b\, c^{*}\right)^{\frac{1}{1-n}}
+\]
+
+```formula
+## equilibrium_chamber_pressure
+family: rocket
+expr: (K*a*rho_b*cstar)**(1/(1 - n))
+symbols: K, a, rho_b, cstar, n
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(p_1\) | Equilibrium chamber pressure | Pa |
+| \(K\) | Burning-area ratio \(A_b/A_t\) | dimensionless |
+| \(a\) | Burn-rate coefficient | m/(s·Pa\(^{n}\)) |
+| \(\rho_b\) | Solid propellant density | kg/m³ |
+| \(c^{*}\) | Characteristic velocity | m/s |
+| \(n\) | Burn-rate pressure exponent | dimensionless |
+
+Assumptions: quasi-steady mass balance (no free-volume accumulation), uniform regression at \(r = a p_1^{n}\), constant \(a\), \(n\), \(\rho_b\), and \(c^{*}\), and no erosive burning. Requires \(n < 1\) for a stable finite equilibrium. The script symbol for \(c^{*}\) is `cstar`.
+
 ## Temperature sensitivity of burning rate at constant pressure
 
 Fractional change of burning rate with propellant temperature, holding chamber pressure fixed.
@@ -2846,7 +3411,7 @@ Assumptions: the derivative is at constant \(K\).
 
 # Aerodynamics
 
-Incompressible flow and the dimensionless force and moment coefficients. Freestream dynamic pressure \(q_{\infty}\) is the dynamic-pressure relation in Compressible flow evaluated far ahead of the body. In this category \(V\) is flow speed. Wing geometry and induced drag follow NASA Glenn's Beginner's Guide (public-domain educational pages). The finite-wing lift curve follows NASA TP-2414 and NACA TN 1862. Stall speed and load factor follow the usual force definitions used in FAA-H-8083 and NASA SP-367. The stick-fixed neutral point and static margin follow NACA TN 1670.
+Incompressible flow and the dimensionless force and moment coefficients. Freestream dynamic pressure \(q_{\infty}\) is the dynamic-pressure relation in Compressible flow evaluated far ahead of the body. In this category \(V\) is flow speed. Wing geometry and induced drag follow NASA Glenn's Beginner's Guide (public-domain educational pages). The finite-wing lift curve follows NASA TP-2414 and NACA TN 1862. Stall speed and load factor follow the usual force definitions used in FAA-H-8083 and NASA SP-367. Breguet propeller range and endurance follow NACA Report 234. Breguet jet range follows Guynn (NASA Langley) and the cruise derivation in NASA TN D-6707. The stick-fixed neutral point and static margin follow NACA TN 1670.
 
 ## Bernoulli's relation
 
@@ -3626,6 +4191,85 @@ symbols: L, W
 | \(W\) | Weight | N |
 
 Assumptions: \(W\) is the vehicle weight, not mass times a local \(g\) different from the weight definition in use. Straight and level flight has \(n = 1\) when \(L = W\).
+
+## Breguet range and endurance
+
+Cruise distance and time while fuel burn lowers the airplane weight. Lift equals weight and thrust equals drag. \(L/D\), speed, and specific fuel consumption are taken constant over the segment. The weight ratio uses the same weight unit at the start and end of cruise. \(\log\) in the script records is the natural logarithm.
+
+For a jet, fuel flow follows thrust. Thrust-specific fuel consumption \(c_t\) is fuel weight flow divided by thrust, so its SI unit is \(1/\mathrm{s}\). Guynn states the range. Endurance is that range divided by the constant cruise speed, which is the integral of \(\mathrm{d}t = -\mathrm{d}W/(c_t D)\) with \(D = W/(L/D)\).
+
+\[
+R_{\mathrm{jet}} = \frac{V}{c_t}\,\frac{L}{D}\,\ln\frac{W_i}{W_f}
+\]
+
+```formula
+## breguet_range_jet
+family: aerodynamics
+expr: (V/ct)*LD*log(Wi/Wf)
+symbols: V, ct, LD, Wi, Wf
+```
+
+\[
+E_{\mathrm{jet}} = \frac{1}{c_t}\,\frac{L}{D}\,\ln\frac{W_i}{W_f}
+\]
+
+```formula
+## breguet_endurance_jet
+family: aerodynamics
+expr: (1/ct)*LD*log(Wi/Wf)
+symbols: ct, LD, Wi, Wf
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(R_{\mathrm{jet}}\) | Cruise range | m |
+| \(E_{\mathrm{jet}}\) | Cruise endurance | s |
+| \(V\) | True airspeed | m/s |
+| \(c_t\) | Thrust-specific fuel consumption, fuel weight flow per unit thrust | 1/s |
+| \(L/D\) | Lift-to-drag ratio | dimensionless |
+| \(LD\) | Script symbol for \(L/D\) | dimensionless |
+| \(W_i\) | Weight at the start of cruise | N |
+| \(W_f\) | Weight at the end of cruise | N |
+
+Assumptions: steady cruise with \(L = W\) and \(T = D\). \(V\), \(L/D\), and \(c_t\) are constant. \(W_i > W_f > 0\). \(c_t > 0\). A value of \(c_t\) quoted in \(1/\mathrm{hr}\) is divided by \(3600\) before use. If the user gives a mass-based TSFC in \(\mathrm{kg/(N\cdot s)}\), multiply by \(g_0 = 9.80665\,\mathrm{m/s}^2\) to obtain this weight-based \(c_t\). NASA TN D-6707 derives the same cruise integral for constant-velocity flight with fuel flow from thrust-specific fuel consumption.
+
+For a propeller airplane, fuel flow follows shaft power. Power-specific fuel consumption \(c\) is fuel weight flow divided by shaft power, so its SI unit is \(1/\mathrm{m}\). Propeller efficiency \(\eta\) converts shaft power to useful propulsive power. NACA Report 234 states Breguet’s equations in historical English units; the records below are the same relations in SI with the natural logarithm.
+
+\[
+R_{\mathrm{prop}} = \frac{\eta}{c}\,\frac{L}{D}\,\ln\frac{W_i}{W_f}
+\]
+
+```formula
+## breguet_range_prop
+family: aerodynamics
+expr: (eta/c)*LD*log(Wi/Wf)
+symbols: eta, c, LD, Wi, Wf
+```
+
+\[
+E_{\mathrm{prop}} = \frac{\eta}{c V}\,\frac{L}{D}\,\ln\frac{W_i}{W_f}
+\]
+
+```formula
+## breguet_endurance_prop
+family: aerodynamics
+expr: (eta/(c*V))*LD*log(Wi/Wf)
+symbols: eta, c, V, LD, Wi, Wf
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(R_{\mathrm{prop}}\) | Cruise range | m |
+| \(E_{\mathrm{prop}}\) | Cruise endurance | s |
+| \(\eta\) | Propeller efficiency | dimensionless |
+| \(c\) | Power-specific fuel consumption, fuel weight flow per unit shaft power | 1/m |
+| \(V\) | True airspeed | m/s |
+| \(L/D\) | Lift-to-drag ratio | dimensionless |
+| \(LD\) | Script symbol for \(L/D\) | dimensionless |
+| \(W_i\) | Weight at the start of cruise | N |
+| \(W_f\) | Weight at the end of cruise | N |
+
+Assumptions: steady cruise with \(L = W\) and thrust power equal to drag times speed. \(\eta\), \(c\), \(L/D\), and for endurance \(V\) are constant. \(0 < \eta \le 1\), \(c > 0\), and \(W_i > W_f > 0\). In this section \(c\) is power-specific fuel consumption, not mean aerodynamic chord and not the rocket effective exhaust velocity. A value of \(c\) in historical units such as \(\mathrm{lb/(hp\cdot hr)}\) must be converted to \(1/\mathrm{m}\) before the call. If the user gives a mass-based power-specific fuel consumption in \(\mathrm{kg/(W\cdot s)}\), multiply by \(g_0 = 9.80665\,\mathrm{m/s}^2\) to obtain this weight-based \(c\). Propeller range does not contain \(V\) when \(c\) and \(\eta\) are constant. Propeller endurance and both jet results need the cruise speed shown above.
 
 ## Stick-fixed neutral point
 

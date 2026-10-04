@@ -5,7 +5,7 @@ A formula is listed when every identity named for it passed, or when it is a def
 A definition is exempt from the identity check.
 Use only these formula ids. Do not use a formula that is absent from this file.
 
-Passed: 204
+Passed: 244
 Failed: 0
 Unchecked: 0
 
@@ -179,6 +179,41 @@ Exempt from the identity check.
 - `perifocal_x` (flight): periapsis, apoapsis
 - `perifocal_y` (flight): quarter_turn
 - `argument_of_latitude` (flight): sum
+- `parameter_from_angular_momentum` (flight): parameter_nine
+- `semimajor_axis_from_energy` (flight): ellipse_axis_four, hyperbola_axis
+- `semimajor_axis_from_state` (flight): circular_radius, periapsis_of_ellipse
+- `eccentricity_from_energy` (flight): parabola, eccentricity_one_half
+- `eccentricity_from_axis` (flight): eccentricity_one_half, hyperbola
+- `specific_angular_momentum_x` (flight): along_x
+- `specific_angular_momentum_y` (flight): zero_for_xy_motion
+- `specific_angular_momentum_z` (flight): unit_xy
+- `specific_angular_momentum_magnitude` (flight): unit_polar
+- `position_velocity_dot` (flight): radial_climb
+- `inclination` (flight): equatorial, polar, retrograde_equatorial
+- `ascending_node_sine` (flight): quarter_turn, third_quadrant
+- `ascending_node_cosine` (flight): on_plus_x, third_quadrant
+- `true_anomaly_cosine_from_state` (flight): periapsis, past_quadrant
+- `true_anomaly_tangent_from_state` (flight): periapsis, eccentric_quadrant
+- `argument_of_latitude_cosine` (flight): at_the_node
+- `argument_of_latitude_sine` (flight): polar_quarter
+- `equatorial_argument_cosine` (flight): on_plus_y
+- `equatorial_argument_sine` (flight): on_plus_y
+- `argument_of_periapsis` (flight): difference
+- `perifocal_x_true` (flight): periapsis, quarter_turn
+- `perifocal_y_true` (flight): periapsis, quarter_turn
+- `node_frame_x` (flight): periapsis_at_quarter
+- `node_frame_y` (flight): periapsis_at_quarter
+- `inertial_position_x` (flight): on_plus_x, node_on_y
+- `inertial_position_y` (flight): on_plus_x, node_on_y
+- `inertial_position_z` (flight): polar_quarter
+- `radial_velocity_eccentric` (flight): eccentric_quadrant
+- `transverse_velocity_eccentric` (flight): matches_h_over_r
+- `radial_velocity` (flight): horizontal, vertical
+- `transverse_velocity` (flight): horizontal
+- `specific_angular_momentum_flight_path` (flight): horizontal
+- `inertial_velocity_x` (flight): horizontal_at_periapsis
+- `inertial_velocity_y` (flight): horizontal_at_periapsis
+- `inertial_velocity_z` (flight): equatorial
 - `mixture_ratio` (rocket): oxidizer_six_to_one
 - `propellant_flow_sum` (rocket): same_split
 - `fuel_flow` (rocket): same_split
@@ -188,6 +223,7 @@ Exempt from the identity check.
 - `solid_mass_flow` (rocket): steady_regression
 - `burning_rate` (rocket): square_root_pressure
 - `burning_area_ratio` (rocket): ratio_200
+- `equilibrium_chamber_pressure` (rocket): square_root_pressure
 - `burn_rate_temperature_sensitivity` (rocket): definition, exempt from the identity check
 - `pressure_temperature_sensitivity` (rocket): definition, exempt from the identity check
 
@@ -235,6 +271,10 @@ Exempt from the identity check.
 - `stall_speed` (aerodynamics): one_g_level
 - `equivalent_airspeed` (aerodynamics): same_dynamic_pressure
 - `load_factor` (aerodynamics): three_g
+- `breguet_range_jet` (aerodynamics): weight_ratio_two
+- `breguet_endurance_jet` (aerodynamics): weight_ratio_two
+- `breguet_range_prop` (aerodynamics): weight_ratio_two
+- `breguet_endurance_prop` (aerodynamics): weight_ratio_two
 - `stick_fixed_neutral_point` (aerodynamics): sample_tail, equal_slopes
 - `center_of_gravity_to_neutral_point` (aerodynamics): ahead
 - `neutral_distance_from_moment` (aerodynamics): five_percent_chord

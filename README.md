@@ -15,15 +15,20 @@ Cursor agent skills for aerospace engineering: checked formulas and small physic
 | [`ROCKET - PayloadtoDeltaV`](skills/ROCKET%20-%20PayloadtoDeltaV) | Run `payload_to_deltav.py` for useful payload from ideal delta-v, or ideal delta-v from useful payload, for one or more stages. A missing delta-v and payload writes a payload-versus-delta-v PNG. |
 | [`ROCKET - LossStack`](skills/ROCKET%20-%20LossStack) | Run `loss_stack.py` for actual thrust, specific impulse, thrust coefficient, c*, and mass flow from ideal \(C_F\), ideal \(c^{*}\), and named efficiencies. With throat area and chamber pressure it also prints the lossless thrust and mass flow. Omitted efficiencies stay 1. |
 | [`ROCKET - ChamberVolumeAndCaseHoopStress`](skills/ROCKET%20-%20ChamberVolumeAndCaseHoopStress) | Run `chamber_case.py` for chamber volume from throat area and \(L^{*}\), and thin-wall hoop stress and margin of safety from pressure, case radius, wall thickness, and allowable stress. |
+| [`ROCKET - SolidMotorParameters`](skills/ROCKET%20-%20SolidMotorParameters) | Run `solid_motor_parameters.py` for burning-area ratio, equilibrium chamber pressure, burn rate, and solid-propellant mass flow from Saint Robert burn-rate inputs, grain and throat areas, density, and \(c^{*}\). |
 | [`ASTRO - HohmannTransfer`](skills/ASTRO%20-%20HohmannTransfer) | Run `hohmann_transfer.py` for circular speed, escape speed, specific energy, impulsive delta-v, and coast time between two circular orbits. Writes a PNG of the transfer. |
+| [`ASTRO - OrbitalParameters`](skills/ASTRO%20-%20OrbitalParameters) | Run `orbital_parameters.py` for classical elements and the inertial state of a Keplerian conic, either direction. Writes a PNG of the orbit and a self-contained HTML viewer. |
 | [`ATMOS - Standard1976`](skills/ATMOS%20-%20Standard1976) | Run `standard_1976.py` for 1976 U.S. Standard Atmosphere temperature, pressure, density, speed of sound, and geometric pressure scale height at one geometric altitude from sea level through 86 km. |
 | [`AERO - PrandtlMeyerAndShocks`](skills/AERO%20-%20PrandtlMeyerAndShocks) | Run `prandtl_meyer_and_shocks.py` for the weak oblique-shock angle, downstream Mach, and static-pressure ratio on a two-dimensional wedge, the Prandtl-Meyer expansion through the same deflection, and whether the shock is attached. |
+| [`AERO - DiamondAirfoilShockExpansion`](skills/AERO%20-%20DiamondAirfoilShockExpansion) | Run `diamond_airfoil_shock_expansion.py` for the four panel pressures and section lift and drag of a symmetric diamond airfoil by shock-expansion theory. Writes a PNG of the waves. |
 | [`AERO - AirplanePerformanceParameters`](skills/AERO%20-%20AirplanePerformanceParameters) | Run `airplane_performance.py` for stall speed, maximum lift-to-drag ratio, jet and propeller best-range and best-endurance speeds, and a sea-level climb estimate from a parabolic drag polar. |
+| [`AERO - BreguetRangeEndurance`](skills/AERO%20-%20BreguetRangeEndurance) | Run `breguet_range_endurance.py` for jet and propeller Breguet cruise range and endurance from lift-to-drag ratio, specific fuel consumption, cruise speed, propeller efficiency, and start and end weight. |
 | [`AERO - WingGeometry`](skills/AERO%20-%20WingGeometry) | Run `wing_geometry.py` for trapezoidal wing area, aspect ratio, taper ratio, mean aerodynamic chord, and the spanwise station of that chord. An optional sweep is drawn on the plan view. |
 | [`AERO - V-nDiagram`](skills/AERO%20-%20V-nDiagram) | Run `vn_diagram.py` for the positive stall boundary and corner speed from weight, wing area, \(C_{L,\max}\), limit load factors, and air density. The PNG plots load factor against equivalent airspeed. |
 | [`AERO - FiniteWingLiftCurve`](skills/AERO%20-%20FiniteWingLiftCurve) | Run `finite_wing_lift_curve.py` for the wing lift-curve slope and the induced angle at \(C_{L,\max}\) from a section slope, zero-lift angle, aspect ratio, and span efficiency. The PDF is lift coefficient versus angle of attack up to stall. |
 | [`AERO - EquivalentAirspeed`](skills/AERO%20-%20EquivalentAirspeed) | Run `equivalent_airspeed.py` for Mach number, dynamic pressure, equivalent airspeed, and Reynolds number from a geometric altitude and either true airspeed or Mach number on the 1976 standard atmosphere. |
 | [`AERO - LongitudinalStaticMargin`](skills/AERO%20-%20LongitudinalStaticMargin) | Run `longitudinal_static_margin.py` for the stick-fixed neutral point and static margin from the wing-fuselage and tail lift-curve slopes, downwash, tail dynamic-pressure ratio, tail geometry, and center-of-gravity position. |
+| [`AERO - RayleighPitotMach`](skills/AERO%20-%20RayleighPitotMach) | Run `rayleigh_pitot_mach.py` for freestream Mach number and dynamic pressure from measured pitot pressure, freestream static pressure, and \(\gamma\). Below Mach 1 uses isentropic stagnation; above Mach 1 uses the Rayleigh-Pitot relation. |
 
 Each skill has a `SKILL.md` that tells the agent when to use it and how to respond.
 
@@ -62,18 +67,31 @@ skills/
   ROCKET - ChamberVolumeAndCaseHoopStress/
     SKILL.md
     chamber_case.py      # chamber volume, hoop stress, margin of safety (key: value stdout)
+  ROCKET - SolidMotorParameters/
+    SKILL.md
+    solid_motor_parameters.py  # solid-motor K, pc, burn rate, mass flow (key: value stdout)
   ATMOS - Standard1976/
     SKILL.md
     standard_1976.py     # 1976 temperature, pressure, density, sound speed, scale height
   ASTRO - HohmannTransfer/
     SKILL.md
     hohmann_transfer.py  # Hohmann delta-v and coast (key: value stdout, PNG)
+  ASTRO - OrbitalParameters/
+    SKILL.md
+    orbital_parameters.py  # elements and inertial state (key: value stdout, PNG, HTML viewer)
+    viewer/                # Three.js template and vendored three.min.js
   AERO - AirplanePerformanceParameters/
     SKILL.md
     airplane_performance.py  # stall, L/D, range and endurance speeds, sea-level climb
+  AERO - BreguetRangeEndurance/
+    SKILL.md
+    breguet_range_endurance.py  # jet and propeller Breguet range and endurance
   AERO - PrandtlMeyerAndShocks/
     SKILL.md
     prandtl_meyer_and_shocks.py  # wedge shock and Prandtl-Meyer expansion (key: value stdout, PNG)
+  AERO - DiamondAirfoilShockExpansion/
+    SKILL.md
+    diamond_airfoil_shock_expansion.py  # diamond panel pressures, cl, cd (key: value stdout, PNG)
   AERO - WingGeometry/
     SKILL.md
     wing_geometry.py     # trapezoidal planform (key: value stdout, PNG)
@@ -89,6 +107,9 @@ skills/
   AERO - LongitudinalStaticMargin/
     SKILL.md
     longitudinal_static_margin.py  # stick-fixed neutral point and static margin (key: value stdout)
+  AERO - RayleighPitotMach/
+    SKILL.md
+    rayleigh_pitot_mach.py  # pitot Mach and dynamic pressure (key: value stdout)
 ```
 
 ## Requirements
@@ -103,14 +124,18 @@ skills/
 - **ROCKET - LossStack** — Python 3 standard library only.
 - **ROCKET - ChamberVolumeAndCaseHoopStress** — Python 3 standard library only.
 - **ASTRO - HohmannTransfer** — Python 3 with `matplotlib`.
+- **ASTRO - OrbitalParameters** — Python 3 with `matplotlib`. Element angles are radians. `--elev` and `--azim` are degrees. Flattening is visual only. Each run also writes a self-contained HTML viewer beside the PNG. The viewer opens offline and animates the spacecraft on the same conic.
 - **ATMOS - Standard1976** — Python 3 standard library only. Hydrostatic model from sea level through 86 km. It does not use the NASA Glenn three-zone fit.
 - **AERO - PrandtlMeyerAndShocks** — Python 3 with `matplotlib`. Deflection is in radians. A two-dimensional wedge, not a cone.
+- **AERO - DiamondAirfoilShockExpansion** — Python 3 with `matplotlib`. Half-angle and angle of attack are radians. Reuses `AERO - PrandtlMeyerAndShocks`. Symmetric diamond only; trailing-edge wake matching is omitted.
 - **AERO - AirplanePerformanceParameters** — Python 3 standard library only. Sea-level density and an altitude lookup both come from `ATMOS - Standard1976`. A climb rate needs `--thrust` or `--power`.
+- **AERO - BreguetRangeEndurance** — Python 3 standard library only. Weight-based TSFC is `--ct` in \(1/\mathrm{s}\). Weight-based power SFC is `--c` in \(1/\mathrm{m}\). Cruise only; climb, descent, reserves, and wind are omitted.
 - **AERO - WingGeometry** — Python 3 with `matplotlib`. Chords are streamwise. Sweep is in radians. An omitted sweep draws an unswept leading edge. An omitted sweep station is the quarter chord.
 - **AERO - V-nDiagram** — Python 3 with `matplotlib`. Equivalent airspeed is `stall_speed` at 1976 sea-level density from `ATMOS - Standard1976`. True airspeeds use `--rho`. The negative line is the limit load factor. The plot end is not a dive speed.
 - **AERO - FiniteWingLiftCurve** — Python 3 with `matplotlib`. Angles are radians. The section slope is per radian. Span efficiency satisfies \(0 < e \le 1\). The PDF ends at stall.
 - **AERO - EquivalentAirspeed** — Python 3 standard library only. Temperature, pressure, density, and sound speed come from `ATMOS - Standard1976`. Equivalent airspeed is `freestream_dynamic_pressure` at 1976 sea-level density. It is not calibrated airspeed. An omitted length is 1 m.
 - **AERO - LongitudinalStaticMargin** — Python 3 standard library only. Stick-fixed TN 1670 equation (6). \(l\) is measured from the neutral point. \(q_T/q\) is the tail dynamic-pressure ratio. Both lift-curve slopes use the same angle unit.
+- **AERO - RayleighPitotMach** — Python 3 standard library only. Measured pitot at or above freestream static. An omitted `--gamma` is \(1.4\). The sonic pressure ratio selects isentropic stagnation versus Rayleigh-Pitot.
 
 Example:
 
@@ -130,14 +155,22 @@ python "skills/ROCKET - ChamberVolumeAndCaseHoopStress/chamber_case.py" --check
 python "skills/ASTRO - HohmannTransfer/hohmann_transfer.py" --r1 6774200 --r2 7374200
 python "skills/ASTRO - HohmannTransfer/hohmann_transfer.py" --alt 400000 --ecc 0.2
 python "skills/ASTRO - HohmannTransfer/hohmann_transfer.py" --check
+python "skills/ASTRO - OrbitalParameters/orbital_parameters.py" --a 10000000 --e 0.3 --i 0.9 --raan 0.6 --aop 1.2 --nu 0.8
+python "skills/ASTRO - OrbitalParameters/orbital_parameters.py" --a=-25000000 --e 1.4 --i 1.1 --raan 0.8 --aop 0.5 --nu 0.6
+python "skills/ASTRO - OrbitalParameters/orbital_parameters.py" --rx 8000000 --ry 0 --rz 0 --vx 0 --vy 7000 --vz 1500
+python "skills/ASTRO - OrbitalParameters/orbital_parameters.py" --check
 python "skills/ROCKET - ExpansionMatchEarth/expansion_match.py" --pc 2e6 --gamma 1.25 --alt 0
 python "skills/ROCKET - ExpansionMatchEarth/expansion_match.py" --check
 python "skills/ATMOS - Standard1976/standard_1976.py" --alt 11000
 python "skills/ATMOS - Standard1976/standard_1976.py" --check
 python "skills/AERO - AirplanePerformanceParameters/airplane_performance.py" --weight 10000 --area 16 --cd0 0.02 --ar 8 --e 0.8 --clmax 1.6 --alt 0
 python "skills/AERO - AirplanePerformanceParameters/airplane_performance.py" --check
+python "skills/AERO - BreguetRangeEndurance/breguet_range_endurance.py" --ld 16 --wi 1e5 --wf 8e4 --speed 250 --ct 2e-5 --c 1e-7 --eta 0.85
+python "skills/AERO - BreguetRangeEndurance/breguet_range_endurance.py" --check
 python "skills/AERO - PrandtlMeyerAndShocks/prandtl_meyer_and_shocks.py" --mach 2 --delta 0.174533
 python "skills/AERO - PrandtlMeyerAndShocks/prandtl_meyer_and_shocks.py" --check
+python "skills/AERO - DiamondAirfoilShockExpansion/diamond_airfoil_shock_expansion.py" --mach 2 --epsilon 0.174533 --alpha 0.087266
+python "skills/AERO - DiamondAirfoilShockExpansion/diamond_airfoil_shock_expansion.py" --check
 python "skills/AERO - WingGeometry/wing_geometry.py" --span 10 --root 2 --tip 1 --sweep 0.523598775598
 python "skills/AERO - WingGeometry/wing_geometry.py" --check
 python "skills/AERO - V-nDiagram/vn_diagram.py" --weight 10000 --area 16 --clmax 1.6 --n-pos 3.8 --n-neg -1.52 --rho 1.225
@@ -148,6 +181,8 @@ python "skills/AERO - EquivalentAirspeed/equivalent_airspeed.py" --alt 11000 --m
 python "skills/AERO - EquivalentAirspeed/equivalent_airspeed.py" --check
 python "skills/AERO - LongitudinalStaticMargin/longitudinal_static_margin.py" --a 5 --at 4 --downwash 0.4 --q-ratio 0.9 --tail-area 2 --tail-length 5 --wing-area 10 --mac 1 --cg 0.1
 python "skills/AERO - LongitudinalStaticMargin/longitudinal_static_margin.py" --check
+python "skills/AERO - RayleighPitotMach/rayleigh_pitot_mach.py" --pitot 120195 --static 101325 --gamma 1.4
+python "skills/AERO - RayleighPitotMach/rayleigh_pitot_mach.py" --check
 ```
 
 ## Units

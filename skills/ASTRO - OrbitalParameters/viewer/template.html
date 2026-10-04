@@ -1,0 +1,895 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>__TITLE__</title>
+<style>
+  :root {
+    color-scheme: light;
+    --ink: #1b2631;
+    --muted: #34495e;
+    --line: #d5d8dc;
+    --paper: #f7f9fb;
+    --card: #ffffff;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    height: 100%;
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: "Segoe UI", Helvetica, Arial, sans-serif;
+  }
+  body { overflow: hidden; }
+  #app {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+  header {
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+    padding: 10px 16px 6px;
+  }
+  h1 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 560;
+    letter-spacing: 0.01em;
+  }
+  #units {
+    margin: 0;
+    color: var(--muted);
+    font-size: 13px;
+  }
+  #stage {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    gap: 8px;
+    padding: 0 12px;
+  }
+  #viewport {
+    position: relative;
+    flex: 1;
+    min-width: 0;
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    overflow: hidden;
+    cursor: grab;
+    touch-action: none;
+  }
+  #viewport.dragging { cursor: grabbing; }
+  #view { width: 100%; height: 100%; display: block; }
+  #legend {
+    width: 188px;
+    margin: 0;
+    padding: 10px 12px;
+    list-style: none;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    overflow: auto;
+  }
+  #legend li {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0 0 7px;
+    font-size: 13px;
+    color: var(--ink);
+  }
+  #legend li:last-child { margin-bottom: 0; }
+  .swatch {
+    width: 18px;
+    height: 12px;
+    flex: 0 0 18px;
+    border-radius: 2px;
+  }
+  .swatch.circle, .swatch.square {
+    width: 12px;
+    height: 12px;
+    flex-basis: 12px;
+    margin-left: 3px;
+  }
+  footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 8px 16px 12px;
+  }
+  #readout {
+    margin: 0;
+    font-size: 13px;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+  }
+  #controls { display: flex; gap: 8px; }
+  button {
+    font: inherit;
+    font-size: 13px;
+    color: var(--ink);
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 6px 10px;
+    cursor: pointer;
+  }
+  button:hover { border-color: #aeb6bf; }
+  @media (max-width: 720px) {
+    #stage { flex-direction: column; }
+    #legend {
+      width: auto;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px 14px;
+    }
+    #legend li { margin: 0; }
+    footer { flex-wrap: wrap; }
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <h1 id="figure-title">__TITLE__</h1>
+    <p id="units">__AXIS_CAPTION__</p>
+  </header>
+  <div id="stage">
+    <div id="viewport">
+      <canvas id="view" aria-label="__TITLE__"></canvas>
+    </div>
+    <ul id="legend"></ul>
+  </div>
+  <footer>
+    <p id="readout"></p>
+    <div id="controls">
+      <button id="play" type="button">Pause</button>
+      <button id="epoch" type="button">Reset to epoch</button>
+      <button id="reset-camera" type="button">Reset camera</button>
+    </div>
+  </footer>
+</div>
+<script>
+__THREE_SOURCE__
+</script>
+<script type="application/json" id="orbital-scene">__SCENE_JSON__</script>
+<script>
+(function () {
+  "use strict";
+  // Kepler, occlusion, and the matplotlib camera match orbital_parameters.py.
+  const SCENE = JSON.parse(document.getElementById("orbital-scene").textContent);
+  const K = SCENE.kepler;
+  const palette = SCENE.palette;
+
+  document.title = SCENE.title;
+  document.getElementById("figure-title").textContent = SCENE.title;
+
+  const viewport = document.getElementById("viewport");
+  const canvas = document.getElementById("view");
+  const readout = document.getElementById("readout");
+  const playButton = document.getElementById("play");
+  const legend = document.getElementById("legend");
+
+  SCENE.legend.forEach(function (entry) {
+    const item = document.createElement("li");
+    const mark = document.createElement("span");
+    mark.className = "swatch " + entry.swatch;
+    if (entry.swatch === "line") {
+      mark.style.height = "0";
+      mark.style.borderTop = "3px solid " + entry.color;
+      mark.style.background = "transparent";
+    } else {
+      mark.style.background = entry.color;
+      if (entry.swatch === "circle") mark.style.borderRadius = "50%";
+      const edge = entry.edge || (entry.swatch === "circle" || entry.swatch === "square" ? "#ffffff" : "");
+      if (edge) mark.style.boxShadow = "inset 0 0 0 1.5px " + edge;
+      if (entry.swatch === "wedge") mark.style.opacity = "0.8";
+    }
+    const text = document.createElement("span");
+    text.textContent = entry.label;
+    item.append(mark, text);
+    legend.append(item);
+  });
+
+  const renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: false });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.setClearColor(0xf7f9fb, 1);
+  const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 10);
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0xf7f9fb);
+
+  let elev = SCENE.elev_deg;
+  let azim = SCENE.azim_deg;
+  let playing = true;
+  let simTime = 0;
+  let lastStamp = null;
+
+  function viewBasis(elevDeg, azimDeg, rollDeg) {
+    const elevRad = elevDeg * Math.PI / 180;
+    const azimRad = azimDeg * Math.PI / 180;
+    const rollRad = rollDeg * Math.PI / 180;
+    let outward = [
+      Math.cos(elevRad) * Math.cos(azimRad),
+      Math.cos(elevRad) * Math.sin(azimRad),
+      Math.sin(elevRad)
+    ];
+    const scale = Math.hypot(outward[0], outward[1], outward[2]);
+    outward = outward.map(function (component) { return component / scale; });
+    const vertical = Math.abs(elevRad) > Math.PI / 2 ? -1 : 1;
+    let right = [-vertical * outward[1], vertical * outward[0], 0];
+    const horizontal = Math.hypot(right[0], right[1]);
+    if (horizontal < 1e-8) {
+      const approach = Math.abs(elevDeg) <= 90 ? 1 : -1;
+      const signed = vertical > 0 ? approach : -approach;
+      right = [-signed * Math.sin(azimRad), signed * Math.cos(azimRad), 0];
+    } else {
+      right = [right[0] / horizontal, right[1] / horizontal, 0];
+    }
+    let up = [
+      outward[1] * right[2] - outward[2] * right[1],
+      outward[2] * right[0] - outward[0] * right[2],
+      outward[0] * right[1] - outward[1] * right[0]
+    ];
+    if (rollRad !== 0) {
+      right = rotateAbout(right, outward, -rollRad);
+      up = rotateAbout(up, outward, -rollRad);
+    }
+    return { u: right, v: up, w: outward };
+  }
+
+  function rotateAbout(vector, axis, angle) {
+    const cosine = Math.cos(angle);
+    const sine = Math.sin(angle);
+    const tilt = 1 - cosine;
+    const ax = axis[0], ay = axis[1], az = axis[2];
+    const vx = vector[0], vy = vector[1], vz = vector[2];
+    return [
+      (tilt * ax * ax + cosine) * vx + (tilt * ax * ay - az * sine) * vy + (tilt * ax * az + ay * sine) * vz,
+      (tilt * ay * ax + az * sine) * vx + (tilt * ay * ay + cosine) * vy + (tilt * ay * az - ax * sine) * vz,
+      (tilt * az * ax - ay * sine) * vx + (tilt * az * ay + ax * sine) * vy + (tilt * az * az + cosine) * vz
+    ];
+  }
+
+  function wrapTwoPi(angle) {
+    const twopi = 2 * Math.PI;
+    let wrapped = angle % twopi;
+    if (wrapped < 0) wrapped += twopi;
+    if (wrapped >= twopi || wrapped < 1e-15) return 0;
+    return wrapped;
+  }
+
+  function wrapPi(angle) {
+    const wrapped = wrapTwoPi(angle);
+    return wrapped > Math.PI ? wrapped - 2 * Math.PI : wrapped;
+  }
+
+  function solveKepler(meanAnomaly, eccentricity) {
+    const mean = wrapPi(meanAnomaly);
+    if (eccentricity === 0) return mean;
+    let eccentric = mean + eccentricity * Math.sin(mean);
+    for (let step = 0; step < 50; step += 1) {
+      const residual = eccentric - eccentricity * Math.sin(eccentric) - mean;
+      const slope = 1 - eccentricity * Math.cos(eccentric);
+      if (Math.abs(residual) <= 1e-14) return eccentric;
+      if (Math.abs(slope) < 1e-14) break;
+      const curve = eccentricity * Math.sin(eccentric);
+      const denom = slope - residual * curve / (2 * slope);
+      if (denom === 0 || !isFinite(denom)) break;
+      const delta = residual / denom;
+      eccentric -= delta;
+      if (Math.abs(delta) <= 1e-14) return eccentric;
+    }
+    return eccentric;
+  }
+
+  function trueAnomalyFromEccentric(eccentricAnomaly, eccentricity) {
+    const denominator = 1 - eccentricity * Math.cos(eccentricAnomaly);
+    const sine = Math.sqrt(1 - eccentricity * eccentricity) * Math.sin(eccentricAnomaly) / denominator;
+    const cosine = (Math.cos(eccentricAnomaly) - eccentricity) / denominator;
+    return Math.atan2(sine, cosine);
+  }
+
+  function inertialPosition(radius, omegaNode, argument, inclination) {
+    return [
+      radius * (Math.cos(omegaNode) * Math.cos(argument) - Math.sin(omegaNode) * Math.cos(inclination) * Math.sin(argument)),
+      radius * (Math.sin(omegaNode) * Math.cos(argument) + Math.cos(omegaNode) * Math.cos(inclination) * Math.sin(argument)),
+      radius * Math.sin(inclination) * Math.sin(argument)
+    ];
+  }
+
+  function inertialVelocity(vr, radius, position, vp, omegaNode, argument, inclination) {
+    const x = position[0], y = position[1], z = position[2];
+    return [
+      (vr / radius) * x - vp * (Math.cos(omegaNode) * Math.sin(argument) + Math.sin(omegaNode) * Math.cos(inclination) * Math.cos(argument)),
+      (vr / radius) * y + vp * (-Math.sin(omegaNode) * Math.sin(argument) + Math.cos(omegaNode) * Math.cos(inclination) * Math.cos(argument)),
+      (vr / radius) * z + vp * Math.sin(inclination) * Math.cos(argument)
+    ];
+  }
+
+  function stateAtNu(nu) {
+    const radius = K.p / (1 + K.e * Math.cos(nu));
+    const argument = K.omega + nu;
+    const position = inertialPosition(radius, K.Omega, argument, K.i);
+    const vr = (K.h * K.e / K.p) * Math.sin(nu);
+    const vp = K.h / radius;
+    return {
+      nu: nu,
+      position: position,
+      velocity: inertialVelocity(vr, radius, position, vp, K.Omega, argument, K.i)
+    };
+  }
+
+  function nuAtSimTime(time) {
+    if (K.conic === "ellipse" && K.a && K.period) {
+      const meanMotion = Math.sqrt(K.mu / Math.pow(K.a, 3));
+      const orbitalTime = time * (K.period / K.ellipse_wall_s);
+      const mean = wrapPi(K.M + meanMotion * orbitalTime);
+      return trueAnomalyFromEccentric(solveKepler(mean, K.e), K.e);
+    }
+    const lo = K.nu_min;
+    const hi = K.nu_max;
+    const span = hi - lo;
+    if (!(span > 1e-9)) return K.nu;
+    const speed = span / K.open_arc_wall_s;
+    const period = 2 * span;
+    let along = (K.nu + speed * time - lo) % period;
+    if (along < 0) along += period;
+    if (along > span) along = period - along;
+    return lo + along;
+  }
+
+  function behindPlanet(x, y, z, ux, uy, uz, radius) {
+    const depth = x * ux + y * uy + z * uz;
+    const offAxis = x * x + y * y + z * z - depth * depth;
+    if (offAxis >= radius * radius) return false;
+    return depth < Math.sqrt(radius * radius - offAxis);
+  }
+
+  function splitHidden(points, hidden) {
+    const near = [];
+    const far = [];
+    let nearRun = [];
+    let farRun = [];
+    function flush() {
+      if (nearRun.length > 1) near.push(nearRun);
+      if (farRun.length > 1) far.push(farRun);
+      nearRun = [];
+      farRun = [];
+    }
+    let previous = null;
+    for (let index = 0; index < points.length; index += 1) {
+      const flag = hidden[index];
+      const point = points[index];
+      if (previous !== null && flag !== previous) {
+        if (flag) nearRun.push(point);
+        else farRun.push(point);
+        flush();
+      }
+      (flag ? farRun : nearRun).push(point);
+      previous = flag;
+    }
+    flush();
+    return { near: near, far: far };
+  }
+
+  function toVecs(polyline) {
+    return polyline.map(function (point) {
+      return new THREE.Vector3(point[0], point[1], point[2]);
+    });
+  }
+
+  function ribbonGeometry(points, width, viewOut) {
+    const view = new THREE.Vector3(viewOut[0], viewOut[1], viewOut[2]);
+    const positions = [];
+    const indices = [];
+    const tangent = new THREE.Vector3();
+    const side = new THREE.Vector3();
+    const fallback = new THREE.Vector3();
+    for (let index = 0; index < points.length; index += 1) {
+      const prev = points[Math.max(0, index - 1)];
+      const next = points[Math.min(points.length - 1, index + 1)];
+      tangent.subVectors(next, prev);
+      if (tangent.lengthSq() < 1e-12) tangent.set(1, 0, 0);
+      side.crossVectors(tangent, view);
+      if (side.lengthSq() < 1e-10) {
+        fallback.set(0, 0, 1);
+        side.crossVectors(tangent, fallback);
+      }
+      if (side.lengthSq() < 1e-10) side.set(0, 1, 0);
+      side.normalize().multiplyScalar(width * 0.5);
+      const point = points[index];
+      positions.push(point.x + side.x, point.y + side.y, point.z + side.z);
+      positions.push(point.x - side.x, point.y - side.y, point.z - side.z);
+    }
+    for (let index = 0; index < points.length - 1; index += 1) {
+      const a = index * 2;
+      indices.push(a, a + 1, a + 2, a + 1, a + 3, a + 2);
+    }
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
+    geometry.setIndex(indices);
+    return geometry;
+  }
+
+  function slicePolyline(points, cum, start, end) {
+    function at(distance) {
+      if (distance <= 0) return points[0].clone();
+      if (distance >= cum[cum.length - 1]) return points[points.length - 1].clone();
+      let index = 1;
+      while (cum[index] < distance) index += 1;
+      const span = cum[index] - cum[index - 1];
+      const fraction = span <= 0 ? 0 : (distance - cum[index - 1]) / span;
+      return points[index - 1].clone().lerp(points[index], fraction);
+    }
+    const piece = [at(start)];
+    for (let index = 1; index < points.length - 1; index += 1) {
+      if (cum[index] > start && cum[index] < end) piece.push(points[index].clone());
+    }
+    piece.push(at(end));
+    return piece;
+  }
+
+  function dashedPieces(points, dash, gap) {
+    const cum = [0];
+    for (let index = 1; index < points.length; index += 1) {
+      cum.push(cum[index - 1] + points[index].distanceTo(points[index - 1]));
+    }
+    const total = cum[cum.length - 1];
+    const pieces = [];
+    if (!(total > 0)) return pieces;
+    const period = dash + gap;
+    for (let distance = 0; distance < total; distance += period) {
+      const piece = slicePolyline(points, cum, distance, Math.min(total, distance + dash));
+      if (piece.length > 1) pieces.push(piece);
+    }
+    return pieces;
+  }
+
+  function addMesh(geometry, material, order) {
+    const mesh = new THREE.Mesh(geometry, material);
+    mesh.frustumCulled = false;
+    mesh.renderOrder = order;
+    scene.add(mesh);
+    return mesh;
+  }
+
+  function lineThrough(points, color, order) {
+    const geometry = new THREE.BufferGeometry().setFromPoints(toVecs(points));
+    const material = new THREE.LineBasicMaterial({ color: color, depthTest: false });
+    const line = new THREE.Line(geometry, material);
+    line.frustumCulled = false;
+    line.renderOrder = order;
+    scene.add(line);
+    return line;
+  }
+
+  const initial = viewBasis(SCENE.elev_deg, SCENE.azim_deg, SCENE.roll_deg);
+  scene.add(new THREE.AmbientLight(0xffffff, 0.78));
+  const key = new THREE.DirectionalLight(0xffffff, 0.7);
+  key.position.set(
+    0.72 * initial.w[0] + 0.48 * initial.v[0] - 0.32 * initial.u[0],
+    0.72 * initial.w[1] + 0.48 * initial.v[1] - 0.32 * initial.u[1],
+    0.72 * initial.w[2] + 0.48 * initial.v[2] - 0.32 * initial.u[2]
+  );
+  scene.add(key);
+  const fill = new THREE.DirectionalLight(0xffffff, 0.28);
+  fill.position.set(-initial.u[0], -initial.u[1], -initial.u[2] + 0.4);
+  scene.add(fill);
+
+  const box = new THREE.Box3(
+    new THREE.Vector3(-SCENE.limit_km, -SCENE.limit_km, -SCENE.limit_km),
+    new THREE.Vector3(SCENE.limit_km, SCENE.limit_km, SCENE.limit_km)
+  );
+  const helper = new THREE.Box3Helper(box, 0xd5d8dc);
+  helper.material.transparent = true;
+  helper.material.opacity = 0.85;
+  helper.material.depthTest = false;
+  helper.renderOrder = 1;
+  scene.add(helper);
+
+  if (SCENE.ring_km.length > 1) lineThrough(SCENE.ring_km, palette.equator, 2);
+  SCENE.spokes_km.forEach(function (spoke) { lineThrough(spoke, palette.equator_spoke, 2); });
+
+  const wedgeSteps = SCENE.wedge_steps || 36;
+  let wedgeGeometry = null;
+  let wedgeOutline = null;
+
+  function sectorOffsets(place) {
+    const horizontal = Math.hypot(place.x, place.y);
+    const radius = Math.hypot(place.x, place.y, place.z);
+    let along;
+    let across;
+    let elevation;
+    if (horizontal < 1e-6) {
+      along = -Math.sin(K.Omega);
+      across = Math.cos(K.Omega);
+      elevation = place.z >= 0 ? Math.PI / 2 : -Math.PI / 2;
+    } else {
+      along = place.x / horizontal;
+      across = place.y / horizontal;
+      elevation = Math.atan2(place.z, horizontal);
+    }
+    const count = wedgeSteps;
+    const positions = new Float32Array((count + 1) * 3);
+    for (let step = 0; step < count; step += 1) {
+      const tilt = elevation * (step / (count - 1));
+      const offset = step + 1;
+      positions[offset * 3] = radius * Math.cos(tilt) * along;
+      positions[offset * 3 + 1] = radius * Math.cos(tilt) * across;
+      positions[offset * 3 + 2] = radius * Math.sin(tilt);
+    }
+    positions[count * 3] = place.x;
+    positions[count * 3 + 1] = place.y;
+    positions[count * 3 + 2] = place.z;
+    return positions;
+  }
+
+  function placeWedge(place) {
+    if (!wedgeGeometry) return;
+    const positions = sectorOffsets(place);
+    wedgeGeometry.attributes.position.array.set(positions);
+    wedgeGeometry.attributes.position.needsUpdate = true;
+    wedgeGeometry.computeBoundingSphere();
+    const outline = new Float32Array((wedgeSteps + 2) * 3);
+    outline.set(positions);
+    outline[(wedgeSteps + 1) * 3] = 0;
+    outline[(wedgeSteps + 1) * 3 + 1] = 0;
+    outline[(wedgeSteps + 1) * 3 + 2] = 0;
+    wedgeOutline.attributes.position.array.set(outline);
+    wedgeOutline.attributes.position.needsUpdate = true;
+  }
+
+  if (SCENE.show_wedge) {
+    const vertexCount = wedgeSteps + 1;
+    const indices = [];
+    for (let index = 1; index < vertexCount - 1; index += 1) {
+      indices.push(0, index, index + 1);
+    }
+    wedgeGeometry = new THREE.BufferGeometry();
+    wedgeGeometry.setAttribute(
+      "position",
+      new THREE.BufferAttribute(new Float32Array(vertexCount * 3), 3)
+    );
+    wedgeGeometry.setIndex(indices);
+    const wedgeMaterial = new THREE.MeshBasicMaterial({
+      color: palette.wedge,
+      transparent: true,
+      opacity: 0.72,
+      side: THREE.DoubleSide,
+      depthWrite: false,
+      depthTest: false
+    });
+    const wedgeMesh = addMesh(wedgeGeometry, wedgeMaterial, 9);
+    wedgeMesh.renderOrder = 9;
+    wedgeOutline = new THREE.BufferGeometry();
+    wedgeOutline.setAttribute(
+      "position",
+      new THREE.BufferAttribute(new Float32Array((wedgeSteps + 2) * 3), 3)
+    );
+    const wedgeLine = new THREE.Line(
+      wedgeOutline,
+      new THREE.LineBasicMaterial({ color: palette.wedge_edge, depthTest: false })
+    );
+    wedgeLine.frustumCulled = false;
+    wedgeLine.renderOrder = 9;
+    scene.add(wedgeLine);
+  }
+
+  const planetGeometry = new THREE.SphereGeometry(
+    SCENE.equatorial_radius_km,
+    SCENE.planet_segments_u,
+    SCENE.planet_segments_v
+  );
+  const planetMaterial = new THREE.MeshLambertMaterial({
+    color: palette.planet,
+    emissive: new THREE.Color(palette.planet),
+    emissiveIntensity: 0.22,
+    transparent: true,
+    opacity: SCENE.planet_opacity,
+    depthWrite: false
+  });
+  const planet = new THREE.Mesh(planetGeometry, planetMaterial);
+  planet.scale.set(1, SCENE.polar_radius_km / SCENE.equatorial_radius_km, 1);
+  planet.rotation.x = Math.PI / 2;
+  planet.renderOrder = 3;
+  scene.add(planet);
+  if (SCENE.equator_km.length > 1) lineThrough(SCENE.equator_km, palette.equator_limb, 4);
+
+  SCENE.axes.forEach(function (axis) {
+    lineThrough([[0, 0, 0], axis.tip_km], palette.axis, 4);
+    const label = textSprite(axis.label, palette.axis);
+    label.position.set(axis.label_km[0], axis.label_km[1], axis.label_km[2]);
+    scene.add(label);
+  });
+
+  const nearMaterial = new THREE.MeshBasicMaterial({
+    color: palette.orbit,
+    side: THREE.DoubleSide,
+    depthTest: false
+  });
+  const farMaterial = new THREE.MeshBasicMaterial({
+    color: palette.orbit,
+    side: THREE.DoubleSide,
+    depthTest: false,
+    transparent: true,
+    opacity: 0.95
+  });
+  const orbitGroup = new THREE.Group();
+  orbitGroup.renderOrder = 6;
+  scene.add(orbitGroup);
+
+  function clearGroup(group) {
+    for (let index = group.children.length - 1; index >= 0; index -= 1) {
+      const child = group.children[index];
+      group.remove(child);
+      if (child.geometry) child.geometry.dispose();
+    }
+  }
+
+  function rebuildOrbit(outward) {
+    clearGroup(orbitGroup);
+    const nearWidth = SCENE.limit_km * 0.011;
+    const farWidth = SCENE.limit_km * 0.0055;
+    const dash = SCENE.limit_km * 0.045;
+    const gap = SCENE.limit_km * 0.028;
+    const radius = SCENE.equatorial_radius_km;
+    SCENE.orbit_km.forEach(function (polyline) {
+      const points = toVecs(polyline);
+      const hidden = points.map(function (point) {
+        return behindPlanet(point.x, point.y, point.z, outward[0], outward[1], outward[2], radius);
+      });
+      const split = splitHidden(points, hidden);
+      split.near.forEach(function (stroke) {
+        const mesh = new THREE.Mesh(ribbonGeometry(stroke, nearWidth, outward), nearMaterial);
+        mesh.frustumCulled = false;
+        mesh.renderOrder = 8;
+        orbitGroup.add(mesh);
+      });
+      split.far.forEach(function (stroke) {
+        dashedPieces(stroke, dash, gap).forEach(function (piece) {
+          const mesh = new THREE.Mesh(ribbonGeometry(piece, farWidth, outward), farMaterial);
+          mesh.frustumCulled = false;
+          mesh.renderOrder = 6;
+          orbitGroup.add(mesh);
+        });
+      });
+    });
+  }
+
+  function markerTexture(shape, fill) {
+    const surface = document.createElement("canvas");
+    surface.width = 64;
+    surface.height = 64;
+    const context = surface.getContext("2d");
+    context.clearRect(0, 0, 64, 64);
+    context.fillStyle = fill;
+    context.strokeStyle = "#ffffff";
+    context.lineWidth = 6;
+    if (shape === "square") {
+      context.beginPath();
+      context.rect(10, 10, 44, 44);
+      context.fill();
+      context.stroke();
+    } else {
+      context.beginPath();
+      context.arc(32, 32, 22, 0, Math.PI * 2);
+      context.fill();
+      context.stroke();
+    }
+    const texture = new THREE.CanvasTexture(surface);
+    texture.needsUpdate = true;
+    return texture;
+  }
+
+  function textSprite(text, color) {
+    const surface = document.createElement("canvas");
+    surface.width = 256;
+    surface.height = 128;
+    const context = surface.getContext("2d");
+    context.clearRect(0, 0, 256, 128);
+    context.fillStyle = color;
+    context.font = "700 72px Segoe UI, Helvetica, Arial, sans-serif";
+    context.textAlign = "center";
+    context.textBaseline = "middle";
+    context.fillText(text, 128, 64);
+    const texture = new THREE.CanvasTexture(surface);
+    texture.needsUpdate = true;
+    const material = new THREE.SpriteMaterial({ map: texture, transparent: true, depthTest: false });
+    const sprite = new THREE.Sprite(material);
+    const scale = SCENE.limit_km * 0.18;
+    sprite.scale.set(scale, scale * 0.5, 1);
+    sprite.renderOrder = 9;
+    sprite.frustumCulled = false;
+    return sprite;
+  }
+
+  const markerScale = SCENE.limit_km * 0.05;
+  let craftSprite = null;
+  SCENE.markers.forEach(function (marker) {
+    const material = new THREE.SpriteMaterial({
+      map: markerTexture(marker.shape, marker.color),
+      transparent: true,
+      depthTest: false
+    });
+    const sprite = new THREE.Sprite(material);
+    const scale = marker.id === "apoapsis" ? markerScale * 0.92 : markerScale;
+    sprite.scale.set(scale, scale, 1);
+    sprite.position.set(marker.km[0], marker.km[1], marker.km[2]);
+    sprite.renderOrder = marker.id === "spacecraft" ? 11 : 10;
+    sprite.frustumCulled = false;
+    scene.add(sprite);
+    if (marker.id === "spacecraft") craftSprite = sprite;
+  });
+
+  const radiusGeometry = new THREE.BufferGeometry().setFromPoints([
+    new THREE.Vector3(0, 0, 0),
+    new THREE.Vector3(SCENE.craft_km[0], SCENE.craft_km[1], SCENE.craft_km[2])
+  ]);
+  const radiusLine = new THREE.Line(
+    radiusGeometry,
+    new THREE.LineBasicMaterial({ color: palette.radius, depthTest: false })
+  );
+  radiusLine.frustumCulled = false;
+  radiusLine.renderOrder = 5;
+  scene.add(radiusLine);
+
+  const epochState = stateAtNu(K.nu);
+  const epochKm = new THREE.Vector3(
+    epochState.position[0] / 1000,
+    epochState.position[1] / 1000,
+    epochState.position[2] / 1000
+  );
+  const epochVelocity = new THREE.Vector3(
+    epochState.velocity[0],
+    epochState.velocity[1],
+    epochState.velocity[2]
+  );
+  if (epochVelocity.lengthSq() === 0) epochVelocity.set(1, 0, 0);
+  epochVelocity.normalize();
+  const arrow = new THREE.ArrowHelper(
+    epochVelocity,
+    epochKm,
+    SCENE.velocity_length_km,
+    palette.velocity,
+    SCENE.velocity_length_km * 0.22,
+    SCENE.velocity_length_km * 0.12
+  );
+  arrow.frustumCulled = false;
+  arrow.renderOrder = 7;
+  scene.add(arrow);
+
+  function frameCamera() {
+    const width = Math.max(1, viewport.clientWidth);
+    const height = Math.max(1, viewport.clientHeight);
+    renderer.setSize(width, height, false);
+    const aspect = width / height;
+    const half = SCENE.limit_km * 1.08;
+    camera.left = -half * aspect;
+    camera.right = half * aspect;
+    camera.top = half;
+    camera.bottom = -half;
+    const distance = SCENE.limit_km * 8;
+    camera.near = distance * 0.05;
+    camera.far = distance * 4;
+    camera.updateProjectionMatrix();
+  }
+
+  function formatDeg(value) {
+    const absolute = Math.abs(value);
+    if (absolute >= 100) return String(Math.round(value * 10) / 10);
+    return String(Math.round(value * 1000) / 1000);
+  }
+
+  function rateText() {
+    if (K.conic === "ellipse") return "rate 1 period / " + K.ellipse_wall_s + " s";
+    return "rate drawn arc / " + K.open_arc_wall_s + " s";
+  }
+
+  function showReadout() {
+    readout.textContent = "elev " + formatDeg(elev) + "°    azim " + formatDeg(azim) + "°    " + rateText();
+  }
+
+  function applyCamera() {
+    const basis = viewBasis(elev, azim, SCENE.roll_deg);
+    const distance = SCENE.limit_km * 8;
+    camera.position.set(basis.w[0] * distance, basis.w[1] * distance, basis.w[2] * distance);
+    camera.up.set(basis.v[0], basis.v[1], basis.v[2]);
+    camera.lookAt(0, 0, 0);
+    rebuildOrbit(basis.w);
+    showReadout();
+  }
+
+  function updateCraft(time) {
+    const state = stateAtNu(nuAtSimTime(time));
+    const place = new THREE.Vector3(state.position[0] / 1000, state.position[1] / 1000, state.position[2] / 1000);
+    if (craftSprite) craftSprite.position.copy(place);
+    radiusGeometry.setFromPoints([new THREE.Vector3(0, 0, 0), place]);
+    const direction = new THREE.Vector3(state.velocity[0], state.velocity[1], state.velocity[2]);
+    if (direction.lengthSq() > 0) {
+      direction.normalize();
+      arrow.position.copy(place);
+      arrow.setDirection(direction);
+    }
+    placeWedge(place);
+  }
+
+  function wrapAzimuth(value) {
+    return ((value + 180) % 360 + 360) % 360 - 180;
+  }
+
+  frameCamera();
+  applyCamera();
+  updateCraft(0);
+
+  let dragging = false;
+  let lastX = 0;
+  let lastY = 0;
+  viewport.addEventListener("pointerdown", function (event) {
+    dragging = true;
+    lastX = event.clientX;
+    lastY = event.clientY;
+    viewport.classList.add("dragging");
+    viewport.setPointerCapture(event.pointerId);
+  });
+  viewport.addEventListener("pointermove", function (event) {
+    if (!dragging) return;
+    const dx = event.clientX - lastX;
+    const dy = event.clientY - lastY;
+    lastX = event.clientX;
+    lastY = event.clientY;
+    azim = wrapAzimuth(azim - dx * 0.35);
+    elev -= dy * 0.28;
+    if (elev > 90) elev = 90;
+    if (elev < -90) elev = -90;
+    applyCamera();
+  });
+  function endDrag() {
+    dragging = false;
+    viewport.classList.remove("dragging");
+  }
+  viewport.addEventListener("pointerup", endDrag);
+  viewport.addEventListener("pointercancel", endDrag);
+  viewport.addEventListener("wheel", function (event) {
+    event.preventDefault();
+    const factor = Math.exp(event.deltaY * 0.0011);
+    camera.zoom = Math.min(40, Math.max(0.2, camera.zoom / factor));
+    camera.updateProjectionMatrix();
+  }, { passive: false });
+  window.addEventListener("resize", frameCamera);
+
+  playButton.addEventListener("click", function () {
+    playing = !playing;
+    playButton.textContent = playing ? "Pause" : "Play";
+  });
+  document.getElementById("epoch").addEventListener("click", function () {
+    simTime = 0;
+    updateCraft(0);
+  });
+  document.getElementById("reset-camera").addEventListener("click", function () {
+    elev = SCENE.elev_deg;
+    azim = SCENE.azim_deg;
+    camera.zoom = 1;
+    camera.updateProjectionMatrix();
+    applyCamera();
+  });
+
+  function frame(now) {
+    if (lastStamp !== null && playing) {
+      simTime += Math.min(0.05, (now - lastStamp) / 1000);
+    }
+    lastStamp = now;
+    updateCraft(simTime);
+    renderer.render(scene, camera);
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
