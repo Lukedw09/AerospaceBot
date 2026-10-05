@@ -1,4 +1,4 @@
-"""Catalog, runner, formula allow-list, and the local plugin cases."""
+﻿"""Catalog, runner, formula allow-list, and the local plugin cases."""
 
 from __future__ import annotations
 
@@ -138,6 +138,38 @@ class RunnerTests(unittest.TestCase):
             "PNG path; the HTML viewer uses the same stem",
         )
         self.assertEqual(path.suffix, ".png")
+
+    def test_naca_publishes_coeff_polar_and_ordinates(self) -> None:
+        tool = tool_by_name(load_catalog(ROOT), "naca_four_digit_section")
+        assert tool is not None
+        result = run_tool(
+            tool,
+            {"naca": "0012", "chord": 1, "alpha": 0.06981317, "re": 3e6},
+            repo_root=ROOT,
+        )
+        self.assertEqual(result.exit_code, 0, result.text)
+        names = {path.name for path in result.files}
+        self.assertEqual(
+            names,
+            {"out.png", "out_coeff.png", "out_polar.png", "out_ordinates.txt"},
+        )
+        for key in (
+            "graph:",
+            "coefficients_graph:",
+            "polar_graph:",
+            "ordinates:",
+        ):
+            line = next(row for row in result.text.splitlines() if row.startswith(key))
+            path = Path(line.split(":", 1)[1].strip())
+            self.assertTrue(path.is_file(), line)
+            self.assertIn(path, result.files)
+        pngs = [path for path in result.files if path.suffix == ".png"]
+        self.assertEqual(len(pngs), 3)
+        for path in pngs:
+            self.assertEqual(path.read_bytes()[:8], b"\x89PNG\r\n\x1a\n")
+        ordinates = next(path for path in result.files if path.name == "out_ordinates.txt")
+        self.assertIn("xi yc_m yt_m", ordinates.read_text(encoding="utf-8").splitlines()[0])
+        shutil.rmtree(result.job_dir, ignore_errors=True)
 
 
 class FormulaTests(unittest.TestCase):

@@ -36,15 +36,28 @@ def _coerce(flag: Flag, raw: object) -> list[str]:
     return [flag.option, str(raw)]
 
 
+# Stdout keys whose values are downloadable result files (PNG, HTML, tables).
+ARTIFACT_PREFIXES = (
+    "graph:",
+    "viewer:",
+    "coefficients_graph:",
+    "polar_graph:",
+    "ordinates:",
+)
+
+
+def _artifact_prefix(line: str) -> str | None:
+    for prefix in ARTIFACT_PREFIXES:
+        if line.startswith(prefix):
+            return prefix
+    return None
+
+
 def _rewrite_paths(stdout: str, job_dir: Path, cwd: Path) -> tuple[str, list[Path]]:
     lines: list[str] = []
     files: list[Path] = []
     for line in stdout.splitlines():
-        prefix = ""
-        if line.startswith("graph:"):
-            prefix = "graph:"
-        elif line.startswith("viewer:"):
-            prefix = "viewer:"
+        prefix = _artifact_prefix(line)
         if not prefix:
             lines.append(line)
             continue

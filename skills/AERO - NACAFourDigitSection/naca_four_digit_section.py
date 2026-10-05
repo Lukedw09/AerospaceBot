@@ -331,30 +331,59 @@ def polar_for(
 
 
 def zero_lift_deg(polar: Polar) -> float:
+    """Geometric α_L0 from the lift curve as angle increases through cl = 0.
+
+    Post-stall hysteresis can cross zero while cl is falling; ignore those
+    downward crossings so heavily cambered charts (e.g. 4412) still resolve.
+    """
     cl = polar.cl
     alpha = polar.alpha_deg
     for i in range(1, len(cl)):
-        if cl[i - 1] == 0.0:
+        lo, hi = cl[i - 1], cl[i]
+        if lo == 0.0:
             return alpha[i - 1]
-        if cl[i - 1] < 0.0 <= cl[i] or cl[i - 1] > 0.0 >= cl[i]:
-            return lerp(0.0, (cl[i - 1], cl[i]), (alpha[i - 1], alpha[i]))
-    raise ValueError("measured lift curve does not cross zero")
+        if lo < 0.0 < hi:
+            return lerp(0.0, (lo, hi), (alpha[i - 1], alpha[i]))
+        if lo < 0.0 and hi == 0.0:
+            return alpha[i]
+    raise ValueError(
+        f"measured lift curve for NACA {polar.designation} does not cross zero "
+        "with increasing angle of attack"
+    )
+
+
+def _alpha_in_table(polar: Polar, alpha_deg: float) -> None:
+    lo, hi = polar.alpha_deg[0], polar.alpha_deg[-1]
+    if alpha_deg < lo or alpha_deg > hi:
+        raise ValueError(
+            f"angle of attack {alpha_deg:g} deg is outside the Report 824 table "
+            f"for {polar.designation}; measured range [{lo:g}, {hi:g}] deg"
+        )
 
 
 def cl_at(polar: Polar, alpha_deg: float) -> float:
+    _alpha_in_table(polar, alpha_deg)
     return lerp(alpha_deg, polar.alpha_deg, polar.cl)
 
 
 def cm_at(polar: Polar, alpha_deg: float) -> float:
+    _alpha_in_table(polar, alpha_deg)
     return lerp(alpha_deg, polar.alpha_deg, polar.cm_c4)
 
 
 def cd_at_cl(polar: Polar, cl: float) -> float:
+    lo, hi = polar.cl_polar[0], polar.cl_polar[-1]
+    if cl < lo or cl > hi:
+        raise ValueError(
+            f"section lift {cl:g} is outside the Report 824 polar for "
+            f"{polar.designation}; measured cl range [{lo:g}, {hi:g}]"
+        )
     return lerp(cl, polar.cl_polar, polar.cd)
 
 
 def cd_at(polar: Polar, alpha_deg: float) -> float:
     if polar.cd_alpha and all(math.isfinite(v) for v in polar.cd_alpha):
+        _alpha_in_table(polar, alpha_deg)
         return lerp(alpha_deg, polar.alpha_deg, polar.cd_alpha)
     return cd_at_cl(polar, cl_at(polar, alpha_deg))
 
@@ -629,6 +658,15 @@ def run_check() -> int:
     if not 0.004 < min_d < 0.012:
         return fail("2412 cdmin out of Report 824 range")
 
+    camber44 = polar_for(parse_designation("4412"), catalog, None)
+    l0_4412 = zero_lift_deg(camber44)
+    if not close_enough(l0_4412, -4.0, 1.0):
+        return fail(f"4412 zero-lift angle {l0_4412}")
+    if cl_at(camber44, 0.0) <= 0.0:
+        return fail("4412 should lift at zero geometric angle")
+    if cd_at(camber44, 0.0) <= 0.0:
+        return fail("4412 measured cd must be positive")
+
     sym = polar_for(parse_designation("0012"), catalog, 6000000.0)
     if abs(cl_at(sym, 0.0)) > 0.02:
         return fail("0012 lift at zero angle")
@@ -657,6 +695,14 @@ def run_check() -> int:
         pass
     else:
         return fail("missing Report 824 chart was accepted")
+
+    try:
+        cl_at(camber44, -40.0)
+    except ValueError as exc:
+        if "outside the Report 824 table" not in str(exc):
+            return fail(f"alpha-out-of-range message was unclear: {exc}")
+    else:
+        return fail("angle far below the table was accepted")
 
     with tempfile.TemporaryDirectory() as tmp:
         base = Path(tmp)
@@ -716,6 +762,38 @@ def run_check() -> int:
                 return fail(f"stdout missing {key}")
         if "cd: 0" in text.splitlines() or "cd: 0.0\n" in text:
             return fail("inviscid zero drag was printed")
+
+        captured.clear()
+        sys.stdout = _Capture()
+        try:
+            code = main(
+                [
+                    "--naca",
+                    "4412",
+                    "--chord",
+                    "1",
+                    "--out",
+                    str(base / "section4412.png"),
+                    "--out-coeff",
+                    str(base / "coeff4412.png"),
+                    "--out-polar",
+                    str(base / "polar4412.png"),
+                    "--out-ordinates",
+                    str(base / "ordinates4412.txt"),
+                ]
+            )
+        finally:
+            sys.stdout = old_out
+        if code != 0:
+            return fail(f"4412 geometry-only main returned {code}")
+        omit_text = "".join(captured)
+        if "designation: 4412" not in omit_text or "alpha_L0_deg:" not in omit_text:
+            return fail("4412 omit-alpha/re stdout incomplete")
+        lines = omit_text.splitlines()
+        if any(line.startswith("cl:") for line in lines):
+            return fail("4412 omit-alpha run printed a point cl")
+        if not (base / "section4412.png").read_bytes().startswith(b"\x89PNG"):
+            return fail("4412 section.png is not a PNG")
 
     sink = sys.stderr
     sys.stderr = tempfile.TemporaryFile(mode="w+")
