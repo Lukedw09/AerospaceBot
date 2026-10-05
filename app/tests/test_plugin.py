@@ -1,4 +1,4 @@
-ï»¿"""Catalog, runner, formula allow-list, and the local plugin cases."""
+﻿"""Catalog, runner, formula allow-list, and the local plugin cases."""
 
 from __future__ import annotations
 
@@ -186,22 +186,31 @@ class RunnerTests(unittest.TestCase):
         self.assertIn("xi yc_m yt_m", ordinates.read_text(encoding="utf-8").splitlines()[0])
         shutil.rmtree(result.job_dir, ignore_errors=True)
 
-
 class FormulaTests(unittest.TestCase):
     def test_unknown_id_is_refused(self) -> None:
         text = lookup_formula(
-            ROOT / "skills" / "aero-formulas" / "formulas.md",
-            ROOT / "skills" / "aero-formulas" / "checks" / "check.md",
+            ROOT / "skills" / "FormulaCatalouge" / "formulas.md",
+            ROOT / "skills" / "FormulaCatalouge" / "checks" / "check.md",
             "not_a_real_formula",
         )
         self.assertEqual(text, "that formula is not allowed")
 
     def test_perfect_gas_evaluates_when_symbols_are_present(self) -> None:
         text = lookup_formula(
-            ROOT / "skills" / "aero-formulas" / "formulas.md",
-            ROOT / "skills" / "aero-formulas" / "checks" / "check.md",
+            ROOT / "skills" / "FormulaCatalouge" / "formulas.md",
+            ROOT / "skills" / "FormulaCatalouge" / "checks" / "check.md",
             "perfect_gas",
             '{"rho": 1.2, "R": 287, "T": 288.15}',
+        )
+        self.assertIn("result:", text)
+        self.assertNotIn("not allowed", text)
+
+    def test_perfect_gas_evaluates_from_an_object(self) -> None:
+        text = lookup_formula(
+            ROOT / "skills" / "FormulaCatalouge" / "formulas.md",
+            ROOT / "skills" / "FormulaCatalouge" / "checks" / "check.md",
+            "perfect_gas",
+            {"rho": 1.2, "R": 287, "T": 288.15},
         )
         self.assertIn("result:", text)
         self.assertNotIn("not allowed", text)
@@ -225,7 +234,7 @@ class PluginCases(unittest.TestCase):
 
         gas = dispatch_formula(
             "perfect_gas",
-            '{"rho": 1.2, "R": 287, "T": 288.15}',
+            {"rho": 1.2, "R": 287, "T": 288.15},
         )
         self.assertIn("result:", gas)
 
@@ -258,6 +267,9 @@ class PluginCases(unittest.TestCase):
         self.assertIn("throat_sizing", names)
         self.assertIn("lookup_formula", names)
         self.assertIn("list_tools", names)
+        values_schema = server._tool_manager._tools["lookup_formula"].parameters["properties"]["values_json"]
+        kinds = values_schema.get("anyOf", [values_schema])
+        self.assertTrue(any(item.get("type") == "object" for item in kinds))
         self.assertNotIn("build_table", names)
         self.assertNotIn("check_formulas", names)
 
@@ -269,7 +281,7 @@ class PluginCases(unittest.TestCase):
         self.assertIn("mp", tool.description)
         self.assertIn("inert", tool.description)
         self.assertIn("isp-vac", tool.description)
-        self.assertIn("Do not invent keys such as mstruct", tool.description)
+        self.assertIn("Do not invent keys such as `mstruct`", tool.description)
         stage_help = next(flag.help for flag in tool.flags if flag.option == "--stage")
         self.assertIn("mp", stage_help)
         self.assertIn("inert", stage_help)

@@ -30,6 +30,7 @@ _FUNCS = {
     "tan": math.tan,
     "atan": math.atan,
     "asin": math.asin,
+    "acos": math.acos,
     "sqrt": math.sqrt,
 }
 
@@ -93,7 +94,7 @@ def lookup_formula(
     formulas_md: Path,
     check_md: Path,
     formula_id: str,
-    values_json: str | None = None,
+    values_json: dict[str, object] | str | None = None,
 ) -> str:
     if formula_id not in allowed_ids(check_md):
         return "that formula is not allowed"
@@ -108,10 +109,13 @@ def lookup_formula(
         return shown + "\n\nThis record is a definition. No number was computed."
     if not values_json:
         return shown
-    try:
-        raw = json.loads(values_json)
-    except json.JSONDecodeError:
-        return shown + "\n\nvalues_json was not valid JSON. No number was computed."
+    if isinstance(values_json, str):
+        try:
+            raw = json.loads(values_json)
+        except json.JSONDecodeError:
+            return shown + "\n\nvalues_json was not valid JSON. No number was computed."
+    else:
+        raw = values_json
     if not isinstance(raw, dict):
         return shown + "\n\nvalues_json must be an object of symbol names to numbers."
     symbols = [part.strip() for part in block.get("symbols", "").split(",") if part.strip()]

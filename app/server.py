@@ -146,7 +146,10 @@ def dispatch_calculation(name: str, arguments: dict[str, Any]) -> str:
         release_job(result.job_dir)
 
 
-def dispatch_formula(formula_id: str, values_json: str | None = None) -> str:
+def dispatch_formula(
+    formula_id: str,
+    values_json: dict[str, object] | str | None = None,
+) -> str:
     settings = _settings()
     identity = _identity.get()
     store = _store()
@@ -156,12 +159,12 @@ def dispatch_formula(formula_id: str, values_json: str | None = None) -> str:
         decision = store.check(identity.sub, identity.email)
         if not decision.allowed:
             return decision.message
-    if values_json and len(values_json) > 8000:
+    if values_json is not None and _too_large({"values_json": values_json}):
         return "those inputs are too large"
     root = repo_root_from()
     text = lookup_formula(
-        root / "skills" / "aero-formulas" / "formulas.md",
-        root / "skills" / "aero-formulas" / "checks" / "check.md",
+        root / "skills" / "FormulaCatalouge" / "formulas.md",
+        root / "skills" / "FormulaCatalouge" / "checks" / "check.md",
         formula_id,
         values_json,
     )
@@ -226,7 +229,10 @@ def build_server():
         """List aerospace tool names and the skill each one belongs to."""
         return dispatch_list()
 
-    def lookup_formula_tool(formula_id: str, values_json: str | None = None) -> str:
+    def lookup_formula_tool(
+        formula_id: str,
+        values_json: dict[str, float] | str | None = None,
+    ) -> str:
         """Return an allowed formula. formula_id must be listed in checks/check.md. values_json is an optional object of symbol names to numbers. partial and integral records are not evaluated."""
         return dispatch_formula(formula_id, values_json)
 
