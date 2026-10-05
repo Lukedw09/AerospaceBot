@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>__TITLE__</title>
+<style>
+  :root {
+    color-scheme: light;
+    --ink: #1b2631;
+    --muted: #34495e;
+    --line: #d5d8dc;
+    --paper: #f7f9fb;
+    --card: #ffffff;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; background: var(--paper); color: var(--ink);
+    font-family: "Segoe UI", Helvetica, Arial, sans-serif; }
+  body { overflow: hidden; }
+  #app { height: 100%; display: flex; flex-direction: column; min-height: 0; }
+  header { display: flex; align-items: baseline; gap: 16px; padding: 10px 16px 6px; }
+  h1 { margin: 0; font-size: 20px; font-weight: 560; }
+  #units { margin: 0; color: var(--muted); font-size: 13px; }
+  #stage { flex: 1; min-height: 0; display: flex; gap: 8px; padding: 0 12px; }
+  #viewport { position: relative; flex: 1; min-width: 0; background: var(--paper);
+    border: 1px solid var(--line); border-radius: 8px; overflow: hidden; cursor: grab; touch-action: none; }
+  #viewport.dragging { cursor: grabbing; }
+  #view { width: 100%; height: 100%; display: block; }
+  #legend { width: 188px; margin: 0; padding: 10px 12px; list-style: none; background: var(--card);
+    border: 1px solid var(--line); border-radius: 8px; overflow: auto; }
+  #legend li { display: flex; align-items: center; gap: 8px; margin: 6px 0; font-size: 13px; }
+  .swatch { width: 14px; height: 14px; border-radius: 3px; border: 1px solid #99a3a4; flex: 0 0 auto; }
+  #bar { display: flex; align-items: center; gap: 10px; padding: 10px 16px 14px; }
+  button { appearance: none; border: 1px solid var(--line); background: var(--card); color: var(--ink);
+    border-radius: 6px; padding: 6px 12px; font: inherit; cursor: pointer; }
+  button:hover { border-color: #aeb6bf; }
+  #status { color: var(--muted); font-size: 13px; }
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <h1>__TITLE__</h1>
+    <p id="units">__AXIS_CAPTION__</p>
+  </header>
+  <div id="stage">
+    <div id="viewport"><canvas id="view"></canvas></div>
+    <ul id="legend"></ul>
+  </div>
+  <div id="bar">
+    <button type="button" id="play">Pause</button>
+    <button type="button" id="reset">Reset</button>
+    <span id="status">drag to rotate · scroll to zoom</span>
+  </div>
+</div>
+<script type="application/json" id="orbital-scene">__SCENE_JSON__</script>
+<script>
+__THREE_SOURCE__
+</script>
+<script>
+(function () {
+  const sceneData = JSON.parse(document.getElementById("orbital-scene").textContent);
+  const canvas = document.getElementById("view");
+  const viewport = document.getElementById("viewport");
+  const legendEl = document.getElementById("legend");
+  const playBtn = document.getElementById("play");
+  const resetBtn = document.getElementById("reset");
+  const statusEl = document.getElementById("status");
+
+  (sceneData.legend || []).forEach(function (item) {
+    const li = document.createElement("li");
+    const sw = document.createElement("span");
+    sw.className = "swatch";
+    sw.style.background = item.color || "#ccc";
+    li.appendChild(sw);
+    li.appendChild(document.createTextNode(item.label || ""));
+    legendEl.appendChild(li);
+  });
+
+  const renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0xf7f9fb);
+  const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 10000);
+  const root = new THREE.Group();
+  scene.add(root);
+
+  let elev = (sceneData.elev_deg || 25) * Math.PI / 180;
+  let azim = (sceneData.azim_deg || 35) * Math.PI / 180;
+  let distance = (sceneData.limit_km || 1000) * 2.4;
+  const limit = sceneData.limit_km || 1000;
+
+  function updateCamera() {
+    const ce = Math.cos(elev), se = Math.sin(elev);
+    const ca = Math.cos(azim), sa = Math.sin(azim);
+    camera.position.set(distance * ce * ca, distance * ce * sa, distance * se);
+    camera.up.set(0, 0, 1);
+    camera.lookAt(0, 0, 0);
+    const aspect = Math.max(viewport.clientWidth, 1) / Math.max(viewport.clientHeight, 1);
+    const half = limit * 1.05;
+    camera.left = -half * aspect;
+    camera.right = half * aspect;
+    camera.top = half;
+    camera.bottom = -half;
+    camera.updateProjectionMatrix();
+  }
+
+  function resize() {
+    const w = viewport.clientWidth, h = viewport.clientHeight;
+    renderer.setSize(w, h, false);
+    updateCamera();
+  }
+  window.addEventListener("resize", resize);
+
+  function addPolyline(points, color, width) {
+    if (!points || points.length < 2) return null;
+    const geo = new THREE.BufferGeometry();
+    const arr = new Float32Array(points.length * 3);
+    for (let i = 0; i < points.length; i++) {
+      arr[i * 3] = points[i][0];
+      arr[i * 3 + 1] = points[i][1];
+      arr[i * 3 + 2] = points[i][2];
+    }
+    geo.setAttribute("position", new THREE.BufferAttribute(arr, 3));
+    const mat = new THREE.LineBasicMaterial({ color: color, linewidth: width || 1 });
+    const line = new THREE.Line(geo, mat);
+    root.add(line);
+    return line;
+  }
+
+  const R = sceneData.equatorial_radius_km || 6371;
+  const Rp = sceneData.polar_radius_km || R;
+  const planet = new THREE.Mesh(
+    new THREE.SphereGeometry(1, sceneData.planet_segments_u || 48, sceneData.planet_segments_v || 24),
+    new THREE.MeshPhongMaterial({
+      color: (sceneData.palette && sceneData.palette.planet) || "#c5ddef",
+      transparent: true,
+      opacity: sceneData.planet_opacity || 0.5,
+      flatShading: false,
+    })
+  );
+  planet.scale.set(R, R, Rp);
+  root.add(planet);
+  scene.add(new THREE.AmbientLight(0xffffff, 0.75));
+  const key = new THREE.DirectionalLight(0xffffff, 0.55);
+  key.position.set(2, 1, 3);
+  scene.add(key);
+
+  addPolyline(sceneData.parking_km, "#2874a6", 1);
+  addPolyline(sceneData.target_km, "#1a5276", 1);
+
+  // Full path stays faded; flown path is drawn solid and updated each frame.
+  (sceneData.segments || []).forEach(function (seg) {
+    const faded = addPolyline(seg.km, seg.color || "#888", seg.kind === "burn" ? 2 : 1);
+    if (faded && faded.material) {
+      faded.material.transparent = true;
+      faded.material.opacity = 0.22;
+    }
+  });
+
+  (sceneData.burns || []).forEach(function (burn) {
+    const origin = new THREE.Vector3(burn.km[0], burn.km[1], burn.km[2]);
+    const dir = new THREE.Vector3(burn.dv_dir[0], burn.dv_dir[1], burn.dv_dir[2]).normalize();
+    const len = limit * 0.08;
+    const tip = origin.clone().add(dir.multiplyScalar(len));
+    addPolyline([[origin.x, origin.y, origin.z], [tip.x, tip.y, tip.z]], burn.color || "#e67e22", 2);
+  });
+
+  const craft = new THREE.Mesh(
+    new THREE.SphereGeometry(limit * 0.012, 16, 12),
+    new THREE.MeshBasicMaterial({ color: (sceneData.palette && sceneData.palette.craft) || "#c0392b" })
+  );
+  root.add(craft);
+
+  const trail = sceneData.trail_km || [];
+  const trailT = sceneData.trail_t_s || [];
+  let playing = true;
+  let tAnim = 0;
+  const tMax = trailT.length ? trailT[trailT.length - 1] : 1;
+  const wall = 16;
+
+  const flownGeo = new THREE.BufferGeometry();
+  const flownMat = new THREE.LineBasicMaterial({ color: "#c0392b", linewidth: 2 });
+  const flownLine = new THREE.Line(flownGeo, flownMat);
+  root.add(flownLine);
+
+  function updateFlown(t) {
+    if (!trail.length) {
+      flownGeo.setAttribute("position", new THREE.BufferAttribute(new Float32Array(0), 3));
+      return;
+    }
+    let n = 1;
+    while (n < trailT.length && trailT[n] <= t) n++;
+    n = Math.max(2, Math.min(n + 1, trail.length));
+    const arr = new Float32Array(n * 3);
+    for (let i = 0; i < n; i++) {
+      arr[i * 3] = trail[i][0];
+      arr[i * 3 + 1] = trail[i][1];
+      arr[i * 3 + 2] = trail[i][2];
+    }
+    flownGeo.setAttribute("position", new THREE.BufferAttribute(arr, 3));
+    flownGeo.computeBoundingSphere();
+  }
+
+  function placeCraft(u) {
+    if (!trail.length) {
+      const c0 = sceneData.craft0_km || [0, 0, 0];
+      craft.position.set(c0[0], c0[1], c0[2]);
+      updateFlown(0);
+      return;
+    }
+    const t = u * tMax;
+    let i = 0;
+    while (i < trailT.length - 2 && trailT[i + 1] < t) i++;
+    const t0 = trailT[i] || 0;
+    const t1 = trailT[i + 1] != null ? trailT[i + 1] : t0 + 1;
+    const a = t1 <= t0 ? 0 : (t - t0) / (t1 - t0);
+    const p0 = trail[i];
+    const p1 = trail[Math.min(i + 1, trail.length - 1)];
+    craft.position.set(
+      p0[0] + a * (p1[0] - p0[0]),
+      p0[1] + a * (p1[1] - p0[1]),
+      p0[2] + a * (p1[2] - p0[2])
+    );
+    updateFlown(t);
+  }
+
+  playBtn.addEventListener("click", function () {
+    playing = !playing;
+    playBtn.textContent = playing ? "Pause" : "Play";
+  });
+  resetBtn.addEventListener("click", function () {
+    tAnim = 0;
+    placeCraft(0);
+    elev = (sceneData.elev_deg || 25) * Math.PI / 180;
+    azim = (sceneData.azim_deg || 35) * Math.PI / 180;
+    updateCamera();
+  });
+
+  let dragging = false, lastX = 0, lastY = 0;
+  viewport.addEventListener("pointerdown", function (ev) {
+    dragging = true; lastX = ev.clientX; lastY = ev.clientY;
+    viewport.classList.add("dragging");
+    viewport.setPointerCapture(ev.pointerId);
+  });
+  viewport.addEventListener("pointerup", function () {
+    dragging = false; viewport.classList.remove("dragging");
+  });
+  viewport.addEventListener("pointermove", function (ev) {
+    if (!dragging) return;
+    const dx = ev.clientX - lastX, dy = ev.clientY - lastY;
+    lastX = ev.clientX; lastY = ev.clientY;
+    azim -= dx * 0.005;
+    elev = Math.max(-Math.PI / 2 + 0.05, Math.min(Math.PI / 2 - 0.05, elev + dy * 0.005));
+    updateCamera();
+  });
+  viewport.addEventListener("wheel", function (ev) {
+    ev.preventDefault();
+    distance *= ev.deltaY > 0 ? 1.08 : 0.92;
+    distance = Math.max(limit * 0.6, Math.min(limit * 8, distance));
+    updateCamera();
+  }, { passive: false });
+
+  let last = performance.now();
+  function frame(now) {
+    const dt = Math.min(0.05, (now - last) / 1000);
+    last = now;
+    if (playing && trail.length) {
+      tAnim += dt / wall;
+      if (tAnim > 1) tAnim = 0;
+      placeCraft(tAnim);
+      statusEl.textContent = "t = " + (tAnim * tMax).toFixed(1) + " s · drag to rotate · scroll to zoom";
+    }
+    renderer.render(scene, camera);
+    requestAnimationFrame(frame);
+  }
+  resize();
+  placeCraft(0);
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

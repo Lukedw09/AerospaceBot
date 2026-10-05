@@ -16,7 +16,10 @@ Cursor agent skills for aerospace engineering: checked formulas and small physic
 | [`ROCKET - PerformanceParameters`](skills/ROCKET%20-%20PerformanceParameters) | Run `performance.py` for frozen-CEA c*, temperature, gamma, ideal Cf, specific impulse, and density impulse. Do not call CEA at reply time. |
 | [`ROCKET - ThroatSizingandMassFlow`](skills/ROCKET%20-%20ThroatSizingandMassFlow) | Run `throat_sizing.py` for circular-throat area and diameter from thrust, thrust coefficient, and chamber pressure, and mass flow from characteristic velocity. |
 | [`ROCKET - PropellantLoad`](skills/ROCKET%20-%20PropellantLoad) | Run `propellant_load.py` for usable propellant mass and tank volume (total, oxidizer, fuel) from mass flow, burn time, mixture ratio, and liquid densities. |
+| [`ROCKET - TankStructureMass`](skills/ROCKET%20-%20TankStructureMass) | Run `tank_structure_mass.py` for tank shell mass, optional structure mass, residual propellant, and total inert from propellant volume, MEOP, material allowables, and residuals fraction. Prints `mp` and `inert` for PayloadtoDeltaV. |
 | [`ROCKET - ExpansionMatchEarth`](skills/ROCKET%20-%20ExpansionMatchEarth) | Run `expansion_match.py` for the altitude-matched nozzle expansion ratio on the 1976 U.S. Standard Atmosphere. Area ratio and ideal \(C_F\) come from Area-Mach. |
+| [`ROCKET - KickStageNozzle`](skills/ROCKET%20-%20KickStageNozzle) | Run `kick_stage_nozzle.py` for vacuum / above-86 km kick-stage nozzle synthesis: design \(\epsilon\) or \(p_e\), vacuum \(C_F\), conical or length-fraction length, optional shell mass, and Summerfield separation margin against a supplied ambient. The 1976 hydrostatic table is not used for \(p_a\). Optional PNG of vacuum \(C_F\) and length versus \(\epsilon\). |
+| [`ROCKET - KickStageFeasibility`](skills/ROCKET%20-%20KickStageFeasibility) | Run `kick_stage_feasibility.py` for in-space kick-stage T/W and burn-time feasibility: continuous burn duration, restart count, per-coast duration limit, ACS propellant coast budget (sum of coasts), and equal-split ignition T/W bounds. Writes a PNG of T/W versus burn time per arc. |
 | [`ROCKET - PayloadtoDeltaV`](skills/ROCKET%20-%20PayloadtoDeltaV) | Run `payload_to_deltav.py` for useful payload from ideal delta-v, or ideal delta-v from useful payload, for one or more stages. A missing delta-v and payload writes a payload-versus-delta-v PNG. |
 | [`ROCKET - LossStack`](skills/ROCKET%20-%20LossStack) | Run `loss_stack.py` for actual thrust, specific impulse, thrust coefficient, c*, and mass flow from ideal \(C_F\), ideal \(c^{*}\), and named efficiencies. With throat area and chamber pressure it also prints the lossless thrust and mass flow. Omitted efficiencies stay 1. |
 | [`ROCKET - BasicTrajectoryLossesFromBodySurface`](skills/ROCKET%20-%20BasicTrajectoryLossesFromBodySurface) | Run `basic_trajectory_losses_from_body_surface.py` for vacuum delta-v, gravity, drag, and steering losses, and burnout speed, flight-path angle, and altitude of a simplified powered ascent from a spherical surface. Constant flight-path angle is closed form; a gravity-turn kick integrates the ODE. Writes a PNG of the path on the atmosphere. |
@@ -27,6 +30,7 @@ Cursor agent skills for aerospace engineering: checked formulas and small physic
 | [`THERM - BallisticEntryPeakLoad`](skills/THERM%20-%20BallisticEntryPeakLoad) | Run `ballistic_entry_peak_load.py` for Allen–Eggers nonlifting ballistic-entry peak deceleration and the altitude of that peak in an exponential atmosphere from ballistic coefficient (or mass, \(C_D\), and area), entry speed, and entry flight-path angle. Default Earth fit from NACA TN 4047. Optional PNG of peak load versus entry angle. Companion to stagnation heat flux; not a full trajectory. |
 | [`ROCKET - SolidMotorParameters`](skills/ROCKET%20-%20SolidMotorParameters) | Run `solid_motor_parameters.py` for burning-area ratio, equilibrium chamber pressure, burn rate, and solid-propellant mass flow from Saint Robert burn-rate inputs, grain and throat areas, density, and \(c^{*}\). |
 | [`ROCKET - CircularPortGrainHistory`](skills/ROCKET%20-%20CircularPortGrainHistory) | Run `circular_port_grain_history.py` for chamber pressure, burning-area ratio, and remaining web versus time of an internal-burning circular grain with inhibited ends. Writes a PNG of the three histories. |
+| [`ASTRO - MultiBurnLeoRaise`](skills/ASTRO%20-%20MultiBurnLeoRaise) | Run `multi_burn_leo_raise.py` for a finite-thrust multi-burn raise from parking LEO to a higher circular LEO, with gravity loss, steered delta-v, burn arcs, time of flight, and an optional inclination change. Writes a PNG; optional `--html` writes a self-contained 3D viewer. |
 | [`ASTRO - HohmannTransfer`](skills/ASTRO%20-%20HohmannTransfer) | Run `hohmann_transfer.py` for circular speed, escape speed, specific energy, impulsive delta-v, coast time, and \(|r_2|/|r_1|\) between two circular orbits. Writes a PNG of the transfer looking down the orbit normal. Optional `--html` writes a self-contained 3D viewer with the two burns. Recommends a bi-elliptic transfer when that ratio is large enough that a path through infinity would be cheaper. |
 | [`ASTRO - HyperbolicExcess`](skills/ASTRO%20-%20HyperbolicExcess) | Run `hyperbolic_excess.py` for hyperbolic excess speed, characteristic energy \(C_3\), the periapsis burn from a circular park onto a hyperbola, the turning angle, and the true anomaly of the asymptote. Writes a PNG of the park and the hyperbola. Optional `--html` writes a self-contained 3D viewer of the burn and the morph from the circle onto the hyperbola. |
 | [`ASTRO - BiellipticTransfer`](skills/ASTRO%20-%20BiellipticTransfer) | Run `bielliptic_transfer.py` for the three-burn delta-v, time of flight, and \(|r_2|/|r_1|\) of a coplanar bi-elliptic transfer between two circular orbits, from radii, classical elements, NORAD two-line element sets, or inertial states plus an intermediate apoapsis. Writes a PNG looking down the orbit normal. Optional `--html` writes a self-contained 3D viewer with the three burns. Recommends a Hohmann transfer when this apoapsis is not cheaper. |
@@ -87,9 +91,18 @@ skills/
   ROCKET - PropellantLoad/
     SKILL.md
     propellant_load.py   # propellant mass and volume (key: value stdout)
+  ROCKET - TankStructureMass/
+    SKILL.md
+    tank_structure_mass.py  # tank/structure/residual inert for PayloadtoDeltaV (key: value stdout)
   ROCKET - ExpansionMatchEarth/
     SKILL.md
     expansion_match.py   # optimal expansion ratio versus altitude (key: value stdout, optional PNG)
+  ROCKET - KickStageNozzle/
+    SKILL.md
+    kick_stage_nozzle.py # vacuum / above-86 km kick-stage nozzle (key: value stdout, optional PNG)
+  ROCKET - KickStageFeasibility/
+    SKILL.md
+    kick_stage_feasibility.py  # T/W, burn-time, restart, ACS coast budget (key: value stdout, PNG)
   ROCKET - PayloadtoDeltaV/
     SKILL.md
     payload_to_deltav.py # payload versus ideal delta-v (key: value stdout, sweep PNG)
@@ -144,6 +157,11 @@ skills/
   ATMOS - TransportProperties/
     SKILL.md
     transport_properties.py  # 1976 viscosity, conductivity, mean free path (key: value stdout)
+  ASTRO - MultiBurnLeoRaise/
+    SKILL.md
+    multi_burn_leo_raise.py  # finite-thrust multi-burn LEO raise (key: value stdout, PNG, optional HTML)
+    example_thrust_profile.csv
+    viewer/                # Three.js template and vendored three.min.js
   ASTRO - HohmannTransfer/
     SKILL.md
     hohmann_transfer.py  # Hohmann delta-v and coast (key: value stdout, PNG, optional HTML viewer)
@@ -253,7 +271,10 @@ skills/
 - **ROCKET - PerformanceParameters** — Python 3 with `numpy` and `matplotlib`. Frozen tables are produced offline by `scripts/build_table.py` (`rocketcea`). A reply does not call CEA.
 - **ROCKET - ThroatSizingandMassFlow** — Python 3 standard library only.
 - **ROCKET - PropellantLoad** — Python 3 standard library only. Pair densities are read from `ROCKET - PerformanceParameters` `scripts/pairs.json`.
+- **ROCKET - TankStructureMass** — Python 3 standard library only. Pass `--volume`, `--rho`, `--residuals`, `--meop`, `--allowable`, and `--rho-mat`. Default shape is a sphere; `--shape cylinder` needs `--radius` and sizes flat heads with \(t_{\mathrm{head}}=R\sqrt{p/(S\eta)}\). Refuses when governing \(t/R\ge 0.1\). Optional `--design-factor`, `--boss-factor`, `--eta`, and `--structure` or `--structure-factor`. Prints `payload_to_deltav_stage` for `ROCKET - PayloadtoDeltaV`.
 - **ROCKET - ExpansionMatchEarth** — Python 3 with `numpy` and `matplotlib`, because it calls `ROCKET - Area-Mach Graph`. It does not call CEA.
+- **ROCKET - KickStageNozzle** — Python 3 with `numpy` and `matplotlib`, because it calls `ROCKET - Area-Mach Graph`. Pass `--pc` with `--epsilon` or `--pe`. Omit `--pa` for vacuum; pass `--pa` for ambient \(C_F\) and Summerfield separation (default `--k-sep` 0.4). Separated nozzles invalidate ambient `CF`/`thrust_N`. Geometry needs `--throat` or `--rt`; mass needs `--thickness` and `--rho-mat`. `--alt` is a note only and does not set ambient from the 1976 table. It does not call CEA.
+- **ROCKET - KickStageFeasibility** — Python 3 with `matplotlib` for the PNG. Pass `--thrust`, `--isp`, `--m0`, one of `--mf`/`--mp`/`--dv`, `--tb-max`, and `--restarts-max`. `--coast-max` is per-coast duration; `--acs-mp`/`--acs-mdot` budget the sum of coasts. T/W bounds apply to every equal-split ignition.
 - **ROCKET - PayloadtoDeltaV** — Python 3 standard library for a point result. A delta-v sweep also needs `matplotlib`.
 - **ROCKET - LossStack** — Python 3 standard library only.
 - **ROCKET - BasicTrajectoryLossesFromBodySurface** — Python 3 with `matplotlib`. Pass `--gamma` or `--kick`, not both. Pass `--mf` or `--mp`. Pass `--tb` or `--mdot`. Optional `--cd` needs `--area`. Off-nominal `--oat` uses `AERO - DensityAndPressureAltitude`. An omitted planet is the 1976 Earth radius and \(g_0\). Angles are radians. Vacuum thrust does not vary with ambient pressure.
@@ -269,6 +290,7 @@ skills/
 - **COMMS - FreeSpaceLinkBudget** — Python 3 standard library for the point result. Optional `--out` needs `matplotlib`. Pass `--pt`, `--range`, `--freq` or `--wavelength`, and each antenna as linear gain or diameter with aperture efficiency. Optional `--ts`, `--bandwidth`, `--bitrate`, and `--ebn0-req`. Vacuum free space only; gains are linear ratios, not dBi.
 - **ROCKET - SolidMotorParameters** — Python 3 standard library only.
 - **ROCKET - CircularPortGrainHistory** — Python 3 with `matplotlib`. Reuses `ROCKET - SolidMotorParameters`. Ends inhibited; no erosive burning. An omitted `--sliver` is 0.
+- **ASTRO - MultiBurnLeoRaise** — Python 3 with `matplotlib`. It reuses OrbitalParameters. Pass parking elements or a state, `--alt-target` or `--r-target`, and `--thrust`/`--isp`/`--m0` or `--profile`. Optional `--i-target`, `--burns` (\(\ge 2\)), `--mf`/`--mp`. Finite-thrust raise with gravity loss; coasts are Keplerian. `--html` writes a self-contained HTML viewer; `--open` opens it.
 - **ASTRO - HohmannTransfer** — Python 3 with `matplotlib`. The PNG looks down the orbit normal. `--html` writes a self-contained HTML viewer beside the PNG; `--open` opens it. The viewer flies the two burns and the transfer coast. The solid trail is the path already flown; the remaining future path stays faded.
 - **ASTRO - HyperbolicExcess** — Python 3 with `matplotlib`. It reuses OrbitalParameters for the planet backdrop. `--rp` is the circular park and the hyperbola periapsis. Pass exactly one of `--vinf`, `--C3`, or `--rinf`. `--rinf` is \(\lvert a\rvert=\mu/v_{\infty}^{2}\), not a station on the path. The PNG is the park, the hyperbola, and the periapsis burn. `--html` writes a self-contained HTML viewer; `--open` opens it. The viewer parks on the circle, morphs through the burn onto the hyperbola, then coasts toward the outgoing asymptote.
 - **ASTRO - BiellipticTransfer** — Python 3 with `matplotlib`. It reuses HohmannTransfer and OrbitalParameters. `--rb` is the common apoapsis and must be at least the larger circular radius. Element angles are radians. The burns are coplanar; a plane change is omitted. Epoch radius from elements, a NORAD TLE, or a state is treated as a circular orbit of that radius. A TLE is passed as two 69-character lines and is not propagated with SGP4. The PNG looks down the orbit normal. `--html` writes a self-contained HTML viewer; `--open` opens it. The viewer flies the three burns and both coasts. The solid trail is the path already flown; the remaining future path stays faded.
@@ -313,6 +335,8 @@ python "skills/ROCKET - ThroatSizingandMassFlow/throat_sizing.py" --thrust 1500 
 python "skills/ROCKET - ThroatSizingandMassFlow/throat_sizing.py" --check
 python "skills/ROCKET - PropellantLoad/propellant_load.py" --mdot 4 --tb 10 --r 2.3 --pair LOX/RP1
 python "skills/ROCKET - PropellantLoad/propellant_load.py" --check
+python "skills/ROCKET - TankStructureMass/tank_structure_mass.py" --volume 0.1 --rho 1008 --residuals 0.02 --meop 2e6 --allowable 9e8 --rho-mat 4430
+python "skills/ROCKET - TankStructureMass/tank_structure_mass.py" --check
 python "skills/ROCKET - PayloadtoDeltaV/payload_to_deltav.py" --stages 1 --stage mp=100,inert=10,isp-vac=300 --payload 5
 python "skills/ROCKET - PayloadtoDeltaV/payload_to_deltav.py" --check
 python "skills/ROCKET - LossStack/loss_stack.py" --cf 1.5 --cstar 1600 --throat 5e-4 --pc 2e6 --eta combustion=0.98 --eta nozzle=0.97
@@ -348,6 +372,13 @@ python "skills/ASTRO - J2SecularRates/j2_secular_rates.py" --a 10000000 --e 0.3 
 python "skills/ASTRO - J2SecularRates/j2_secular_rates.py" --check
 python "skills/ROCKET - ExpansionMatchEarth/expansion_match.py" --pc 2e6 --gamma 1.25 --alt 0
 python "skills/ROCKET - ExpansionMatchEarth/expansion_match.py" --check
+python "skills/ROCKET - KickStageNozzle/kick_stage_nozzle.py" --pc 2e6 --gamma 1.25 --pe 5000 --throat 0.001 --thickness 0.002 --rho-mat 2700
+python "skills/ROCKET - KickStageNozzle/kick_stage_nozzle.py" --pc 2e6 --gamma 1.25 --epsilon-min 10 --epsilon-max 80 --epsilon 40 --throat 0.001
+python "skills/ROCKET - KickStageNozzle/kick_stage_nozzle.py" --check
+python "skills/ROCKET - KickStageFeasibility/kick_stage_feasibility.py" --thrust 1000 --isp 300 --m0 500 --mp 50 --tb-max 200 --restarts-max 5
+python "skills/ROCKET - KickStageFeasibility/kick_stage_feasibility.py" --check
+python "skills/ASTRO - MultiBurnLeoRaise/multi_burn_leo_raise.py" --a 6674200 --e 0 --i 0.5 --raan 0.2 --aop 0 --nu 0 --alt-target 800000 --thrust 20000 --isp 320 --m0 2000 --mp 600 --burns 2
+python "skills/ASTRO - MultiBurnLeoRaise/multi_burn_leo_raise.py" --check
 python "skills/STRUCT - BeamBendingStress/beam_bending_stress.py" --moment 1200 --section-modulus 0.003 --allowable 500000
 python "skills/STRUCT - BeamBendingStress/beam_bending_stress.py" --moment 1200 --inertia 9e-5 --fiber 0.03 --out beam_bending_stress.png
 python "skills/STRUCT - BeamBendingStress/beam_bending_stress.py" --check
