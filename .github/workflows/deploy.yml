@@ -30,6 +30,7 @@ jobs:
       group: deploy-aerospace
       cancel-in-progress: false
     env:
+      PYTHONUNBUFFERED: "1"
       AWS_REGION: us-east-1
       SITE_DOMAIN: astraeus.de-wet.com
       STACK_NAME: aerospace
