@@ -1,4 +1,4 @@
-﻿"""Catalog, runner, formula allow-list, and the local plugin cases."""
+ï»¿"""Catalog, runner, formula allow-list, and the local plugin cases."""
 
 from __future__ import annotations
 
@@ -41,6 +41,21 @@ class CatalogTests(unittest.TestCase):
         self.assertIn("--outer", grain_options)
         self.assertNotIn("--out", grain_options)
         self.assertIn("--outer", grain.required_options())
+
+    def test_propellant_load_density_paths_are_optional(self) -> None:
+        tools = load_catalog(ROOT)
+        tool = tool_by_name(tools, "propellant_load")
+        assert tool is not None
+        self.assertEqual(tool.required_options(), ["--mdot", "--tb", "--r"])
+        optional = {flag.option for flag in tool.flags if not flag.required}
+        self.assertEqual(optional, {"--pair", "--rho-ox", "--rho-fuel"})
+        loss = tool_by_name(tools, "loss_stack")
+        assert loss is not None
+        self.assertNotIn("--throat", loss.required_options())
+        self.assertNotIn("--pc", loss.required_options())
+        solid = tool_by_name(tools, "solid_motor_parameters")
+        assert solid is not None
+        self.assertIn("--n", solid.required_options())
 
 
 class RunnerTests(unittest.TestCase):
@@ -245,6 +260,59 @@ class PluginCases(unittest.TestCase):
         self.assertIn("list_tools", names)
         self.assertNotIn("build_table", names)
         self.assertNotIn("check_formulas", names)
+
+    def test_payload_to_deltav_documents_stage_keys(self) -> None:
+        from app.catalog import load_catalog, tool_by_name
+
+        tool = tool_by_name(load_catalog(ROOT), "payload_to_deltav")
+        assert tool is not None
+        self.assertIn("mp", tool.description)
+        self.assertIn("inert", tool.description)
+        self.assertIn("isp-vac", tool.description)
+        self.assertIn("Do not invent keys such as mstruct", tool.description)
+        stage_help = next(flag.help for flag in tool.flags if flag.option == "--stage")
+        self.assertIn("mp", stage_help)
+        self.assertIn("inert", stage_help)
+        server = build_server()
+        stage_schema = server._tool_manager._tools["payload_to_deltav"].parameters["properties"]["stage"]
+        self.assertIn("mp", stage_schema.get("description", ""))
+        self.assertIn("inert", stage_schema.get("description", ""))
+
+    def test_performance_accepts_split_pair_array(self) -> None:
+        import sys
+
+        skill_src = ROOT / "skills" / "ROCKET - PerformanceParameters" / "src"
+        sys.path.insert(0, str(skill_src))
+        try:
+            from load_table import normalize_pair_args
+        finally:
+            sys.path.remove(str(skill_src))
+
+        self.assertEqual(normalize_pair_args(["LOX/RP1"]), ["LOX/RP1"])
+        self.assertEqual(normalize_pair_args(["LOX", "RP1"]), ["LOX/RP1"])
+        self.assertEqual(
+            normalize_pair_args(["LOX", "RP1", "LOX", "CH4"]),
+            ["LOX/RP1", "LOX/CH4"],
+        )
+        tool = tool_by_name(load_catalog(ROOT), "performance")
+        assert tool is not None
+        self.assertIn('["LOX/RP1"]', tool.description)
+        joined = run_tool(
+            tool,
+            {"pair": ["LOX", "RP1"], "pc": 7e6, "eps": 40, "pa": 101325, "r": 2.3},
+            repo_root=ROOT,
+        )
+        self.assertEqual(joined.exit_code, 0, joined.text)
+        self.assertIn("pair: LOX/RP1", joined.text)
+        single = run_tool(
+            tool,
+            {"pair": ["LOX/RP1"], "pc": 7e6, "eps": 40, "pa": 101325, "r": 2.3},
+            repo_root=ROOT,
+        )
+        self.assertEqual(single.exit_code, 0, single.text)
+        self.assertIn("pair: LOX/RP1", single.text)
+        shutil.rmtree(joined.job_dir, ignore_errors=True)
+        shutil.rmtree(single.job_dir, ignore_errors=True)
 
     def test_missing_bearer_is_rejected(self) -> None:
         settings = Settings(

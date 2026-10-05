@@ -17,6 +17,7 @@ from pathlib import Path
 from load_table import (
     TableError,
     canonical_pair,
+    normalize_pair_args,
     interpolate_row,
     pair_spec,
     pc_bar_from_pa,
@@ -806,7 +807,15 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Evaluate frozen-CEA rocket performance and optional X-vs-Y plots."
     )
-    parser.add_argument("--pair", action="append", default=None, help="oxName/fuelName (repeatable)")
+    parser.add_argument(
+        "--pair",
+        action="append",
+        default=None,
+        help=(
+            "one propellant pair as oxName/fuelName (repeatable for overlays); "
+            "MCP: pass ['LOX/RP1'], or ['LOX','RP1'] which is joined to LOX/RP1"
+        ),
+    )
     parser.add_argument("--pc", type=float, default=None, help="chamber pressure [Pa]")
     parser.add_argument("--eps", type=float, default=None, help="exit-to-throat area ratio Ae/At")
     parser.add_argument("--pa", type=float, default=None, help="ambient pressure [Pa]")
@@ -840,6 +849,8 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     args = parser.parse_args(argv)
     if args.pair is None:
         args.pair = []
+    else:
+        args.pair = normalize_pair_args(args.pair)
     if args.plot is None:
         args.plot = []
     return args

@@ -40,7 +40,8 @@ Chamber pressure and ambient pressure are pascals. Convert pc and pa to Pa befor
 ## When to run
 
 1. Point: the user gives a pair, chamber pressure, area ratio, ambient pressure, and mixture ratio. Missing `r` is an error, not a sweep. A point request does not write a PNG.
-2. Plot: the user asks for one quantity against another. The name before `vs` is the vertical axis. The name after `vs` is the horizontal axis. Exactly one axis must be mixture ratio, pc, eps, or pa.
+2. `--pair` is one `oxName/fuelName` string per propellant combination (example `LOX/RP1`). On MCP, `pair` is an array of those strings: pass `["LOX/RP1"]` for one pair, not oxidizer and fuel as separate list items. `["LOX","RP1"]` is also accepted and joined to `LOX/RP1`. Repeat the array element (or CLI `--pair`) only to overlay several pairs on a plot.
+3. Plot: the user asks for one quantity against another. The name before `vs` is the vertical axis. The name after `vs` is the horizontal axis. Exactly one axis must be mixture ratio, pc, eps, or pa.
 
 ## Flags
 
@@ -50,7 +51,7 @@ python "skills/ROCKET - PerformanceParameters/src/performance.py" --pair LOX/RP1
 
 | Flag | Meaning |
 | --- | --- |
-| `--pair` | Repeatable. `oxName/fuelName`. Spaces around `/` are allowed. Known names fold to the card (`RP-1` is `RP1`). Several pairs are overlaid on one plot. |
+| `--pair` | Repeatable. One value per pair: `oxName/fuelName` (e.g. `LOX/RP1`). MCP array shape is `["LOX/RP1"]`, or `["LOX","RP1"]` joined to the same. Spaces around `/` are allowed. Known names fold to the card (`RP-1` is `RP1`). Several pairs are overlaid on one plot. |
 | `--pc` | Chamber pressure, Pa. Required on a point call. |
 | `--eps` | \(A_e/A_t\), at least 1. Required on a point call. |
 | `--pa` | Ambient pressure, Pa. Required on a point call. Omitted `pa` is an error. |

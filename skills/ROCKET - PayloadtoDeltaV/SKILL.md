@@ -19,7 +19,7 @@ This program does not apply gravity loss or drag loss, and it does not integrate
 
 1. Use this skill when the user asks for payload mass from delta-v, delta-v from payload mass, or a payload-versus-delta-v curve for a staged rocket.
 2. Convert all inputs to SI before the call (kg, s, Pa, m/s). State the converted units in the reply. Do not invent values the user did not give.
-3. Pass `--stages` equal to the number of stages the user broke out. Pass one `--stage` per stage, bottom stage first (stage 1 burns first).
+3. Pass `--stages` equal to the number of stages the user broke out. Pass one `--stage` string per stage, bottom stage first (stage 1 burns first). Each `--stage` value is comma-separated `key=value` pairs. Allowed keys only: `mp` (usable propellant mass, kg, required), `inert` (inert mass including residual propellant, kg, required), `isp-sl` (sea-level specific impulse, s), `isp-vac` (vacuum specific impulse, s), `pa` (ambient pressure for that burn, Pa). At least one of `isp-sl` or `isp-vac` is required. Pass `pa` when both impulses are given. Do not invent keys such as `mstruct`, `ms`, `dry`, `mprop`, or `isp`. Example: `mp=20000,inert=2000,isp-vac=300`.
 4. Specific impulse is in seconds. Label sea level as `isp-sl` and vacuum as `isp-vac`. If the user gives both and an ambient pressure, pass `pa`. If the user gives only sea-level impulse, do not also invent a vacuum value or an altitude. If the user gives only vacuum impulse, do not invent a sea-level value.
 5. If the user gives a delta-v and no payload, pass `--dv` and do not pass `--payload`. If the user gives a payload and no delta-v, pass `--payload` and do not pass `--dv`. If the user gives neither, omit both so the program sweeps delta-v. If the user gives both, pass both.
 
@@ -42,15 +42,15 @@ Pass **only** flags the user supplied (after SI conversion). Repeat `--stage` on
 | `--dv-min`, `--dv-max` | Delta-v sweep limits. Used only when `--dv` and `--payload` are both omitted. | m/s | Optional |
 | `--out` | PNG path for the sweep | — | Optional |
 
-`--stage` keys:
+`--stage` keys (no other names are accepted):
 
-| Key | Meaning | Unit |
-| --- | --- | --- |
-| `mp` | Usable propellant mass of that stage | kg |
-| `inert` | Inert mass of that stage, including residual propellant. Dropped after the stage burns. | kg |
-| `isp-sl` | Sea-level specific impulse | s |
-| `isp-vac` | Vacuum specific impulse | s |
-| `pa` | Ambient pressure held during that burn | Pa |
+| Key | Meaning | Unit | Required? |
+| --- | --- | --- | --- |
+| `mp` | Usable propellant mass of that stage | kg | Required |
+| `inert` | Inert mass of that stage, including residual propellant. Dropped after the stage burns. | kg | Required |
+| `isp-sl` | Sea-level specific impulse | s | Optional; at least one of `isp-sl` or `isp-vac` |
+| `isp-vac` | Vacuum specific impulse | s | Optional; at least one of `isp-sl` or `isp-vac` |
+| `pa` | Ambient pressure held during that burn | Pa | Optional; required when both impulses are given |
 
 A bare number for `pa` is pascals. Use `pa_Pa = pa_bar * 1e5`, `1 atm = 101325 Pa`, and `1 psi = 6894.757293168361 Pa`. Mass in pounds-mass uses `1 lbm = 0.45359237 kg`. Delta-v in feet per second uses `1 ft/s = 0.3048 m/s`. Specific impulse is already in seconds; do not scale it. If the user gives effective exhaust velocity \(c\) in m/s, pass \(I_s = c / g_0\) with \(g_0 = 9.80665\,\mathrm{m/s}^2\) and say so. Do not put \(c\) in `isp-sl` or `isp-vac`.
 

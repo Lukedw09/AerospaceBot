@@ -8,8 +8,9 @@ import os
 import sys
 import time
 from contextvars import ContextVar
-from typing import Any
+from typing import Annotated, Any
 
+from pydantic import Field
 from starlette.requests import Request
 from starlette.responses import JSONResponse, Response
 
@@ -177,10 +178,14 @@ def dispatch_list() -> str:
     return "\n".join(lines)
 
 
-def _annotation(flag_type: str, repeat: bool) -> Any:
+def _annotation(flag_type: str, repeat: bool, description: str = "") -> Any:
     if repeat:
-        return list[str]
-    return {"float": float, "int": int, "bool": bool, "string": str}[flag_type]
+        base: Any = list[str]
+    else:
+        base = {"float": float, "int": int, "bool": bool, "string": str}[flag_type]
+    if not description:
+        return base
+    return Annotated[base, Field(description=description)]
 
 
 def _handler_for(tool: Tool):
@@ -188,23 +193,23 @@ def _handler_for(tool: Tool):
         return dispatch_calculation(tool.name, kwargs)
 
     params = []
-    notes = {}
+    annotations: dict[str, Any] = {}
     for flag in tool.flags:
         default = inspect.Parameter.empty if flag.required else None
+        ann = _annotation(flag.type_name, flag.repeat, flag.help)
         params.append(
             inspect.Parameter(
                 flag.dest,
                 inspect.Parameter.KEYWORD_ONLY,
                 default=default,
-                annotation=_annotation(flag.type_name, flag.repeat),
+                annotation=ann,
             )
         )
-        if flag.help:
-            notes[flag.dest] = flag.help
+        annotations[flag.dest] = ann
     handler.__signature__ = inspect.Signature(params)  # type: ignore[attr-defined]
     handler.__name__ = tool.name
     handler.__doc__ = tool.description
-    handler.__annotations__ = {flag.dest: _annotation(flag.type_name, flag.repeat) for flag in tool.flags}
+    handler.__annotations__ = annotations
     return handler
 
 

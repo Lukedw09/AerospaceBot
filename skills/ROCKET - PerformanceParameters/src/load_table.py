@@ -144,13 +144,47 @@ def _card_name(token: str) -> str:
 def canonical_pair(text: str) -> str:
     """oxName/fuelName. Spaces around the slash are removed. Known names fold to the card."""
     if "/" not in text:
-        raise TableError(f"pair must be oxName/fuelName, got {text!r}")
+        raise TableError(
+            f"pair must be oxName/fuelName (one value, e.g. LOX/RP1), got {text!r}"
+        )
     ox, fuel = text.split("/", 1)
     ox = _card_name(ox)
     fuel = _card_name(fuel)
     if not ox or not fuel or "/" in fuel:
         raise TableError(f"pair must be oxName/fuelName, got {text!r}")
     return f"{ox}/{fuel}"
+
+
+def normalize_pair_args(pairs: list[str] | None) -> list[str]:
+    """Fold CLI/MCP pair tokens into oxName/fuelName strings.
+
+    Each pair is normally one token (`LOX/RP1`). Agents often pass oxidizer and
+    fuel as two array elements; join adjacent slash-free tokens pairwise.
+    """
+    if not pairs:
+        return []
+    out: list[str] = []
+    i = 0
+    while i < len(pairs):
+        item = pairs[i].strip()
+        if "/" in item:
+            out.append(item)
+            i += 1
+            continue
+        if i + 1 >= len(pairs):
+            raise TableError(
+                f"pair must be oxName/fuelName (one array element, e.g. ['LOX/RP1']), "
+                f"got {item!r}"
+            )
+        nxt = pairs[i + 1].strip()
+        if "/" in nxt:
+            raise TableError(
+                f"pair must be oxName/fuelName (one array element, e.g. ['LOX/RP1']), "
+                f"got {item!r}"
+            )
+        out.append(f"{item}/{nxt}")
+        i += 2
+    return out
 
 
 def clear_table_cache() -> None:

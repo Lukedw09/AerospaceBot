@@ -44,9 +44,9 @@ python "skills/ROCKET - PropellantLoad/propellant_load.py" --mdot <kg/s> --tb <s
 | `--mdot` | Total propellant mass flow \(\dot{m}\) | kg/s | Required |
 | `--tb` | Burn time \(t_b\) | s | Required |
 | `--r` | Mixture ratio, oxidizer/fuel | dimensionless | Required |
-| `--pair` | `oxName/fuelName`. Spaces around `/` are allowed. Known names fold to the card (`RP-1` is `RP1`, `Ethanol` stays `Ethanol`). | — | Required when densities are omitted |
-| `--rho-ox` | Oxidizer density \(\rho_o\) | kg/m³ | Required with `--rho-fuel` when `--pair` is not used for density |
-| `--rho-fuel` | Fuel density \(\rho_f\) | kg/m³ | Required with `--rho-ox` when `--pair` is not used for density |
+| `--pair` | `oxName/fuelName`. Spaces around `/` are allowed. Known names fold to the card (`RP-1` is `RP1`, `Ethanol` stays `Ethanol`). | — | Optional; required when densities are omitted |
+| `--rho-ox` | Oxidizer density \(\rho_o\) | kg/m³ | Optional; required with `--rho-fuel` when `--pair` is not used for density |
+| `--rho-fuel` | Fuel density \(\rho_f\) | kg/m³ | Optional; required with `--rho-ox` when `--pair` is not used for density |
 
 User densities override the pair table. `--rho-ox` and `--rho-fuel` must be given together. A listed `--pair` still prints `pair` when the user also gave densities.
 

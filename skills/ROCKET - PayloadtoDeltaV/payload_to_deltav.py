@@ -646,7 +646,13 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         "--stage",
         action="append",
         default=None,
-        help="repeatable, bottom stage first: mp=<kg>,inert=<kg>[,isp-sl=<s>][,isp-vac=<s>][,pa=<Pa>]",
+        help=(
+            "repeatable stage string, bottom stage first; comma-separated key=value; "
+            "keys: mp (kg, required), inert (kg, required), "
+            "isp-sl (s), isp-vac (s; need isp-sl and/or isp-vac), "
+            "pa (Pa; required when both Isp values are given); "
+            "example: mp=20000,inert=2000,isp-vac=300"
+        ),
     )
     parser.add_argument("--dv", type=float, default=None, help="ideal delta-v [m/s]; solve payload")
     parser.add_argument(

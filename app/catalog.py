@@ -91,10 +91,15 @@ def _when_to_run(text: str) -> str:
 
 
 def _required_flags(text: str) -> set[str]:
+    """Schema-required flags are unconditional Required cells only.
+
+    "Required when…", "Required with…", and "Optional; required with…" stay
+    optional in MCP so alternate CLI paths remain usable.
+    """
     required: set[str] = set()
     for option, cell in FLAG_ROW.findall(text):
         label = cell.strip().lower()
-        if label.startswith("required"):
+        if label == "required" or label.startswith("required;") or label.startswith("required."):
             required.add(option)
     return required
 
