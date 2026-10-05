@@ -162,9 +162,7 @@ __THREE_SOURCE__
 <script>
 (function () {
   "use strict";
-  // Kepler, occlusion, and the matplotlib camera match orbital_parameters.py.
   const SCENE = JSON.parse(document.getElementById("orbital-scene").textContent);
-  const K = SCENE.kepler;
   const palette = SCENE.palette;
 
   document.title = SCENE.title;
@@ -189,7 +187,6 @@ __THREE_SOURCE__
       if (entry.swatch === "circle") mark.style.borderRadius = "50%";
       const edge = entry.edge || (entry.swatch === "circle" || entry.swatch === "square" ? "#ffffff" : "");
       if (edge) mark.style.boxShadow = "inset 0 0 0 1.5px " + edge;
-      if (entry.swatch === "wedge") mark.style.opacity = "0.8";
     }
     const text = document.createElement("span");
     text.textContent = entry.label;
@@ -209,6 +206,7 @@ __THREE_SOURCE__
   let playing = true;
   let simTime = 0;
   let lastStamp = null;
+  let viewOut = [0, 0, 1];
 
   function viewBasis(elevDeg, azimDeg, rollDeg) {
     const elevRad = elevDeg * Math.PI / 180;
@@ -269,6 +267,13 @@ __THREE_SOURCE__
     return wrapped > Math.PI ? wrapped - 2 * Math.PI : wrapped;
   }
 
+  function wrapAzimuth(value) {
+    let wrapped = value % 360;
+    if (wrapped > 180) wrapped -= 360;
+    if (wrapped <= -180) wrapped += 360;
+    return wrapped;
+  }
+
   function solveKepler(meanAnomaly, eccentricity) {
     const mean = wrapPi(meanAnomaly);
     if (eccentricity === 0) return mean;
@@ -295,6 +300,18 @@ __THREE_SOURCE__
     return Math.atan2(sine, cosine);
   }
 
+  function eccentricFromTrue(nu, eccentricity) {
+    const cosine = (eccentricity + Math.cos(nu)) / (1 + eccentricity * Math.cos(nu));
+    const sine = Math.sqrt(Math.max(0, 1 - eccentricity * eccentricity)) * Math.sin(nu) / (1 + eccentricity * Math.cos(nu));
+    return Math.atan2(sine, cosine);
+  }
+
+  function meanFromTrue(nu, eccentricity) {
+    if (!(eccentricity > 1e-12)) return wrapPi(nu);
+    const eccentric = eccentricFromTrue(nu, eccentricity);
+    return wrapPi(eccentric - eccentricity * Math.sin(eccentric));
+  }
+
   function inertialPosition(radius, omegaNode, argument, inclination) {
     return [
       radius * (Math.cos(omegaNode) * Math.cos(argument) - Math.sin(omegaNode) * Math.cos(inclination) * Math.sin(argument)),
@@ -310,66 +327,6 @@ __THREE_SOURCE__
       (vr / radius) * y + vp * (-Math.sin(omegaNode) * Math.sin(argument) + Math.cos(omegaNode) * Math.cos(inclination) * Math.cos(argument)),
       (vr / radius) * z + vp * Math.sin(inclination) * Math.cos(argument)
     ];
-  }
-
-  function orbitalTime(time) {
-    if (K.conic === "ellipse" && K.a && K.period) {
-      return time * (K.period / K.ellipse_wall_s);
-    }
-    return 0;
-  }
-
-  function stateAtNu(nu, time) {
-    const elapsed = orbitalTime(time || 0);
-    const omegaNode = wrapTwoPi(K.Omega + (K.Omega_dot || 0) * elapsed);
-    const periapsis = wrapTwoPi(K.omega + (K.omega_dot || 0) * elapsed);
-    const radius = K.p / (1 + K.e * Math.cos(nu));
-    const argument = periapsis + nu;
-    const position = inertialPosition(radius, omegaNode, argument, K.i);
-    const vr = (K.h * K.e / K.p) * Math.sin(nu);
-    const vp = K.h / radius;
-    return {
-      nu: nu,
-      position: position,
-      velocity: inertialVelocity(vr, radius, position, vp, omegaNode, argument, K.i)
-    };
-  }
-
-  function kmFromState(state) {
-    return [state.position[0] / 1000, state.position[1] / 1000, state.position[2] / 1000];
-  }
-
-  function ellipsePolylineKm(time) {
-    const points = [];
-    const steps = 361;
-    for (let step = 0; step < steps; step += 1) {
-      const nu = 2 * Math.PI * step / (steps - 1);
-      points.push(kmFromState(stateAtNu(nu, time)));
-    }
-    return points;
-  }
-
-  function secularRatesOn() {
-    return Math.abs(K.Omega_dot || 0) > 0 || Math.abs(K.omega_dot || 0) > 0;
-  }
-
-  function nuAtSimTime(time) {
-    if (K.conic === "ellipse" && K.a && K.period) {
-      const meanMotion = Math.sqrt(K.mu / Math.pow(K.a, 3));
-      const orbitalTime = time * (K.period / K.ellipse_wall_s);
-      const mean = wrapPi(K.M + meanMotion * orbitalTime);
-      return trueAnomalyFromEccentric(solveKepler(mean, K.e), K.e);
-    }
-    const lo = K.nu_min;
-    const hi = K.nu_max;
-    const span = hi - lo;
-    if (!(span > 1e-9)) return K.nu;
-    const speed = span / K.open_arc_wall_s;
-    const period = 2 * span;
-    let along = (K.nu + speed * time - lo) % period;
-    if (along < 0) along += period;
-    if (along > span) along = period - along;
-    return lo + along;
   }
 
   function behindPlanet(x, y, z, ux, uy, uz, radius) {
@@ -412,8 +369,8 @@ __THREE_SOURCE__
     });
   }
 
-  function ribbonGeometry(points, width, viewOut) {
-    const view = new THREE.Vector3(viewOut[0], viewOut[1], viewOut[2]);
+  function ribbonGeometry(points, width, viewOutward) {
+    const view = new THREE.Vector3(viewOutward[0], viewOutward[1], viewOutward[2]);
     const positions = [];
     const indices = [];
     const tangent = new THREE.Vector3();
@@ -524,91 +481,6 @@ __THREE_SOURCE__
   if (SCENE.ring_km.length > 1) lineThrough(SCENE.ring_km, palette.equator, 2);
   SCENE.spokes_km.forEach(function (spoke) { lineThrough(spoke, palette.equator_spoke, 2); });
 
-  const wedgeSteps = SCENE.wedge_steps || 36;
-  let wedgeGeometry = null;
-  let wedgeOutline = null;
-
-  function sectorOffsets(place) {
-    const horizontal = Math.hypot(place.x, place.y);
-    const radius = Math.hypot(place.x, place.y, place.z);
-    let along;
-    let across;
-    let elevation;
-    if (horizontal < 1e-6) {
-      along = -Math.sin(K.Omega);
-      across = Math.cos(K.Omega);
-      elevation = place.z >= 0 ? Math.PI / 2 : -Math.PI / 2;
-    } else {
-      along = place.x / horizontal;
-      across = place.y / horizontal;
-      elevation = Math.atan2(place.z, horizontal);
-    }
-    const count = wedgeSteps;
-    const positions = new Float32Array((count + 1) * 3);
-    for (let step = 0; step < count; step += 1) {
-      const tilt = elevation * (step / (count - 1));
-      const offset = step + 1;
-      positions[offset * 3] = radius * Math.cos(tilt) * along;
-      positions[offset * 3 + 1] = radius * Math.cos(tilt) * across;
-      positions[offset * 3 + 2] = radius * Math.sin(tilt);
-    }
-    positions[count * 3] = place.x;
-    positions[count * 3 + 1] = place.y;
-    positions[count * 3 + 2] = place.z;
-    return positions;
-  }
-
-  function placeWedge(place) {
-    if (!wedgeGeometry) return;
-    const positions = sectorOffsets(place);
-    wedgeGeometry.attributes.position.array.set(positions);
-    wedgeGeometry.attributes.position.needsUpdate = true;
-    wedgeGeometry.computeBoundingSphere();
-    const outline = new Float32Array((wedgeSteps + 2) * 3);
-    outline.set(positions);
-    outline[(wedgeSteps + 1) * 3] = 0;
-    outline[(wedgeSteps + 1) * 3 + 1] = 0;
-    outline[(wedgeSteps + 1) * 3 + 2] = 0;
-    wedgeOutline.attributes.position.array.set(outline);
-    wedgeOutline.attributes.position.needsUpdate = true;
-  }
-
-  if (SCENE.show_wedge) {
-    const vertexCount = wedgeSteps + 1;
-    const indices = [];
-    for (let index = 1; index < vertexCount - 1; index += 1) {
-      indices.push(0, index, index + 1);
-    }
-    wedgeGeometry = new THREE.BufferGeometry();
-    wedgeGeometry.setAttribute(
-      "position",
-      new THREE.BufferAttribute(new Float32Array(vertexCount * 3), 3)
-    );
-    wedgeGeometry.setIndex(indices);
-    const wedgeMaterial = new THREE.MeshBasicMaterial({
-      color: palette.wedge,
-      transparent: true,
-      opacity: 0.72,
-      side: THREE.DoubleSide,
-      depthWrite: false,
-      depthTest: false
-    });
-    const wedgeMesh = addMesh(wedgeGeometry, wedgeMaterial, 9);
-    wedgeMesh.renderOrder = 9;
-    wedgeOutline = new THREE.BufferGeometry();
-    wedgeOutline.setAttribute(
-      "position",
-      new THREE.BufferAttribute(new Float32Array((wedgeSteps + 2) * 3), 3)
-    );
-    const wedgeLine = new THREE.Line(
-      wedgeOutline,
-      new THREE.LineBasicMaterial({ color: palette.wedge_edge, depthTest: false })
-    );
-    wedgeLine.frustumCulled = false;
-    wedgeLine.renderOrder = 9;
-    scene.add(wedgeLine);
-  }
-
   const planetGeometry = new THREE.SphereGeometry(
     SCENE.equatorial_radius_km,
     SCENE.planet_segments_u,
@@ -628,161 +500,6 @@ __THREE_SOURCE__
   planet.renderOrder = 3;
   scene.add(planet);
   if (SCENE.equator_km.length > 1) lineThrough(SCENE.equator_km, palette.equator_limb, 4);
-
-  SCENE.axes.forEach(function (axis) {
-    lineThrough([[0, 0, 0], axis.tip_km], palette.axis, 4);
-    const label = textSprite(axis.label, palette.axis);
-    label.position.set(axis.label_km[0], axis.label_km[1], axis.label_km[2]);
-    scene.add(label);
-  });
-
-  const nearMaterial = new THREE.MeshBasicMaterial({
-    color: palette.orbit,
-    side: THREE.DoubleSide,
-    depthTest: false,
-    transparent: true,
-    opacity: 1.0
-  });
-  const farMaterial = new THREE.MeshBasicMaterial({
-    color: palette.orbit,
-    side: THREE.DoubleSide,
-    depthTest: false,
-    transparent: true,
-    opacity: 0.95
-  });
-  const orbitGroup = new THREE.Group();
-  orbitGroup.renderOrder = 6;
-  scene.add(orbitGroup);
-  const trailGroup = new THREE.Group();
-  trailGroup.renderOrder = 7;
-  scene.add(trailGroup);
-  const epochOrbitKm = SCENE.orbit_km.map(function (polyline) {
-    return polyline.map(function (point) { return [point[0], point[1], point[2]]; });
-  });
-  const trailPts = [];
-  let lastOrbitBuild = -1;
-  let lastOutward = [0, 0, 1];
-
-  function clearGroup(group) {
-    for (let index = group.children.length - 1; index >= 0; index -= 1) {
-      const child = group.children[index];
-      group.remove(child);
-      if (child.geometry) child.geometry.dispose();
-      if (child.material && child.material.userData && child.material.userData.disposable && !child.material.userData.disposed) {
-        child.material.dispose();
-        child.material.userData.disposed = true;
-      }
-    }
-  }
-
-  function strokeSplit(group, points, outward, nearMat, farMat) {
-    const nearWidth = SCENE.limit_km * 0.011;
-    const farWidth = SCENE.limit_km * 0.0055;
-    const dash = SCENE.limit_km * 0.045;
-    const gap = SCENE.limit_km * 0.028;
-    const radius = SCENE.equatorial_radius_km;
-    const hidden = points.map(function (point) {
-      return behindPlanet(point.x, point.y, point.z, outward[0], outward[1], outward[2], radius);
-    });
-    const split = splitHidden(points, hidden);
-    split.near.forEach(function (stroke) {
-      const mesh = new THREE.Mesh(ribbonGeometry(stroke, nearWidth, outward), nearMat);
-      mesh.frustumCulled = false;
-      mesh.renderOrder = 8;
-      group.add(mesh);
-    });
-    split.far.forEach(function (stroke) {
-      dashedPieces(stroke, dash, gap).forEach(function (piece) {
-        const mesh = new THREE.Mesh(ribbonGeometry(piece, farWidth, outward), farMat);
-        mesh.frustumCulled = false;
-        mesh.renderOrder = 6;
-        group.add(mesh);
-      });
-    });
-  }
-
-  function rebuildOrbit(outward) {
-    clearGroup(orbitGroup);
-    lastOutward = outward;
-    SCENE.orbit_km.forEach(function (polyline) {
-      strokeSplit(orbitGroup, toVecs(polyline), outward, nearMaterial, farMaterial);
-    });
-  }
-
-  function trailSpan() {
-    if (K.conic === "ellipse" && K.period) return 0.75 * K.period;
-    return 0;
-  }
-
-  function trailOpacity(along) {
-    return Math.max(0, Math.min(1, along));
-  }
-
-  function rebuildTrail(outward) {
-    clearGroup(trailGroup);
-    const span = trailSpan();
-    if (trailPts.length < 2 || !(span > 0)) return;
-    const now = trailPts[trailPts.length - 1].t;
-    const count = trailPts.length;
-    const chunks = Math.min(16, count - 1);
-    for (let chunk = 0; chunk < chunks; chunk += 1) {
-      const start = Math.floor(chunk * (count - 1) / chunks);
-      const stop = Math.floor((chunk + 1) * (count - 1) / chunks) + 1;
-      const slice = trailPts.slice(start, Math.max(stop, start + 2));
-      if (slice.length < 2) continue;
-      const mid = slice[Math.floor((slice.length - 1) / 2)];
-      const along = 1 - (now - mid.t) / span;
-      const opacity = trailOpacity(along);
-      if (opacity <= 0.02) continue;
-      const fade = new THREE.MeshBasicMaterial({
-        color: palette.orbit,
-        side: THREE.DoubleSide,
-        depthTest: false,
-        transparent: true,
-        opacity: opacity
-      });
-      fade.userData.disposable = true;
-      strokeSplit(
-        trailGroup,
-        slice.map(function (entry) { return entry.p.clone(); }),
-        outward,
-        fade,
-        fade
-      );
-    }
-  }
-
-  function setOrbitFade(hasTrail) {
-    nearMaterial.opacity = hasTrail ? 0.28 : 1.0;
-    farMaterial.opacity = hasTrail ? 0.18 : 0.95;
-    nearMaterial.needsUpdate = true;
-    farMaterial.needsUpdate = true;
-  }
-
-  function markerTexture(shape, fill) {
-    const surface = document.createElement("canvas");
-    surface.width = 64;
-    surface.height = 64;
-    const context = surface.getContext("2d");
-    context.clearRect(0, 0, 64, 64);
-    context.fillStyle = fill;
-    context.strokeStyle = "#ffffff";
-    context.lineWidth = 6;
-    if (shape === "square") {
-      context.beginPath();
-      context.rect(10, 10, 44, 44);
-      context.fill();
-      context.stroke();
-    } else {
-      context.beginPath();
-      context.arc(32, 32, 22, 0, Math.PI * 2);
-      context.fill();
-      context.stroke();
-    }
-    const texture = new THREE.CanvasTexture(surface);
-    texture.needsUpdate = true;
-    return texture;
-  }
 
   function textSprite(text, color) {
     const surface = document.createElement("canvas");
@@ -806,9 +523,186 @@ __THREE_SOURCE__
     return sprite;
   }
 
+  SCENE.axes.forEach(function (axis) {
+    lineThrough([[0, 0, 0], axis.tip_km], palette.axis, 4);
+    const label = textSprite(axis.label, palette.axis);
+    label.position.set(axis.label_km[0], axis.label_km[1], axis.label_km[2]);
+    scene.add(label);
+  });
+
+  const orbitGroup = new THREE.Group();
+  orbitGroup.renderOrder = 6;
+  scene.add(orbitGroup);
+
+  function clearGroup(group) {
+    for (let index = group.children.length - 1; index >= 0; index -= 1) {
+      const child = group.children[index];
+      group.remove(child);
+      if (child.geometry) child.geometry.dispose();
+      if (child.material) child.material.dispose();
+    }
+  }
+
+  function drawLayer(polylines, color, nearFrac, farFrac, outward, opacity) {
+    if (!polylines || !polylines.length) return;
+    const alpha = opacity === undefined ? 1 : opacity;
+    const nearMaterial = new THREE.MeshBasicMaterial({
+      color: color,
+      side: THREE.DoubleSide,
+      depthTest: false,
+      transparent: alpha < 0.99,
+      opacity: alpha
+    });
+    const farMaterial = new THREE.MeshBasicMaterial({
+      color: color,
+      side: THREE.DoubleSide,
+      depthTest: false,
+      transparent: true,
+      opacity: alpha * 0.55
+    });
+    const nearWidth = SCENE.limit_km * nearFrac;
+    const farWidth = SCENE.limit_km * farFrac;
+    const dash = SCENE.limit_km * 0.045;
+    const gap = SCENE.limit_km * 0.028;
+    const radius = SCENE.equatorial_radius_km;
+    polylines.forEach(function (polyline) {
+      const points = toVecs(polyline);
+      const hidden = points.map(function (point) {
+        return behindPlanet(point.x, point.y, point.z, outward[0], outward[1], outward[2], radius);
+      });
+      const split = splitHidden(points, hidden);
+      split.near.forEach(function (stroke) {
+        const mesh = new THREE.Mesh(ribbonGeometry(stroke, nearWidth, outward), nearMaterial);
+        mesh.frustumCulled = false;
+        mesh.renderOrder = 8;
+        orbitGroup.add(mesh);
+      });
+      split.far.forEach(function (stroke) {
+        dashedPieces(stroke, dash, gap).forEach(function (piece) {
+          const mesh = new THREE.Mesh(ribbonGeometry(piece, farWidth, outward), farMaterial);
+          mesh.frustumCulled = false;
+          mesh.renderOrder = 6;
+          orbitGroup.add(mesh);
+        });
+      });
+    });
+  }
+
+  function lerpHex(start, end, fraction) {
+    const left = new THREE.Color(start);
+    const right = new THREE.Color(end);
+    return "#" + left.lerp(right, fraction).getHexString();
+  }
+
+  function layerColor(id, fallback) {
+    const layers = SCENE.layers || [];
+    for (let index = 0; index < layers.length; index += 1) {
+      if (layers[index].id === id) return layers[index].color;
+    }
+    return fallback || palette.orbit;
+  }
+
+  function lerpApsides(from, to, u) {
+    const rp = from.rp + (to.rp - from.rp) * u;
+    const ra = from.ra + (to.ra - from.ra) * u;
+    const a = 0.5 * (rp + ra);
+    const span = rp + ra;
+    const e = span > 0 ? Math.abs(ra - rp) / span : 0;
+    return { a: a, e: e, rp: rp, ra: ra, p: a * (1 - e * e) };
+  }
+
+  function sampleConic(conic) {
+    const eccentricity = conic.e || 0;
+    const semiMajor = conic.a;
+    const parameter = eccentricity > 1e-12 ? semiMajor * (1 - eccentricity * eccentricity) : semiMajor;
+    const count = 360;
+    const points = [];
+    for (let index = 0; index <= count; index += 1) {
+      const nu = (2 * Math.PI) * index / count;
+      const radius = parameter / (1 + eccentricity * Math.cos(nu));
+      points.push([radius * Math.cos(nu) / 1000, radius * Math.sin(nu) / 1000, 0]);
+    }
+    return [points];
+  }
+
+  function morphOrbit(schedule) {
+    if (!schedule || schedule.phase !== "burn" || !schedule.leg || !schedule.leg.from || !schedule.leg.to) {
+      return null;
+    }
+    const u = schedule.u * schedule.u * (3 - 2 * schedule.u);
+    const conic = lerpApsides(schedule.leg.from, schedule.leg.to, u);
+    return {
+      polylines: sampleConic(conic),
+      color: lerpHex(
+        layerColor(schedule.leg.from_layer, palette.orbit),
+        layerColor(schedule.leg.to_layer, palette.orbit),
+        u
+      ),
+      from_layer: schedule.leg.from_layer,
+      to_layer: schedule.leg.to_layer,
+      u: u
+    };
+  }
+
+  function activeLayer(schedule) {
+    if (!schedule || !schedule.leg) return "";
+    return schedule.leg.layer || "";
+  }
+
+  function rebuildOrbit(outward) {
+    clearGroup(orbitGroup);
+    const schedule = scheduleAt(simTime);
+    const morph = morphOrbit(schedule);
+    const current = morph ? "" : activeLayer(schedule);
+    (SCENE.layers || []).forEach(function (layer) {
+      const swinging = morph && (layer.id === morph.from_layer || layer.id === morph.to_layer);
+      const hot = layer.id === current;
+      const alpha = hot ? 1 : (swinging ? 0.16 : 0.28);
+      const near = hot ? 0.011 : 0.005;
+      const far = hot ? 0.0055 : 0.003;
+      drawLayer(layer.polylines, layer.color, near, far, outward, alpha);
+    });
+    if (morph) {
+      drawLayer(morph.polylines, morph.color, 0.011, 0.0055, outward, 1);
+    }
+  }
+
+  function markerTexture(shape, fill) {
+    const surface = document.createElement("canvas");
+    surface.width = 64;
+    surface.height = 64;
+    const context = surface.getContext("2d");
+    context.clearRect(0, 0, 64, 64);
+    context.fillStyle = fill;
+    context.strokeStyle = "#ffffff";
+    context.lineWidth = 6;
+    if (shape === "square") {
+      context.beginPath();
+      context.rect(10, 10, 44, 44);
+      context.fill();
+      context.stroke();
+    } else if (shape === "diamond") {
+      context.beginPath();
+      context.moveTo(32, 6);
+      context.lineTo(58, 32);
+      context.lineTo(32, 58);
+      context.lineTo(6, 32);
+      context.closePath();
+      context.fill();
+      context.stroke();
+    } else {
+      context.beginPath();
+      context.arc(32, 32, 22, 0, Math.PI * 2);
+      context.fill();
+      context.stroke();
+    }
+    const texture = new THREE.CanvasTexture(surface);
+    texture.needsUpdate = true;
+    return texture;
+  }
+
   const markerScale = SCENE.limit_km * 0.05;
   let craftSprite = null;
-  const spritesById = {};
   SCENE.markers.forEach(function (marker) {
     const material = new THREE.SpriteMaterial({
       map: markerTexture(marker.shape, marker.color),
@@ -816,13 +710,11 @@ __THREE_SOURCE__
       depthTest: false
     });
     const sprite = new THREE.Sprite(material);
-    const scale = marker.id === "apoapsis" ? markerScale * 0.92 : markerScale;
-    sprite.scale.set(scale, scale, 1);
+    sprite.scale.set(markerScale, markerScale, 1);
     sprite.position.set(marker.km[0], marker.km[1], marker.km[2]);
     sprite.renderOrder = marker.id === "spacecraft" ? 11 : 10;
     sprite.frustumCulled = false;
     scene.add(sprite);
-    spritesById[marker.id] = sprite;
     if (marker.id === "spacecraft") craftSprite = sprite;
   });
 
@@ -838,30 +730,106 @@ __THREE_SOURCE__
   radiusLine.renderOrder = 5;
   scene.add(radiusLine);
 
-  const epochState = stateAtNu(K.nu, 0);
-  const epochKm = new THREE.Vector3(
-    epochState.position[0] / 1000,
-    epochState.position[1] / 1000,
-    epochState.position[2] / 1000
-  );
-  const epochVelocity = new THREE.Vector3(
-    epochState.velocity[0],
-    epochState.velocity[1],
-    epochState.velocity[2]
-  );
-  if (epochVelocity.lengthSq() === 0) epochVelocity.set(1, 0, 0);
-  epochVelocity.normalize();
-  const arrow = new THREE.ArrowHelper(
-    epochVelocity,
-    epochKm,
-    SCENE.velocity_length_km,
+  const craftKm = new THREE.Vector3(SCENE.craft_km[0], SCENE.craft_km[1], SCENE.craft_km[2]);
+  const velocityLength = SCENE.velocity_length_km;
+  const velocityArrow = new THREE.ArrowHelper(
+    new THREE.Vector3(0, 1, 0),
+    craftKm,
+    velocityLength,
     palette.velocity,
-    SCENE.velocity_length_km * 0.22,
-    SCENE.velocity_length_km * 0.12
+    velocityLength * 0.18,
+    velocityLength * 0.08
   );
-  arrow.frustumCulled = false;
-  arrow.renderOrder = 7;
-  scene.add(arrow);
+  velocityArrow.frustumCulled = false;
+  velocityArrow.renderOrder = 12;
+  velocityArrow.line.material.depthTest = false;
+  velocityArrow.cone.material.depthTest = false;
+  velocityArrow.line.renderOrder = 12;
+  velocityArrow.cone.renderOrder = 12;
+  scene.add(velocityArrow);
+
+  const burnArrows = [];
+  (SCENE.burns || []).forEach(function (burn) {
+    const vector = new THREE.Vector3(
+      burn.dv_m_s[0] || 0,
+      burn.dv_m_s[1] || 0,
+      burn.dv_m_s[2] || 0
+    );
+    const has = vector.lengthSq() > 0;
+    if (!has) vector.set(0, 1, 0);
+    vector.normalize();
+    const length = SCENE.velocity_length_km * 1.65;
+    const origin = new THREE.Vector3(burn.km[0], burn.km[1], burn.km[2]);
+    const helper = new THREE.ArrowHelper(
+      vector,
+      origin,
+      length,
+      burn.color || palette.dv || "#e67e22",
+      length * 0.24,
+      length * 0.11
+    );
+    helper.frustumCulled = false;
+    helper.renderOrder = 13;
+    helper.line.material.depthTest = false;
+    helper.cone.material.depthTest = false;
+    helper.line.renderOrder = 13;
+    helper.cone.renderOrder = 13;
+    helper.visible = has;
+    helper.userData.has = has;
+    scene.add(helper);
+    burnArrows.push(helper);
+  });
+
+  function stateOn(leg, nu) {
+    const radius = leg.p / (1 + leg.e * Math.cos(nu));
+    const argument = (leg.omega || 0) + nu;
+    const position = inertialPosition(radius, leg.Omega || 0, argument, leg.i || 0);
+    const vr = (leg.h * leg.e / leg.p) * Math.sin(nu);
+    const vp = leg.h / radius;
+    return {
+      nu: nu,
+      position: position,
+      velocity: inertialVelocity(vr, radius, position, vp, leg.Omega || 0, argument, leg.i || 0)
+    };
+  }
+
+  function nuAlong(leg, u) {
+    const clamped = Math.min(1, Math.max(0, u));
+    if (!(leg.e > 1e-12)) {
+      return wrapTwoPi(leg.nu0 + (leg.nu1 - leg.nu0) * clamped);
+    }
+    let m0 = meanFromTrue(leg.nu0, leg.e);
+    let m1 = meanFromTrue(leg.nu1, leg.e);
+    let span = m1 - m0;
+    const want = wrapPi(leg.nu1 - leg.nu0);
+    if (want > 0 && span < 0) span += 2 * Math.PI;
+    if (want < 0 && span > 0) span -= 2 * Math.PI;
+    if (Math.abs(span) < 1e-12) span = wrapPi(leg.nu1 - leg.nu0);
+    return trueAnomalyFromEccentric(solveKepler(m0 + span * clamped, leg.e), leg.e);
+  }
+
+  function scheduleAt(time) {
+    const legs = SCENE.sequence || [];
+    if (!legs.length) return { index: 0, u: 0, leg: null, phase: "idle" };
+    let total = 0;
+    legs.forEach(function (leg) { total += leg.wall_s; });
+    if (!(total > 1e-9)) return { index: 0, u: 0, leg: legs[0], phase: legs[0].kind };
+    let loop = ((time % total) + total) % total;
+    for (let index = 0; index < legs.length; index += 1) {
+      const wall = legs[index].wall_s;
+      if (loop <= wall || index === legs.length - 1) {
+        return {
+          index: index,
+          u: wall > 0 ? Math.min(1, loop / wall) : 1,
+          leg: legs[index],
+          phase: legs[index].kind
+        };
+      }
+      loop -= wall;
+    }
+    const last = legs[legs.length - 1];
+    return { index: legs.length - 1, u: 1, leg: last, phase: last.kind };
+  }
 
   function frameCamera() {
     const width = Math.max(1, viewport.clientWidth);
@@ -886,8 +854,9 @@ __THREE_SOURCE__
   }
 
   function rateText() {
-    if (K.conic === "ellipse") return "rate 1 period / " + K.ellipse_wall_s + " s";
-    return "rate drawn arc / " + K.open_arc_wall_s + " s";
+    const schedule = scheduleAt(simTime);
+    if (!schedule.leg) return "orbit-normal view";
+    return schedule.leg.label || schedule.phase;
   }
 
   function showReadout() {
@@ -896,83 +865,55 @@ __THREE_SOURCE__
 
   function applyCamera() {
     const basis = viewBasis(elev, azim, SCENE.roll_deg);
+    viewOut = basis.w;
     const distance = SCENE.limit_km * 8;
     camera.position.set(basis.w[0] * distance, basis.w[1] * distance, basis.w[2] * distance);
     camera.up.set(basis.v[0], basis.v[1], basis.v[2]);
     camera.lookAt(0, 0, 0);
     rebuildOrbit(basis.w);
-    rebuildTrail(basis.w);
     showReadout();
   }
 
-  function nuForPlaneMark(id, time) {
-    if (id === "spacecraft") return null;
-    if (id === "apoapsis") return Math.PI;
-    if (id === "ascending_node") {
-      const periapsis = wrapTwoPi(K.omega + (K.omega_dot || 0) * orbitalTime(time));
-      return wrapPi(-periapsis);
-    }
-    return 0;
-  }
-
-  function placePlaneMarks(time) {
-    Object.keys(spritesById).forEach(function (id) {
-      const nu = nuForPlaneMark(id, time);
-      if (nu === null) return;
-      const km = kmFromState(stateAtNu(nu, time));
-      spritesById[id].position.set(km[0], km[1], km[2]);
-    });
-  }
-
-  function followSecularOrbit(time, place) {
-    if (!secularRatesOn()) return;
-    const basis = viewBasis(elev, azim, SCENE.roll_deg);
-    if (time <= 0) {
-      SCENE.orbit_km = epochOrbitKm;
-      trailPts.length = 0;
-      lastOrbitBuild = 0;
-      setOrbitFade(false);
-      rebuildOrbit(basis.w);
-      rebuildTrail(basis.w);
-      placePlaneMarks(0);
-      return;
-    }
-    const now = orbitalTime(time);
-    const span = trailSpan();
-    const previous = trailPts.length ? trailPts[trailPts.length - 1].p : null;
-    if (!previous || previous.distanceTo(place) > SCENE.limit_km * 0.0015) {
-      trailPts.push({ p: place.clone(), t: now });
-    }
-    while (trailPts.length && span > 0 && now - trailPts[0].t > span) {
-      trailPts.shift();
-    }
-    if (Math.abs(time - lastOrbitBuild) >= 0.08) {
-      lastOrbitBuild = time;
-      SCENE.orbit_km = [ellipsePolylineKm(time)];
-      setOrbitFade(true);
-      rebuildOrbit(basis.w);
-      rebuildTrail(basis.w);
-      placePlaneMarks(time);
-    }
+  function placeCraft(position, velocity) {
+    const place = new THREE.Vector3(position[0] / 1000, position[1] / 1000, position[2] / 1000);
+    if (craftSprite) craftSprite.position.copy(place);
+    radiusGeometry.setFromPoints([new THREE.Vector3(0, 0, 0), place]);
+    const direction = new THREE.Vector3(velocity[0], velocity[1], velocity[2]);
+    if (direction.lengthSq() < 1e-18) direction.set(0, 1, 0);
+    direction.normalize();
+    velocityArrow.position.copy(place);
+    velocityArrow.setDirection(direction);
+    velocityArrow.setLength(velocityLength, velocityLength * 0.18, velocityLength * 0.08);
   }
 
   function updateCraft(time) {
-    const state = stateAtNu(nuAtSimTime(time), time);
-    const place = new THREE.Vector3(state.position[0] / 1000, state.position[1] / 1000, state.position[2] / 1000);
-    if (craftSprite) craftSprite.position.copy(place);
-    radiusGeometry.setFromPoints([new THREE.Vector3(0, 0, 0), place]);
-    const direction = new THREE.Vector3(state.velocity[0], state.velocity[1], state.velocity[2]);
-    if (direction.lengthSq() > 0) {
-      direction.normalize();
-      arrow.position.copy(place);
-      arrow.setDirection(direction);
+    const schedule = scheduleAt(time);
+    const burns = SCENE.burns || [];
+    burnArrows.forEach(function (helper, index) {
+      const hot = schedule.leg && schedule.leg.kind === "burn" && schedule.leg.burn === index;
+      const length = SCENE.velocity_length_km * (hot ? 2.05 : 1.65);
+      helper.setLength(length, length * 0.24, length * 0.11);
+      helper.visible = helper.userData.has;
+    });
+    if (!schedule.leg) {
+      showReadout();
+      return;
     }
-    placeWedge(place);
-    followSecularOrbit(time, place);
-  }
-
-  function wrapAzimuth(value) {
-    return ((value + 180) % 360 + 360) % 360 - 180;
+    if (schedule.leg.kind === "burn") {
+      const burn = burns[schedule.leg.burn] || burns[0];
+      if (burn) {
+        const dummyVel = burn.dv_m_s && (burn.dv_m_s[0] || burn.dv_m_s[1] || burn.dv_m_s[2])
+          ? burn.dv_m_s
+          : [0, 1, 0];
+        placeCraft([burn.km[0] * 1000, burn.km[1] * 1000, burn.km[2] * 1000], dummyVel);
+      }
+    } else {
+      const nu = nuAlong(schedule.leg, schedule.u);
+      const state = stateOn(schedule.leg, nu);
+      placeCraft(state.position, state.velocity);
+    }
+    rebuildOrbit(viewOut);
+    showReadout();
   }
 
   frameCamera();

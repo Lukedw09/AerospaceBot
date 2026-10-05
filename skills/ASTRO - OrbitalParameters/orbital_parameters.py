@@ -3,7 +3,8 @@
 
 Energy, period, radii, anomalies, angular momentum, inclination, node,
 argument of latitude, and the inertial position and velocity come from the
-flight records in formulas.md. Oblateness is drawn only; it does not enter mu.
+flight records in formulas.md. Flattening is drawn only. Optional first-order
+J2 secular rates match ASTRO - J2SecularRates.
 """
 
 from __future__ import annotations
@@ -15,14 +16,17 @@ import math
 import sys
 import tempfile
 import webbrowser
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 
 # Earth values from formulas.md. R0 is the reference radius in mu = g0*R0^2.
 # g0 is standard sea-level gravity. Flattening is the visual polar squash only.
+# Optional first-order J2 uses the same records and Earth defaults as J2SecularRates.
 G0 = 9.80665
 R0_EARTH = 6.3742e6
 F_EARTH = 1.0 / 298.257
+AE_WGS84 = 6378137.0
+J2_GSFC = 1.08228e-3
 PLOT_TITLE = "ASTRO - OrbitalParameters"
 PNG_AXIS_LABELS = ("X (km)", "Y (km)", "Z (km)")
 AXIS_UNIT_CAPTION = "X, Y, Z (km)"
@@ -94,7 +98,18 @@ ASSUMPTIONS = (
     "transverse_velocity_eccentric; hyperbola velocity uses vis_viva with "
     "radial_velocity and transverse_velocity; inertial velocity is inertial_velocity_x, "
     "inertial_velocity_y, and inertial_velocity_z; a parabola has no finite semi-major "
-    "axis, no period, and no apoapsis; element angles are radians"
+    "axis, no period, and no apoapsis; element angles are radians; optional first-order "
+    "J2 secular rates are off unless --j2 is passed; then Omega and omega in the HTML "
+    "viewer use j2_nodal_rate and j2_apsidal_rate from ASTRO - J2SecularRates; a, e, and "
+    "i have no secular J2 rate; drag, third body, higher zonals, and the J2 mean-motion "
+    "correction are omitted; J2 is ellipse-only; a bare --j2 uses Earth J2 = 1.08228e-3 "
+    "(GSFC, March 1986, NASA RP-1204) and RE = WGS 84 ae = 6378137 m; any other planet "
+    "needs --j2 and --R0, and --ae if RE is not that R0; flattening remains visual only "
+    "and does not enter mu or the J2 rates; a NORAD two-line element set may be "
+    "passed with --tle and is used as a Keplerian conic: line-2 angles are degrees, "
+    "semi-major axis is the inverse of mean_motion from the published mean motion "
+    "in revolutions per 86400 s and this mu, and BSTAR, mean-motion derivatives, "
+    "SGP4, and the epoch do not change the state"
 )
 
 
@@ -104,7 +119,40 @@ class Body:
     g0: float
     mu: float
     flattening: float
+    ae: float
+    j2: float
     radius_source: str
+    ae_source: str
+    j2_source: str
+
+
+TLE_SECONDS_PER_DAY = 86400.0
+TLE_NOTE = (
+    "TLE mean elements are used as a Keplerian conic; "
+    "BSTAR, mean-motion derivatives, and SGP4 are not applied; "
+    "the epoch does not move the spacecraft"
+)
+# Celestrak sample, epoch 2008 day 264. Line 2 columns 53-69 are mean motion,
+# revolution number, and checksum with no extra separator.
+ISS_TLE_LINE1 = "1 25544U 98067A   08264.51782528 -.00002182  00000-0 -11606-4 0  2927"
+ISS_TLE_LINE2 = "2 25544  51.6416 247.4627 0006703 130.5360 325.0288 15.72125391563537"
+
+
+@dataclass(frozen=True)
+class Tle:
+    name: str | None
+    catalog: int
+    classification: str
+    designator: str
+    epoch_year: int
+    epoch_day: float
+    inclination_rad: float
+    raan_rad: float
+    eccentricity: float
+    arg_perigee_rad: float
+    mean_anomaly_rad: float
+    mean_motion_rev_day: float
+    bstar: float
 
 
 @dataclass(frozen=True)
@@ -133,6 +181,7 @@ class Orbit:
     vx: float
     vy: float
     vz: float
+    tle: Tle | None = None
 
 
 def print_kv(key: str, value: object) -> None:
@@ -234,6 +283,42 @@ def apoapsis_radius(semi_major: float, eccentricity: float) -> float:
 def orbital_period(mu: float, semi_major: float) -> float:
     """orbital_period."""
     return 2.0 * math.pi * math.sqrt(semi_major**3 / mu)
+
+
+def mean_motion(mu: float, semi_major: float) -> float:
+    """mean_motion."""
+    return math.sqrt(mu / semi_major**3)
+
+
+def mean_motion_from_rev_per_day(rev_per_day: float) -> float:
+    """mean_motion_from_period. One revolution spans 86400/n_rev seconds."""
+    if rev_per_day <= 0.0 or not math.isfinite(rev_per_day):
+        raise ValueError("TLE mean motion must be > 0 rev/day")
+    return rev_per_day * (2.0 * math.pi) / TLE_SECONDS_PER_DAY
+
+
+def semimajor_axis_from_mean_motion(mu: float, n_rad_s: float) -> float:
+    """Inverse of mean_motion. a = (mu / n^2)^(1/3)."""
+    if mu <= 0.0 or n_rad_s <= 0.0 or not math.isfinite(mu) or not math.isfinite(n_rad_s):
+        raise ValueError("mean motion and mu must be positive")
+    return (mu / (n_rad_s * n_rad_s)) ** (1.0 / 3.0)
+
+
+def j2_nodal_rate(n: float, j2: float, re: float, inc: float, a: float, ecc: float) -> float:
+    """j2_nodal_rate."""
+    return -3.0 * n * j2 * re**2 * math.cos(inc) / (2.0 * a**2 * (1.0 - ecc**2) ** 2)
+
+
+def j2_apsidal_rate(n: float, j2: float, re: float, inc: float, a: float, ecc: float) -> float:
+    """j2_apsidal_rate."""
+    return (
+        3.0
+        * n
+        * j2
+        * re**2
+        * (4.0 - 5.0 * math.sin(inc) ** 2)
+        / (4.0 * a**2 * (1.0 - ecc**2) ** 2)
+    )
 
 
 def kepler_equation(eccentric_anomaly: float, eccentricity: float) -> float:
@@ -751,6 +836,195 @@ def orbit_from_elements(
     return orbit_from_state(mu, x, y, z, vx, vy, vz, mode)
 
 
+def tle_checksum(line68: str) -> int:
+    """NORAD checksum of the first 68 characters. Digits add their value; '-' adds 1."""
+    if len(line68) < 68:
+        raise ValueError("TLE checksum needs 68 characters")
+    total = 0
+    for char in line68[:68]:
+        if char.isdigit():
+            total += int(char)
+        elif char == "-":
+            total += 1
+    return total % 10
+
+
+def _tle_catalog(field: str) -> int:
+    if len(field) != 5:
+        raise ValueError("TLE catalog number must be 5 characters")
+    if field[0].isalpha():
+        if not field[0].isupper() or not field[1:].isdigit():
+            raise ValueError(f"TLE catalog number {field} is not alpha-5")
+        # A=10 ... Z=35, concatenated with the remaining four digits.
+        return int(f"{10 + ord(field[0]) - ord('A')}{field[1:]}")
+    if not field.isdigit():
+        raise ValueError(f"TLE catalog number {field} is not numeric")
+    return int(field)
+
+
+def _tle_year(field: str, label: str = "epoch year") -> int:
+    if len(field) != 2 or not field.isdigit():
+        raise ValueError(f"TLE {label} must be two digits")
+    year = int(field)
+    if year < 57:
+        return 2000 + year
+    return 1900 + year
+
+
+def _tle_assumed_decimal(field: str, label: str) -> float:
+    """NORAD field with an implied leading decimal and a trailing power of ten."""
+    if (
+        len(field) != 8
+        or field[0] not in "+- "
+        or not field[1:6].isdigit()
+        or field[6] not in "+- "
+        or not field[7].isdigit()
+    ):
+        raise ValueError(f"TLE {label} is not a NORAD decimal")
+    sign = -1.0 if field[0] == "-" else 1.0
+    exponent_sign = -1 if field[6] == "-" else 1
+    return sign * int(field[1:6]) * 10.0 ** (-5 + exponent_sign * int(field[7]))
+
+
+def _tle_float(field: str, label: str) -> float:
+    try:
+        value = float(field)
+    except ValueError as exc:
+        raise ValueError(f"TLE {label} is not a number") from exc
+    if not math.isfinite(value):
+        raise ValueError(f"TLE {label} must be finite")
+    return value
+
+
+def _require_tle_spaces(line: str, columns: tuple[int, ...]) -> None:
+    for index in columns:
+        if line[index] != " ":
+            raise ValueError(f"TLE line {line[0]} is not in NORAD columns")
+
+
+def _tle_from_lines(name: str | None, line1: str, line2: str) -> Tle:
+    _require_tle_spaces(line1, (1, 8, 17, 32, 43, 52, 61, 63))
+    _require_tle_spaces(line2, (1, 7, 16, 25, 33, 42, 51))
+    catalog = _tle_catalog(line1[2:7])
+    if _tle_catalog(line2[2:7]) != catalog:
+        raise ValueError("TLE line 1 and line 2 catalog numbers differ")
+    _tle_year(line1[9:11], "designator year")
+    _tle_float(line1[33:43], "mean-motion derivative")
+    _tle_assumed_decimal(line1[44:52], "second mean-motion derivative")
+    if not line1[62].isdigit():
+        raise ValueError("TLE ephemeris type must be a digit")
+    try:
+        int(line1[64:68])
+        int(line2[63:68])
+    except ValueError as exc:
+        raise ValueError("TLE element-set or revolution number is not an integer") from exc
+    eccentricity_field = line2[26:33]
+    if len(eccentricity_field) != 7 or not eccentricity_field.isdigit():
+        raise ValueError("TLE eccentricity must be 7 digits")
+    eccentricity = int(eccentricity_field) * 1.0e-7
+    if eccentricity >= 1.0:
+        raise ValueError("a TLE mean motion defines an ellipse; eccentricity must be < 1")
+    inclination_deg = _tle_float(line2[8:16], "inclination")
+    if inclination_deg < 0.0 or inclination_deg > 180.0:
+        raise ValueError("TLE inclination must be from 0 to 180 degrees")
+    epoch_day = _tle_float(line1[20:32], "epoch day")
+    if epoch_day <= 0.0 or epoch_day >= 367.0:
+        raise ValueError("TLE epoch day must be in (0, 367)")
+    mean_motion_rev_day = _tle_float(line2[52:63], "mean motion")
+    if mean_motion_rev_day <= 0.0:
+        raise ValueError("TLE mean motion must be > 0 rev/day")
+    degree = math.pi / 180.0
+    return Tle(
+        name=name,
+        catalog=catalog,
+        classification=line1[7],
+        designator=line1[9:17].strip(),
+        epoch_year=_tle_year(line1[18:20]),
+        epoch_day=epoch_day,
+        inclination_rad=inclination_deg * degree,
+        raan_rad=_tle_float(line2[17:25], "right ascension") * degree,
+        eccentricity=eccentricity,
+        arg_perigee_rad=_tle_float(line2[34:42], "argument of perigee") * degree,
+        mean_anomaly_rad=_tle_float(line2[43:51], "mean anomaly") * degree,
+        mean_motion_rev_day=mean_motion_rev_day,
+        bstar=_tle_assumed_decimal(line1[53:61], "BSTAR"),
+    )
+
+
+def parse_tle(text: str) -> Tle:
+    """Parse a NORAD two-line element set. A leading name line is optional."""
+    lines = [line for line in (piece.rstrip("\r") for piece in text.splitlines()) if line.strip()]
+    if len(lines) == 3:
+        name = lines[0].strip()
+        element_lines = lines[1:]
+    elif len(lines) == 2:
+        name = None
+        element_lines = lines
+    else:
+        raise ValueError("a TLE needs two 69-character lines and an optional name line")
+    parsed: dict[str, str] = {}
+    for line in element_lines:
+        if len(line) != 69 or line[0] not in "12":
+            raise ValueError(f"each TLE element line must be 69 characters and start with 1 or 2; got {len(line)}")
+        expected = tle_checksum(line[:68])
+        if not line[68].isdigit() or int(line[68]) != expected:
+            raise ValueError(f"TLE line {line[0]} checksum is {line[68]}, expected {expected}")
+        if line[0] in parsed:
+            raise ValueError(f"TLE line {line[0]} is repeated")
+        parsed[line[0]] = line
+    if set(parsed) != {"1", "2"}:
+        raise ValueError("a TLE needs line 1 and line 2")
+    return _tle_from_lines(name, parsed["1"], parsed["2"])
+
+
+def parse_tle_args(parts: list[str]) -> Tle:
+    if not parts:
+        raise ValueError("pass both TLE lines")
+    return parse_tle("\n".join(parts))
+
+
+def tle_elements(mu: float, tle: Tle) -> tuple[float, float, float, float, float, float]:
+    """Semi-major axis and radians (a, e, i, raan, aop, M) from a TLE and mu."""
+    semi_major = semimajor_axis_from_mean_motion(mu, mean_motion_from_rev_per_day(tle.mean_motion_rev_day))
+    return (
+        semi_major,
+        tle.eccentricity,
+        tle.inclination_rad,
+        tle.raan_rad,
+        tle.arg_perigee_rad,
+        tle.mean_anomaly_rad,
+    )
+
+
+def orbit_from_tle(mu: float, tle: Tle) -> Orbit:
+    semi_major, eccentricity, inc, raan, arg_perigee, mean_anomaly = tle_elements(mu, tle)
+    orbit = orbit_from_elements(
+        mu,
+        semi_major,
+        eccentricity,
+        inc,
+        raan,
+        arg_perigee,
+        None,
+        mean_anomaly,
+        "tle",
+    )
+    return replace(orbit, tle=tle)
+
+
+def print_tle(tle: Tle, label: str = "") -> None:
+    stem = f"tle{label}_" if label else "tle_"
+    if tle.name:
+        print_kv(f"{stem}name", tle.name)
+    print_kv(f"{stem}catalog", tle.catalog)
+    print_kv(f"{stem}designator", tle.designator)
+    print_kv(f"{stem}epoch_year", tle.epoch_year)
+    print_kv(f"{stem}epoch_day", tle.epoch_day)
+    print_kv(f"{stem}n_rev_day", tle.mean_motion_rev_day)
+    print_kv(f"{stem}bstar", tle.bstar)
+    print_kv(f"{stem}note", TLE_NOTE)
+
+
 def surface_warning(body: Body, orbit: Orbit) -> str | None:
     if orbit.rp < body.radius and not math.isclose(orbit.rp, body.radius, rel_tol=1e-12, abs_tol=0.0):
         return (
@@ -994,6 +1268,8 @@ class KeplerAnim:
     nu_max: float
     ellipse_wall_s: float
     open_arc_wall_s: float
+    Omega_dot: float
+    omega_dot: float
 
 
 @dataclass(frozen=True)
@@ -1096,6 +1372,8 @@ class Scene:
                 "nu_max": self.kepler.nu_max,
                 "ellipse_wall_s": self.kepler.ellipse_wall_s,
                 "open_arc_wall_s": self.kepler.open_arc_wall_s,
+                "Omega_dot": self.kepler.Omega_dot,
+                "omega_dot": self.kepler.omega_dot,
             },
         }
 
@@ -1147,6 +1425,7 @@ def inclination_sector(
 def build_scene(body: Body, orbit: Orbit, elev: float, azim: float) -> Scene:
     """Planet, orbit samples, markers, wedge, axes, and the Kepler animation payload."""
     span = display_span_m(body, orbit)
+    node_rate, apsis_rate = secular_j2_rates(body, orbit)
     limit_m = LIMIT_SPAN_FRAC * span
     axis_len = min(max(1.35 * body.radius, 0.42 * span), 0.72 * span)
     ring_r = min(1.22 * body.radius, 0.98 * span)
@@ -1287,6 +1566,8 @@ def build_scene(body: Body, orbit: Orbit, elev: float, azim: float) -> Scene:
             nu_max=nu_max,
             ellipse_wall_s=ELLIPSE_WALL_S,
             open_arc_wall_s=OPEN_ARC_WALL_S,
+            Omega_dot=node_rate,
+            omega_dot=apsis_rate,
         ),
     )
 
@@ -1678,11 +1959,20 @@ def print_report(
     print_kv("title", PLOT_TITLE)
     print_kv("assumptions", ASSUMPTIONS)
     print_kv("mode", orbit.mode)
+    if orbit.tle is not None:
+        print_tle(orbit.tle)
     print_kv("R0_m", body.radius)
     print_kv("R0_source", body.radius_source)
     print_kv("g0_m_s2", body.g0)
     print_kv("mu_m3_s2", body.mu)
     print_kv("flattening", body.flattening)
+    print_kv("ae_m", body.ae)
+    print_kv("ae_source", body.ae_source)
+    print_kv("J2", body.j2)
+    print_kv("J2_source", body.j2_source)
+    node_rate, apsis_rate = secular_j2_rates(body, orbit)
+    print_kv("Omega_dot_rad_s", node_rate)
+    print_kv("omega_dot_rad_s", apsis_rate)
     print_kv("conic", orbit.conic)
     if orbit.a is None:
         print_kv("a", "none")
@@ -1727,7 +2017,22 @@ def print_report(
     print_kv("viewer", str(viewer))
 
 
-def resolve_body(radius_arg: float | None, flattening_arg: float | None) -> Body:
+def secular_j2_rates(body: Body, orbit: Orbit) -> tuple[float, float]:
+    if body.j2 == 0.0 or orbit.conic != "ellipse" or orbit.a is None:
+        return 0.0, 0.0
+    n = mean_motion(body.mu, orbit.a)
+    return (
+        j2_nodal_rate(n, body.j2, body.ae, orbit.i, orbit.a, orbit.e),
+        j2_apsidal_rate(n, body.j2, body.ae, orbit.i, orbit.a, orbit.e),
+    )
+
+
+def resolve_body(
+    radius_arg: float | None,
+    flattening_arg: float | None,
+    j2_arg: float | None = None,
+    ae_arg: float | None = None,
+) -> Body:
     if radius_arg is None:
         radius = R0_EARTH
         source = "default"
@@ -1743,12 +2048,42 @@ def resolve_body(radius_arg: float | None, flattening_arg: float | None) -> Body
         require_finite(flattening_arg, "--flattening")
     if flattening < 0.0 or flattening >= 1.0:
         raise ValueError("--flattening must satisfy 0 <= f < 1")
+    if j2_arg is None:
+        if ae_arg is not None:
+            raise ValueError("--ae needs --j2")
+        j2 = 0.0
+        j2_source = "off"
+        ae = radius
+        ae_source = "unused"
+    else:
+        require_finite(j2_arg, "--j2")
+        if j2_arg <= 0.0:
+            raise ValueError("--j2 must be > 0")
+        j2 = j2_arg
+        j2_source = "default" if abs(j2_arg - J2_GSFC) <= CHECK_TOL * J2_GSFC and ae_arg is None and radius_arg is None else "input"
+        if ae_arg is None:
+            if radius_arg is None:
+                ae = AE_WGS84
+                ae_source = "default"
+            else:
+                ae = radius
+                ae_source = "R0"
+        else:
+            require_finite(ae_arg, "--ae")
+            if ae_arg <= 0.0:
+                raise ValueError("--ae must be > 0 m")
+            ae = ae_arg
+            ae_source = "input"
     return Body(
         radius=radius,
         g0=G0,
         mu=G0 * radius**2,
         flattening=flattening,
+        ae=ae,
+        j2=j2,
         radius_source=source,
+        ae_source=ae_source,
+        j2_source=j2_source,
     )
 
 
@@ -1763,10 +2098,14 @@ def resolve_camera(elev_arg: float | None, azim_arg: float | None) -> tuple[floa
 def resolve_request(ns: argparse.Namespace, body: Body) -> Orbit:
     element_names = ("a", "e", "i", "raan", "aop", "nu", "M")
     state_names = ("rx", "ry", "rz", "vx", "vy", "vz")
+    tle_parts = getattr(ns, "tle", None)
+    tle_used = bool(tle_parts)
     element_used = [name for name in element_names if getattr(ns, name) is not None]
     state_used = [name for name in state_names if getattr(ns, name) is not None]
-    if element_used and state_used:
-        raise ValueError("pass either classical elements or an inertial state, not both")
+    if int(tle_used) + int(bool(element_used)) + int(bool(state_used)) > 1:
+        raise ValueError("pass a TLE, classical elements, or an inertial state, not more than one")
+    if tle_used:
+        return orbit_from_tle(body.mu, parse_tle_args(tle_parts))
     if state_used:
         missing = [name for name in state_names if getattr(ns, name) is None]
         if missing:
@@ -1777,7 +2116,7 @@ def resolve_request(ns: argparse.Namespace, body: Body) -> Orbit:
         )
     if not element_used:
         raise ValueError(
-            "pass --a --e --i --raan --aop and one of --nu or --M, "
+            "pass --tle, or --a --e --i --raan --aop and one of --nu or --M, "
             "or pass --rx --ry --rz --vx --vy --vz"
         )
     missing = [name for name in ("a", "e", "i", "raan", "aop") if getattr(ns, name) is None]
@@ -1794,9 +2133,11 @@ def resolve_request(ns: argparse.Namespace, body: Body) -> Orbit:
 
 
 def run(ns: argparse.Namespace) -> int:
-    body = resolve_body(ns.R0, ns.flattening)
+    body = resolve_body(ns.R0, ns.flattening, ns.j2, ns.ae)
     elev, azim = resolve_camera(ns.elev, ns.azim)
     orbit = resolve_request(ns, body)
+    if body.j2 > 0.0 and orbit.conic != "ellipse":
+        raise ValueError("J2 secular rates are defined on an ellipse only")
     script_dir = Path(__file__).resolve().parent
     out_path = Path(ns.out) if ns.out else script_dir / "orbital_parameters.png"
     out_path = out_path.resolve()
@@ -2075,6 +2416,12 @@ def _visual_language_issue(html: str) -> str | None:
         ("background", "0xf7f9fb", "viewer background is not the light paper color"),
         ("motion", "function solveKepler", "ellipse motion does not solve Kepler"),
         ("motion", "K.M + meanMotion", "ellipse motion is not mean-anomaly time"),
+        ("motion", "K.Omega_dot", "J2 nodal rate is not applied"),
+        ("motion", "ellipsePolylineKm", "J2 orbit does not follow the spacecraft"),
+        ("motion", "trailPts", "J2 path has no trail"),
+        ("motion", "setOrbitFade", "current orbit does not fade behind the trail"),
+        ("motion", "trailOpacity", "trail does not fade"),
+        ("motion", "0.75 * K.period", "trail does not vanish by three-quarters of an orbit"),
         ("motion", "open_arc_wall_s", "open conics have no drawn-arc window"),
         ("motion", "let playing = true", "viewer does not start playing"),
         ("planet", "SCENE.polar_radius_km / SCENE.equatorial_radius_km", "planet squash is not polar"),
@@ -2087,6 +2434,8 @@ def _visual_language_issue(html: str) -> str | None:
     update = _js_function(html, "updateCraft")
     if "craftSprite" not in update or "setDirection" not in update or "placeWedge" not in update:
         return "motion does not update the craft, radius, velocity, and inclination"
+    if "followSecularOrbit" not in update:
+        return "J2 motion does not update the drawn orbit"
     if "periapsis" in update or "apoapsis" in update or "ascending_node" in update:
         return "motion moves a fixed marker"
     return None
@@ -2227,7 +2576,7 @@ def _run_known_case(
     if "viewer" not in values:
         return f"{name} / viewer path", values, None
     ns = parse_args(argv)
-    body = resolve_body(ns.R0, ns.flattening)
+    body = resolve_body(ns.R0, ns.flattening, ns.j2, ns.ae)
     elev, azim = resolve_camera(ns.elev, ns.azim)
     orbit = resolve_request(ns, body)
     scene = build_scene(body, orbit, elev, azim)
@@ -2323,6 +2672,14 @@ def run_check() -> int:
     forced = resolve_body(None, 0.01)
     if not close_enough(forced.flattening, 0.01, 1.0):
         return fail("flattening override")
+    if body.j2 != 0.0 or body.j2_source != "off":
+        return fail("J2 is off by default")
+    earth_j2 = resolve_body(None, None, J2_GSFC, None)
+    if earth_j2.j2_source != "default" or not close_enough(earth_j2.ae, AE_WGS84, AE_WGS84):
+        return fail("Earth J2 defaults")
+    other = resolve_body(3.396e6, None, 1.96e-3, None)
+    if other.ae_source != "R0" or not close_enough(other.ae, 3.396e6, 3.396e6):
+        return fail("other planet J2 uses R0 as RE")
 
     # Equatorial ellipse at periapsis: closed form, mu = 1, a = 4, e = 1/2.
     simple = orbit_from_elements(1.0, 4.0, 0.5, 0.0, 0.0, 0.0, 0.0, None, "elements")
@@ -2768,6 +3125,10 @@ def run_check() -> int:
             "conic",
             "elev_deg",
             "azim_deg",
+            "J2",
+            "J2_source",
+            "Omega_dot_rad_s",
+            "omega_dot_rad_s",
             "graph",
             "viewer",
         ):
@@ -2779,6 +3140,10 @@ def run_check() -> int:
             return fail("elements conic")
         if values["elev_deg"] != "20" or values["azim_deg"] != "35":
             return fail("default camera")
+        if values.get("J2_source") != "off":
+            return fail("J2 should be off without --j2")
+        if not close_enough(float(values.get("Omega_dot_rad_s", "nan")), 0.0, 1.0):
+            return fail("Keplerian nodal rate")
         if "period: none" in text or "apoapsis: none" in text:
             return fail("ellipse omitted the period or apoapsis")
         issue = viewer_issues(text, out)
@@ -2791,6 +3156,8 @@ def run_check() -> int:
                 return fail(f"ellipse viewer missing {label}")
         if ellipse_scene["title"] != PLOT_TITLE or ellipse_scene["kepler"]["conic"] != "ellipse":
             return fail("ellipse viewer payload")
+        if ellipse_scene["kepler"].get("Omega_dot") not in (0, 0.0):
+            return fail("viewer J2 off")
         craft_marker = next(item for item in ellipse_scene["markers"] if item["id"] == "spacecraft")
         if abs(craft_marker["km"][0] - float(values["rx_m"]) / 1000.0) > 1e-4:
             return fail("viewer craft is not the printed state")
@@ -2922,13 +3289,135 @@ def run_check() -> int:
         if hyper_scene["show_wedge"] is not True:
             return fail("hyperbola viewer omitted the wedge")
 
+    with tempfile.TemporaryDirectory() as tmp:
+        j2_out = str(Path(tmp) / "j2.png")
+        code, text, err = invoke(EARTH_ELLIPSE_ARGV + ["--j2", "--out", j2_out])
+        if code != 0:
+            return fail(f"Earth --j2 failed: {err or text}")
+        j2_values = parse_stdout(text)
+        if j2_values.get("J2_source") != "default":
+            return fail("bare --j2 is Earth default")
+        if not close_enough(float(j2_values.get("J2", "nan")), J2_GSFC, J2_GSFC):
+            return fail("printed Earth J2")
+        earth_j2_body = resolve_body(None, None, J2_GSFC, None)
+        pictured_j2 = orbit_from_elements(
+            earth_j2_body.mu, 1.0e7, 0.3, 0.9, 0.6, 1.2, 0.8, None, "elements"
+        )
+        node, apsis = secular_j2_rates(earth_j2_body, pictured_j2)
+        if not close_enough(float(j2_values.get("Omega_dot_rad_s", "nan")), node, max(abs(node), 1.0)):
+            return fail("printed nodal rate")
+        j2_folder = str(Path(__file__).resolve().parent.parent / "ASTRO - J2SecularRates")
+        if j2_folder not in sys.path:
+            sys.path.insert(0, j2_folder)
+        import j2_secular_rates as j2_skill
+
+        n = mean_motion(earth_j2_body.mu, pictured_j2.a)
+        if not close_enough(
+            node,
+            j2_skill.j2_nodal_rate(
+                n, earth_j2_body.j2, earth_j2_body.ae, pictured_j2.i, pictured_j2.a, pictured_j2.e
+            ),
+            max(abs(node), 1e-16),
+        ):
+            return fail("OrbitalParameters J2 does not match J2SecularRates")
+        if not close_enough(
+            apsis,
+            j2_skill.j2_apsidal_rate(
+                n, earth_j2_body.j2, earth_j2_body.ae, pictured_j2.i, pictured_j2.a, pictured_j2.e
+            ),
+            max(abs(apsis), 1e-16),
+        ):
+            return fail("OrbitalParameters apsidal rate does not match J2SecularRates")
+        j2_scene = scene_from_html(Path(j2_values["viewer"]).read_text(encoding="utf-8"))
+        if abs(j2_scene["kepler"]["Omega_dot"] - node) > CHECK_TOL * max(abs(node), 1.0):
+            return fail("viewer Omega_dot")
+        if abs(float(j2_values["rx_m"]) - pictured_j2.rx) > 1e-6 * max(abs(pictured_j2.rx), 1.0):
+            return fail("J2 changed the epoch state")
+
+    iss = parse_tle(f"ISS (ZARYA)\n{ISS_TLE_LINE1}\n{ISS_TLE_LINE2}")
+    if iss.name != "ISS (ZARYA)" or iss.catalog != 25544 or iss.designator != "98067A":
+        return fail("ISS TLE identity")
+    if iss.epoch_year != 2008 or not close_enough(iss.epoch_day, 264.51782528, 1.0):
+        return fail("ISS TLE epoch")
+    if not close_enough(iss.eccentricity, 6.703e-4, 1.0):
+        return fail("ISS eccentricity")
+    if not close_enough(iss.bstar, -1.1606e-5, 1.1606e-5):
+        return fail("ISS BSTAR")
+    swapped = parse_tle(f"{ISS_TLE_LINE2}\n{ISS_TLE_LINE1}")
+    if swapped.catalog != iss.catalog or swapped.name is not None:
+        return fail("swapped TLE lines")
+    n_iss = mean_motion_from_rev_per_day(iss.mean_motion_rev_day)
+    a_iss = semimajor_axis_from_mean_motion(body.mu, n_iss)
+    if not close_enough(mean_motion(body.mu, a_iss), n_iss, n_iss):
+        return fail("TLE semi-major axis does not recover the mean motion")
+    if not close_enough(orbital_period(body.mu, a_iss), TLE_SECONDS_PER_DAY / iss.mean_motion_rev_day, a_iss):
+        return fail("TLE period")
+    from_tle = orbit_from_tle(body.mu, iss)
+    from_elements = orbit_from_elements(
+        body.mu,
+        a_iss,
+        iss.eccentricity,
+        iss.inclination_rad,
+        iss.raan_rad,
+        iss.arg_perigee_rad,
+        None,
+        iss.mean_anomaly_rad,
+        "elements",
+    )
+    if from_tle.mode != "tle" or from_tle.tle is not iss:
+        return fail("tle mode")
+    if not close_enough(from_tle.a or 0.0, from_elements.a or 0.0, a_iss):
+        return fail("TLE semi-major axis")
+    if not angle_close(from_tle.nu, from_elements.nu) or not angle_close(from_tle.M or 0.0, from_elements.M or 0.0):
+        return fail("TLE anomalies")
+
+    def _retag(line: str, catalog: str) -> str:
+        body68 = line[:2] + catalog + line[7:68]
+        return body68 + str(tle_checksum(body68))
+
+    alpha = parse_tle(f"{_retag(ISS_TLE_LINE1, 'A0001')}\n{_retag(ISS_TLE_LINE2, 'A0001')}")
+    if alpha.catalog != 100001:
+        return fail("alpha-5 catalog")
+    year98 = ISS_TLE_LINE1[:18] + "98" + ISS_TLE_LINE1[20:68]
+    year98 = year98 + str(tle_checksum(year98))
+    if parse_tle(f"{year98}\n{ISS_TLE_LINE2}").epoch_year != 1998:
+        return fail("TLE epoch year window")
+    try:
+        parse_tle(ISS_TLE_LINE1[:-1] + "0\n" + ISS_TLE_LINE2)
+    except ValueError:
+        pass
+    else:
+        return fail("a bad TLE checksum was accepted")
+
+    with tempfile.TemporaryDirectory() as tmp:
+        tle_out = str(Path(tmp) / "tle.png")
+        code, text, err = invoke(
+            ["--tle", "ISS (ZARYA)", ISS_TLE_LINE1, ISS_TLE_LINE2, "--out", tle_out]
+        )
+        if code != 0:
+            return fail(f"TLE main returned {code}: {err}")
+        tle_values = parse_stdout(text)
+        if tle_values.get("mode") != "tle" or tle_values.get("tle_catalog") != "25544":
+            return fail("TLE stdout")
+        if tle_values.get("tle_epoch_year") != "2008" or "tle_note" not in tle_values:
+            return fail("TLE epoch stdout")
+        if tle_values.get("a_m") != f"{a_iss:.8g}":
+            return fail("printed TLE semi-major axis")
+        if not Path(tle_out).read_bytes().startswith(b"\x89PNG"):
+            return fail("TLE run did not write a PNG")
+
     rejections = (
         ["--a", "1e7", "--e", "0.1", "--i", "0.2", "--raan", "0.1", "--aop", "0.1", "--nu", "0.2", "--M", "0.2"],
+        ["--tle", ISS_TLE_LINE1, ISS_TLE_LINE2, "--a", "7000000"],
+        ["--tle", ISS_TLE_LINE1[:-1] + "0", ISS_TLE_LINE2],
+        ["--tle", ISS_TLE_LINE1],
         ["--a", "1e7", "--e", "0.1", "--i", "0.2", "--raan", "0.1", "--aop", "0.1"],
         ["--a", "1e7", "--e", "0.1", "--i", "0.2", "--raan", "0.1", "--aop", "0.1", "--nu", "0", "--rx", "1"],
         ["--rx", "8000000", "--ry", "0", "--rz", "0", "--vx", "0", "--vy", "7000"],
         ["--a", "-2e7", "--e", "1.4", "--i", "0.2", "--raan", "0.1", "--aop", "0.1", "--M", "0.2"],
         ["--a", "-2e7", "--e", "1.4", "--i", "0.2", "--raan", "0.1", "--aop", "0.1", "--nu", "3"],
+        ["--a", "-2e7", "--e", "1.4", "--i", "0.2", "--raan", "0.1", "--aop", "0.1", "--nu", "0.5", "--j2"],
+        ["--ae", "6378137", "--a", "1e7", "--e", "0.1", "--i", "0.2", "--raan", "0.1", "--aop", "0.1", "--nu", "0.2"],
         ["--rx", "1", "--ry", "0", "--rz", "0", "--vx", "1", "--vy", "0", "--vz", "0"],
         [],
     )
@@ -2977,6 +3466,8 @@ def _bind_negative_values(argv: list[str]) -> list[str]:
         "--vz",
         "--R0",
         "--flattening",
+        "--j2",
+        "--ae",
         "--elev",
         "--azim",
     }
@@ -3016,6 +3507,12 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--vy", type=float, default=None, help="inertial velocity y [m/s]")
     parser.add_argument("--vz", type=float, default=None, help="inertial velocity z [m/s]")
     parser.add_argument(
+        "--tle",
+        nargs="+",
+        default=None,
+        help="NORAD two-line elements; two 69-character lines, optional name line first",
+    )
+    parser.add_argument(
         "--R0",
         type=float,
         default=None,
@@ -3026,6 +3523,20 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         type=float,
         default=None,
         help="visual polar flattening; Earth default 1/298.257, otherwise 0",
+    )
+    parser.add_argument(
+        "--j2",
+        nargs="?",
+        const=J2_GSFC,
+        type=float,
+        default=None,
+        help=f"optional first-order J2; bare --j2 uses Earth {J2_GSFC:.8g}",
+    )
+    parser.add_argument(
+        "--ae",
+        type=float,
+        default=None,
+        help="equatorial radius in the J2 term [m]; Earth default WGS 84, else R0",
     )
     parser.add_argument("--elev", type=float, default=None, help=f"camera elevation [deg]; default {ELEV_DEG:g}")
     parser.add_argument("--azim", type=float, default=None, help=f"camera azimuth [deg]; default {AZIM_DEG:g}")

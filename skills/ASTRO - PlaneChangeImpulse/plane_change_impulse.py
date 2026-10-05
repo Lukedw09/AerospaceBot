@@ -39,7 +39,11 @@ ASSUMPTIONS = (
     "ascending-node true anomaly is -omega and descending-node true anomaly is "
     "pi - omega; radius is conic_radius; speed is vis_viva; impulse is "
     "plane_change_impulse, an impulsive equal-speed turn; no combined plane "
-    "and radius change; no drag, coast thrust, or third body"
+    "and radius change; no drag, coast thrust, or third body; a NORAD two-line "
+    "element set may be passed with --tle and is used as a Keplerian conic: "
+    "line-2 angles are degrees, semi-major axis is the inverse of mean_motion "
+    "from the published mean motion in revolutions per 86400 s and this mu, and "
+    "BSTAR, mean-motion derivatives, SGP4, and the epoch do not change the state"
 )
 
 
@@ -835,6 +839,8 @@ def print_report(
     print_kv("title", PLOT_TITLE)
     print_kv("assumptions", ASSUMPTIONS)
     print_kv("mode", initial.mode)
+    if getattr(initial, "tle", None) is not None:
+        op.print_tle(initial.tle)
     print_kv("R0_m", body.radius)
     print_kv("R0_source", body.radius_source)
     print_kv("g0_m_s2", body.g0)
@@ -900,10 +906,14 @@ def resolve_orbit(ns: argparse.Namespace, body: object):
     op = op_mod()
     element_names = ("a", "e", "i", "raan", "aop", "nu", "M")
     state_names = ("rx", "ry", "rz", "vx", "vy", "vz")
+    tle_parts = getattr(ns, "tle", None)
+    tle_used = bool(tle_parts)
     element_used = [name for name in element_names if getattr(ns, name) is not None]
     state_used = [name for name in state_names if getattr(ns, name) is not None]
-    if element_used and state_used:
-        raise ValueError("pass either classical elements or an inertial state, not both")
+    if int(tle_used) + int(bool(element_used)) + int(bool(state_used)) > 1:
+        raise ValueError("pass a TLE, classical elements, or an inertial state, not more than one")
+    if tle_used:
+        return op.orbit_from_tle(body.mu, op.parse_tle_args(tle_parts))
     if state_used:
         missing = [name for name in state_names if getattr(ns, name) is None]
         if missing:
@@ -912,7 +922,7 @@ def resolve_orbit(ns: argparse.Namespace, body: object):
         return op.orbit_from_state(body.mu, ns.rx, ns.ry, ns.rz, ns.vx, ns.vy, ns.vz, "state")
     if not element_used:
         raise ValueError(
-            "pass --a --e --i --raan --aop and one of --nu or --M, "
+            "pass --tle, or --a --e --i --raan --aop and one of --nu or --M, "
             "or pass --rx --ry --rz --vx --vy --vz"
         )
     missing = [name for name in ("a", "e", "i", "raan", "aop") if getattr(ns, name) is None]
@@ -1012,6 +1022,12 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--vx", type=float, default=None, help="inertial velocity x [m/s]")
     parser.add_argument("--vy", type=float, default=None, help="inertial velocity y [m/s]")
     parser.add_argument("--vz", type=float, default=None, help="inertial velocity z [m/s]")
+    parser.add_argument(
+        "--tle",
+        nargs="+",
+        default=None,
+        help="NORAD two-line elements; two 69-character lines, optional name line first",
+    )
     parser.add_argument("--di", type=float, default=None, help="inclination change [rad]")
     parser.add_argument("--burn", choices=("an", "dn"), default=None, help="node to draw; default is the slower node")
     parser.add_argument(
@@ -1253,6 +1269,18 @@ def run_check() -> int:
             report = parse_stdout(out)
             check(report.get("mode") == "state", "state mode tag")
             check(state_png.is_file() and state_png.with_suffix(".html").is_file(), "state artifacts")
+
+        op = op_mod()
+        tle_png = root / "tle.png"
+        code, out, err = invoke(
+            ["--tle", op.ISS_TLE_LINE1, op.ISS_TLE_LINE2, "--di", "0.05", "--out", str(tle_png)]
+        )
+        check(code == 0 and err == "", f"TLE mode failed: {err or out}")
+        if code == 0:
+            report = parse_stdout(out)
+            check(report.get("mode") == "tle", "tle mode tag")
+            check(report.get("tle_catalog") == "25544", "tle catalog")
+            check(tle_png.is_file() and tle_png.with_suffix(".html").is_file(), "tle artifacts")
 
         code, _out, err = invoke(
             [

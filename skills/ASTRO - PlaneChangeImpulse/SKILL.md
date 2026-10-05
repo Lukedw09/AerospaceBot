@@ -4,7 +4,8 @@ description: >-
   Run the plane-change impulse program and report its printed results, PNG, and
   HTML viewer. Use when the user wants the impulsive delta-v of a pure
   inclination change at the ascending or descending node of one Keplerian
-  conic. Do not redraw the orbits, recompute the burn, or animate the
+  conic, from classical elements, a NORAD two-line element set, or an inertial
+  state. Do not redraw the orbits, recompute the burn, or animate the
   spacecraft by hand.
 ---
 
@@ -22,13 +23,14 @@ The ascending node is \(\nu = -\omega\). The descending node is \(\nu = \pi - \o
 
 1. Classical elements: pass `--a`, `--e`, `--i`, `--raan`, `--aop`, exactly one of `--nu` or `--M`, and `--di`.
 2. Inertial state: pass `--rx`, `--ry`, `--rz`, `--vx`, `--vy`, `--vz`, and `--di`.
-3. Pass one orbit mode. Do not pass elements and a state together.
-4. Pass `--di` in radians. \(i_f = i + \Delta i\) must stay in \([0, \pi]\).
-5. Pass `--burn an` or `--burn dn` when the user names the node. Omit it to burn at the slower node. The program still prints both nodes.
-6. Pass `--R0` only when the user gives a planetary radius other than the Earth default.
-7. Pass `--flattening` only when the user wants a visual polar squash other than the default. It does not change the numbers.
-8. Pass `--elev` and `--azim` when the user wants another initial camera angle. The PNG is the still at that angle. The HTML viewer opens on the same angle. Pass `--open` when the user wants that file opened in a browser.
-9. Convert inputs to SI and radians before the call. State the converted units in the reply. Do not invent a missing element, a missing state component, a missing \(\Delta i\), or a planetary radius.
+3. NORAD TLE: pass `--tle` with line 1 and line 2, and `--di`. A name line may be the first `--tle` argument. Do not convert those angles to radians.
+4. Pass one orbit mode. Do not combine a TLE, elements, and a state.
+5. Pass `--di` in radians. \(i_f = i + \Delta i\) must stay in \([0, \pi]\).
+6. Pass `--burn an` or `--burn dn` when the user names the node. Omit it to burn at the slower node. The program still prints both nodes.
+7. Pass `--R0` only when the user gives a planetary radius other than the Earth default.
+8. Pass `--flattening` only when the user wants a visual polar squash other than the default. It does not change the numbers.
+9. Pass `--elev` and `--azim` when the user wants another initial camera angle. The PNG is the still at that angle. The HTML viewer opens on the same angle. Pass `--open` when the user wants that file opened in a browser.
+10. Convert classical elements and a state to SI and radians before the call. Leave a TLE in its published lines. State the converted units in the reply. Do not invent a missing element, a missing state component, a missing TLE line, a missing \(\Delta i\), or a planetary radius.
 
 ## Flags
 
@@ -37,6 +39,7 @@ Run:
 ```text
 python "skills/ASTRO - PlaneChangeImpulse/plane_change_impulse.py" --a <m> --e <e> --i <rad> --raan <rad> --aop <rad> (--nu <rad> | --M <rad>) --di <rad> [--burn an|dn] [--R0 <m>] [--flattening <f>] [--elev <deg>] [--azim <deg>] [--out <png>] [--open]
 python "skills/ASTRO - PlaneChangeImpulse/plane_change_impulse.py" --rx <m> --ry <m> --rz <m> --vx <m/s> --vy <m/s> --vz <m/s> --di <rad> [--burn an|dn] [--R0 <m>] [--flattening <f>] [--elev <deg>] [--azim <deg>] [--out <png>] [--open]
+python "skills/ASTRO - PlaneChangeImpulse/plane_change_impulse.py" --tle "<line 1>" "<line 2>" --di <rad> [--burn an|dn] [--R0 <m>] [--flattening <f>] [--elev <deg>] [--azim <deg>] [--out <png>] [--open]
 ```
 
 | Flag | Meaning | Unit | Required? |
@@ -50,6 +53,7 @@ python "skills/ASTRO - PlaneChangeImpulse/plane_change_impulse.py" --rx <m> --ry
 | `--M` | Mean anomaly of the printed epoch. Ellipse only. Not the burn. | rad | Elements mode, or `--nu` |
 | `--rx`, `--ry`, `--rz` | Inertial position of the printed epoch | m | State mode, all three |
 | `--vx`, `--vy`, `--vz` | Inertial velocity of the printed epoch | m/s | State mode, all three |
+| `--tle` | NORAD two-line element set. Two 69-character lines. An optional name line may be first. | — | TLE mode |
 | `--di` | Inclination change. \(i_f = i + \Delta i\) stays in \([0, \pi]\). | rad | Yes |
 | `--burn` | Node drawn as the maneuver. `an` or `dn`. Default is the slower node. | — | Optional |
 | `--R0` | Planetary radius used in \(\mu = g_0 R_0^{2}\) | m, \(> 0\) | Optional. Earth default \(6.3742\times 10^{6}\) |
@@ -59,7 +63,7 @@ python "skills/ASTRO - PlaneChangeImpulse/plane_change_impulse.py" --rx <m> --ry
 | `--out` | PNG path. The HTML viewer is the same path with a `.html` suffix. | — | Optional |
 | `--open` | Open the HTML viewer in a browser. | — | Optional |
 
-A negative semi-major axis may be written `--a=-2e7` or `--a -2e7`. A negative inclination change may be written `--di=-0.2` or `--di -0.2`. A bare length is metres. Kilometres use `1 km = 1000 m`. Statute miles use `1 mi = 1609.344 m`. Nautical miles use `1 nmi = 1852 m`. Element angles, `--nu`, `--M`, and `--di` are radians. Degrees use \(\pi/180\). `--elev` and `--azim` are degrees.
+A negative semi-major axis may be written `--a=-2e7` or `--a -2e7`. A negative inclination change may be written `--di=-0.2` or `--di -0.2`. A bare length is metres. Kilometres use `1 km = 1000 m`. Statute miles use `1 mi = 1609.344 m`. Nautical miles use `1 nmi = 1852 m`. Element angles, `--nu`, `--M`, and `--di` are radians. Degrees use \(\pi/180\). `--elev` and `--azim` are degrees. A TLE is a mean-element set used as a Keplerian conic. Leave its lines unchanged; line-2 angles are degrees. Semi-major axis comes from the published mean motion and this program's \(\mu\). BSTAR, the mean-motion derivatives, and SGP4 are not applied. The epoch is printed and does not move the spacecraft. A bad checksum is rejected.
 
 Every successful run writes one PNG and one HTML file. `graph:` is the PNG. `viewer:` is the HTML. The plot title on both is `ASTRO - PlaneChangeImpulse`. Axes are kilometres. The planet is a translucent spheroid. Both orbits are drawn, the far side dashed. The line of nodes and both node markers are drawn when those nodes lie on the branch. The spacecraft and the \(\Delta v\) arrow sit at the selected node. The PNG is that burn still. The HTML file is self-contained and opens offline. Drag rotates the camera, the scroll wheel zooms, and Reset camera returns to `--elev`, `--azim`, and roll \(0^\circ\). Play starts on. The spacecraft flies one revolution on the initial orbit, easing to a stop at the selected node. The inclination then hinges about the line of nodes from \(i\) to \(i_f\). It eases away on the final conic and flies four revolutions there, then the sequence repeats. The orbit the spacecraft is on is solid; the other is faded. The orange arrow fixed at the burn is the plane-change impulse. The blue arrow on the spacecraft is its velocity. Cruise speed is one revolution in 8 s of wall time. Reset to epoch restarts that sequence at the node on the initial orbit. Do not recompute that motion by hand. Pass `--open` only when the user wants the HTML opened in a browser. Give `viewer:` as a local file path the user can open.
 
@@ -68,7 +72,7 @@ Every successful run writes one PNG and one HTML file. `graph:` is the PNG. `vie
 1. Quote the printed `key: value` stdout. Do not recompute the numbers.
 2. Include the PNG image. `graph:` is the file path.
 3. Give `viewer:` as a markdown link to that HTML file. Keep the printed path as the link target so it can be opened and copied. Do not draw a second figure. Pass `--open` only when the user asks to open the viewer.
-4. Report `mode`. `elements` started from classical elements. `state` started from position and velocity.
+4. Report `mode`. `elements` started from classical elements. `state` started from position and velocity. `tle` started from a NORAD two-line element set. When `mode` is `tle`, also report `tle_catalog`, `tle_designator`, `tle_epoch_year`, `tle_epoch_day`, `tle_n_rev_day`, `tle_bstar`, and `tle_note`, and `tle_name` if it is printed.
 5. Report `R0_m`, `R0_source`, `g0_m_s2`, `mu_m3_s2`, and `flattening`. `default` means the Earth radius. Flattening is visual only.
 6. Report `conic`: `ellipse`, `parabola`, or `hyperbola`.
 7. Report `a_m` when it is printed. Report `a: none` for a parabola.

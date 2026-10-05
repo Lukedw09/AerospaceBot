@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
-"""Subsatellite ground track of a Keplerian ellipse.
+"""Subsatellite ground track of an Earth ellipse.
 
-Two-body motion, Greenwich angle, Earth-fixed axes, and geodetic latitude
-come from the flight records in formulas.md. Flattening changes the footprint
-only; it does not enter mu.
+Keplerian mean anomaly, Greenwich angle, Earth-fixed axes, and geodetic
+latitude come from the flight records in formulas.md. First-order J2 secular
+nodal and apsidal rates are the same records as ASTRO - J2SecularRates.
+Flattening changes the footprint only; it does not enter mu.
 """
 
 from __future__ import annotations
@@ -23,6 +24,7 @@ R0_EARTH = 6.3742e6
 AE_WGS84 = 6378137.0
 F_WGS84 = 1.0 / 298.257223563
 OMEGA_E = 7.292115e-5
+J2_GSFC = 1.08228e-3
 PLOT_TITLE = "ASTRO - GroundTrackEarth"
 CHECK_TOL = 1e-9
 CIRCULAR_E = 1e-7
@@ -31,21 +33,31 @@ DEFAULT_SAMPLES_PER_ORBIT = 361
 DEFAULT_ORBITS = 10
 # Natural Earth 1:110m land, public domain (naturalearthdata.com terms of use).
 LAND_SHAPEFILE = Path(__file__).resolve().parent / "data" / "ne_110m_land.shp"
+_OP = None
 ASSUMPTIONS = (
-    "spherical inverse-square two-body gravity on an ellipse; planetary flattening "
-    "enters the geodetic latitude of the subsatellite point only and does not enter "
-    "mu or the inertial motion; mu = g0*R0^2 with g0 = 9.80665 m/s^2; Earth default "
-    "R0 = 6374200 m; WGS 84 ellipsoid ae = 6378137 m, f = 1/298.257223563, and "
-    "omega_E = 7.292115e-5 rad/s; Greenwich angle is greenwich_angle; Earth-fixed "
-    "position is earth_fixed_x, earth_fixed_y, and earth_fixed_z; geocentric "
-    "latitude uses geocentric_latitude_sine and geocentric_latitude_cosine; "
-    "longitude uses longitude_sine and longitude_cosine; geodetic latitude is "
+    "ellipse with inverse-square mean motion; first-order J2 secular rates from "
+    "ASTRO - J2SecularRates: Omega and omega use j2_nodal_rate and j2_apsidal_rate; "
+    "a, e, and i have no secular J2 rate; drag, third body, higher zonals, and the "
+    "J2 mean-motion correction are omitted; planetary flattening enters the "
+    "geodetic latitude of the subsatellite point only and does not enter mu; "
+    "mu = g0*R0^2 with g0 = 9.80665 m/s^2; Earth default R0 = 6374200 m; WGS 84 "
+    "ellipsoid ae = 6378137 m, f = 1/298.257223563, and omega_E = 7.292115e-5 rad/s; "
+    "RE in the J2 term is that ae; J2 default is 1.08228e-3 (GSFC, March 1986, "
+    "NASA RP-1204); Greenwich angle is greenwich_angle; Earth-fixed position is "
+    "earth_fixed_x, earth_fixed_y, and earth_fixed_z; geocentric latitude uses "
+    "geocentric_latitude_sine and geocentric_latitude_cosine; longitude uses "
+    "longitude_sine and longitude_cosine; geodetic latitude is "
     "geodetic_latitude_from_geocentric (NASA TN D-7522 equation (36) through "
     "order f^2); polar radius is polar_radius_from_flattening; mean anomaly vs "
     "time is mean_anomaly_from_epoch; inertial position is inertial_position_x, "
     "inertial_position_y, and inertial_position_z; the frame is planet-centered "
     "inertial with +Z along the polar axis and Omega measured from +X; element "
-    "angles are radians; the PNG land fill is Natural Earth 1:110m land, public domain"
+    "angles are radians; the PNG land fill is Natural Earth 1:110m land, public domain; "
+    "a NORAD two-line element set may be passed with --tle and is used as a Keplerian "
+    "ellipse: line-2 angles are degrees, semi-major axis is the inverse of mean_motion "
+    "from the published mean motion in revolutions per 86400 s and this mu, and BSTAR, "
+    "mean-motion derivatives, SGP4, and the epoch do not change the state; the TLE epoch "
+    "is not a Greenwich angle"
 )
 PALETTE = {
     "ocean": "#c5ddef",
@@ -68,7 +80,10 @@ class Body:
     ae: float
     flattening: float
     omega_e: float
+    j2: float
     radius_source: str
+    ae_source: str
+    j2_source: str
 
 
 @dataclass(frozen=True)
@@ -97,6 +112,19 @@ class Subsatellite:
     lat_geodetic: float
     lon: float
     radius: float
+
+
+def op_mod():
+    """OrbitalParameters TLE parser. This skill does not call that program's run()."""
+    global _OP
+    if _OP is None:
+        folder = str(Path(__file__).resolve().parent.parent / "ASTRO - OrbitalParameters")
+        if folder not in sys.path:
+            sys.path.insert(0, folder)
+        import orbital_parameters as imported
+
+        _OP = imported
+    return _OP
 
 
 def print_kv(key: str, value: object) -> None:
@@ -141,6 +169,23 @@ def wrap_pi(angle: float) -> float:
 def mean_motion(mu: float, semi_major: float) -> float:
     """mean_motion."""
     return math.sqrt(mu / semi_major**3)
+
+
+def j2_nodal_rate(n: float, j2: float, re: float, inc: float, a: float, ecc: float) -> float:
+    """j2_nodal_rate."""
+    return -3.0 * n * j2 * re**2 * math.cos(inc) / (2.0 * a**2 * (1.0 - ecc**2) ** 2)
+
+
+def j2_apsidal_rate(n: float, j2: float, re: float, inc: float, a: float, ecc: float) -> float:
+    """j2_apsidal_rate."""
+    return (
+        3.0
+        * n
+        * j2
+        * re**2
+        * (4.0 - 5.0 * math.sin(inc) ** 2)
+        / (4.0 * a**2 * (1.0 - ecc**2) ** 2)
+    )
 
 
 def mean_anomaly_from_epoch(mean0: float, n: float, time: float, epoch: float) -> float:
@@ -562,17 +607,27 @@ def orbit_from_elements(
     return orbit_from_state(mu, x, y, z, vx, vy, vz, mode)
 
 
-def inertial_at_time(orbit: Orbit, time: float, epoch: float) -> tuple[float, float, float, float]:
+def inertial_at_time(
+    body: Body, orbit: Orbit, time: float, epoch: float
+) -> tuple[float, float, float, float]:
     mean = mean_anomaly_from_epoch(orbit.M, orbit.n, time, epoch)
     eccentric = solve_kepler(mean, orbit.e)
     nu = nu_from_eccentric(orbit.e, eccentric)
-    return position_at_true(orbit.a, orbit.e, orbit.i, orbit.Omega, orbit.omega, nu)
+    elapsed = time - epoch
+    node = wrap_two_pi(
+        orbit.Omega + j2_nodal_rate(orbit.n, body.j2, body.ae, orbit.i, orbit.a, orbit.e) * elapsed
+    )
+    periapsis = wrap_two_pi(
+        orbit.omega
+        + j2_apsidal_rate(orbit.n, body.j2, body.ae, orbit.i, orbit.a, orbit.e) * elapsed
+    )
+    return position_at_true(orbit.a, orbit.e, orbit.i, node, periapsis, nu)
 
 
 def subsatellite_at(
     body: Body, orbit: Orbit, time: float, epoch: float, theta0: float
 ) -> Subsatellite:
-    x, y, z, radius = inertial_at_time(orbit, time, epoch)
+    x, y, z, radius = inertial_at_time(body, orbit, time, epoch)
     theta = wrap_two_pi(greenwich_angle(theta0, body.omega_e, time, epoch))
     xe = earth_fixed_x(x, y, theta)
     ye = earth_fixed_y(x, y, theta)
@@ -609,6 +664,7 @@ def resolve_body(
     ae_arg: float | None,
     flattening_arg: float | None,
     omega_arg: float | None,
+    j2_arg: float | None,
 ) -> Body:
     if radius_arg is None:
         radius = R0_EARTH
@@ -619,13 +675,17 @@ def resolve_body(
             raise ValueError("--R0 must be > 0 m")
         radius = radius_arg
         source = "input"
-    ae = AE_WGS84 if ae_arg is None else ae_arg
-    flattening = F_WGS84 if flattening_arg is None else flattening_arg
-    omega_e = OMEGA_E if omega_arg is None else omega_arg
-    if ae_arg is not None:
+    if ae_arg is None:
+        ae = AE_WGS84
+        ae_source = "default"
+    else:
         require_finite(ae_arg, "--ae")
         if ae_arg <= 0.0:
             raise ValueError("--ae must be > 0 m")
+        ae = ae_arg
+        ae_source = "input"
+    flattening = F_WGS84 if flattening_arg is None else flattening_arg
+    omega_e = OMEGA_E if omega_arg is None else omega_arg
     if flattening_arg is not None:
         require_finite(flattening_arg, "--flattening")
     if flattening < 0.0 or flattening >= 1.0:
@@ -634,6 +694,15 @@ def resolve_body(
         require_finite(omega_arg, "--omega-e")
         if omega_e < 0.0:
             raise ValueError("--omega-e must be >= 0 rad/s")
+    if j2_arg is None:
+        j2 = J2_GSFC
+        j2_source = "default"
+    else:
+        require_finite(j2_arg, "--j2")
+        if j2_arg < 0.0:
+            raise ValueError("--j2 must be >= 0")
+        j2 = j2_arg
+        j2_source = "input"
     return Body(
         radius=radius,
         g0=G0,
@@ -641,7 +710,10 @@ def resolve_body(
         ae=ae,
         flattening=flattening,
         omega_e=omega_e,
+        j2=j2,
         radius_source=source,
+        ae_source=ae_source,
+        j2_source=j2_source,
     )
 
 
@@ -792,20 +864,26 @@ def report(
     t1: float,
     points: list[Subsatellite],
     png: Path,
+    tle: object | None = None,
 ) -> None:
     epoch = points[0]
     end = points[-1]
     lats = [point.lat_geodetic for point in points]
     print_kv("mode", orbit.mode)
+    if tle is not None:
+        op_mod().print_tle(tle)
     print_kv("assumptions", ASSUMPTIONS)
     print_kv("R0_m", body.radius)
     print_kv("R0_source", body.radius_source)
     print_kv("g0_m_s2", body.g0)
     print_kv("mu_m3_s2", body.mu)
     print_kv("ae_m", body.ae)
+    print_kv("ae_source", body.ae_source)
     print_kv("flattening", body.flattening)
     print_kv("polar_radius_m", polar_radius_from_flattening(body.ae, body.flattening))
     print_kv("omega_e_rad_s", body.omega_e)
+    print_kv("J2", body.j2)
+    print_kv("J2_source", body.j2_source)
     print_kv("greenwich_epoch_rad", wrap_two_pi(theta0))
     print_kv("t0_s", t0)
     print_kv("t1_s", t1)
@@ -820,6 +898,13 @@ def report(
     print_kv("M_epoch_rad", orbit.M)
     print_kv("n_rad_s", orbit.n)
     print_kv("period_s", orbit.period)
+    node_rate = j2_nodal_rate(orbit.n, body.j2, body.ae, orbit.i, orbit.a, orbit.e)
+    apsis_rate = j2_apsidal_rate(orbit.n, body.j2, body.ae, orbit.i, orbit.a, orbit.e)
+    elapsed = t1 - t0
+    print_kv("Omega_dot_rad_s", node_rate)
+    print_kv("omega_dot_rad_s", apsis_rate)
+    print_kv("Omega_end_rad", wrap_two_pi(orbit.Omega + node_rate * elapsed))
+    print_kv("omega_end_rad", wrap_two_pi(orbit.omega + apsis_rate * elapsed))
     print_kv("lat_geocentric_epoch_rad", epoch.lat_geocentric)
     print_kv("lat_geodetic_epoch_rad", epoch.lat_geodetic)
     print_kv("lon_epoch_rad", epoch.lon)
@@ -867,17 +952,19 @@ def run_check() -> int:
         print(f"CHECK FAIL: {message}", file=sys.stderr)
         return 1
 
-    body = resolve_body(None, None, None, None)
+    body = resolve_body(None, None, None, None, None)
     if body.radius != R0_EARTH or body.radius_source != "default":
         return fail("Earth radius default")
     if not close_enough(body.mu, G0 * R0_EARTH**2, body.mu):
         return fail("mu is not g0*R0^2")
-    if not close_enough(body.ae, AE_WGS84, AE_WGS84):
+    if not close_enough(body.ae, AE_WGS84, AE_WGS84) or body.ae_source != "default":
         return fail("WGS 84 equatorial radius")
     if not close_enough(body.flattening, F_WGS84, 1.0):
         return fail("WGS 84 flattening")
     if not close_enough(body.omega_e, OMEGA_E, OMEGA_E):
         return fail("WGS 84 Earth rate")
+    if not close_enough(body.j2, J2_GSFC, J2_GSFC) or body.j2_source != "default":
+        return fail("GSFC J2 default")
     if not close_enough(polar_radius_from_flattening(2.0, 0.5), 1.0, 1.0):
         return fail("polar_radius_from_flattening")
     if len(land_polygons()) < 20:
@@ -906,7 +993,16 @@ def run_check() -> int:
     if not close_enough(unit.period, 2.0 * math.pi, 1.0):
         return fail("unit circular period")
     sphere = Body(
-        radius=1.0, g0=1.0, mu=1.0, ae=1.0, flattening=0.0, omega_e=0.0, radius_source="input"
+        radius=1.0,
+        g0=1.0,
+        mu=1.0,
+        ae=1.0,
+        flattening=0.0,
+        omega_e=0.0,
+        j2=0.0,
+        radius_source="input",
+        ae_source="input",
+        j2_source="input",
     )
     foot = subsatellite_at(sphere, unit, 0.0, 0.0, 0.0)
     if not close_enough(foot.lat_geocentric, 0.0, 1.0) or not close_enough(foot.lon, 0.0, 1.0):
@@ -915,7 +1011,16 @@ def run_check() -> int:
     if not close_enough(moved.lon, math.pi / 2.0, 1.0):
         return fail("inertial motion with a frozen Earth")
     rotating = Body(
-        radius=1.0, g0=1.0, mu=1.0, ae=1.0, flattening=0.0, omega_e=1.0, radius_source="input"
+        radius=1.0,
+        g0=1.0,
+        mu=1.0,
+        ae=1.0,
+        flattening=0.0,
+        omega_e=1.0,
+        j2=0.0,
+        radius_source="input",
+        ae_source="input",
+        j2_source="input",
     )
     synch = subsatellite_at(rotating, unit, math.pi / 2.0, 0.0, 0.0)
     if not close_enough(synch.lon, 0.0, 1.0):
@@ -929,7 +1034,7 @@ def run_check() -> int:
     inclined = orbit_from_elements(
         G0 * R0_EARTH**2, 7.0e6, 0.0, 0.9, 0.4, 0.0, math.pi / 2.0, None, "elements"
     )
-    earth = resolve_body(None, None, None, None)
+    earth = resolve_body(None, None, None, None, None)
     flat = Body(
         radius=earth.radius,
         g0=earth.g0,
@@ -937,7 +1042,10 @@ def run_check() -> int:
         ae=earth.ae,
         flattening=0.0,
         omega_e=earth.omega_e,
+        j2=0.0,
         radius_source=earth.radius_source,
+        ae_source=earth.ae_source,
+        j2_source="input",
     )
     oblate = subsatellite_at(earth, inclined, 0.0, 0.0, 0.0)
     sphere_foot = subsatellite_at(flat, inclined, 0.0, 0.0, 0.0)
@@ -945,6 +1053,48 @@ def run_check() -> int:
         return fail("flattening did not change geodetic latitude")
     if not close_enough(oblate.lon, sphere_foot.lon, 1.0):
         return fail("flattening changed longitude")
+    if not close_enough(j2_nodal_rate(1.0, 1.0, 1.0, math.pi / 2.0, 1.0, 0.0), 0.0, 1.0):
+        return fail("polar nodal rate")
+    if not close_enough(j2_nodal_rate(1.0, 1.0, 1.0, 0.0, 1.0, 0.0), -1.5, 1.0):
+        return fail("equatorial nodal rate")
+    if not close_enough(j2_apsidal_rate(1.0, 1.0, 1.0, 0.0, 1.0, 0.0), 3.0, 1.0):
+        return fail("equatorial apsidal rate")
+    kepler_earth = Body(
+        radius=earth.radius,
+        g0=earth.g0,
+        mu=earth.mu,
+        ae=earth.ae,
+        flattening=earth.flattening,
+        omega_e=earth.omega_e,
+        j2=0.0,
+        radius_source=earth.radius_source,
+        ae_source=earth.ae_source,
+        j2_source="input",
+    )
+    later = 6000.0
+    with_j2 = subsatellite_at(earth, inclined, later, 0.0, 0.0)
+    without_j2 = subsatellite_at(kepler_earth, inclined, later, 0.0, 0.0)
+    if abs(with_j2.lon - without_j2.lon) <= 1e-12:
+        return fail("J2 did not change longitude")
+    j2_folder = str(Path(__file__).resolve().parent.parent / "ASTRO - J2SecularRates")
+    if j2_folder not in sys.path:
+        sys.path.insert(0, j2_folder)
+    import j2_secular_rates as j2_skill
+
+    node = j2_nodal_rate(inclined.n, earth.j2, earth.ae, inclined.i, inclined.a, inclined.e)
+    apsis = j2_apsidal_rate(inclined.n, earth.j2, earth.ae, inclined.i, inclined.a, inclined.e)
+    if not close_enough(
+        node,
+        j2_skill.j2_nodal_rate(inclined.n, earth.j2, earth.ae, inclined.i, inclined.a, inclined.e),
+        max(abs(node), 1.0),
+    ):
+        return fail("nodal rate does not match J2SecularRates")
+    if not close_enough(
+        apsis,
+        j2_skill.j2_apsidal_rate(inclined.n, earth.j2, earth.ae, inclined.i, inclined.a, inclined.e),
+        max(abs(apsis), 1.0),
+    ):
+        return fail("apsidal rate does not match J2SecularRates")
 
     with tempfile.TemporaryDirectory() as tmp:
         out = str(Path(tmp) / "track.png")
@@ -981,12 +1131,18 @@ def run_check() -> int:
             "lon_epoch_rad",
             "lat_geodetic_end_rad",
             "lon_end_rad",
+            "Omega_dot_rad_s",
+            "omega_dot_rad_s",
             "graph",
         ):
             if key not in values:
                 return fail(f"stdout missing {key}")
         if values.get("mode") != "elements":
             return fail("elements mode label")
+        if values.get("J2_source") != "default":
+            return fail("J2 default source")
+        if not close_enough(float(values.get("J2", "nan")), J2_GSFC, J2_GSFC):
+            return fail("printed J2")
         default_out = str(Path(tmp) / "default.png")
         code, text, err = invoke(
             [
@@ -1040,6 +1196,28 @@ def run_check() -> int:
             return fail(f"state main returned {code}: {err}")
         if parse_stdout(text).get("mode") != "state":
             return fail("state mode label")
+        op = op_mod()
+        tle_out = str(Path(tmp) / "tle.png")
+        code, text, err = invoke(
+            [
+                "--tle",
+                op.ISS_TLE_LINE1,
+                op.ISS_TLE_LINE2,
+                "--greenwich",
+                "0",
+                "--span",
+                "60",
+                "--samples",
+                "2",
+                "--out",
+                tle_out,
+            ]
+        )
+        if code != 0:
+            return fail(f"TLE main returned {code}: {err}")
+        tle_values = parse_stdout(text)
+        if tle_values.get("mode") != "tle" or tle_values.get("tle_catalog") != "25544":
+            return fail("tle mode label")
 
     rejections = (
         ["--a", "7e6", "--e", "0.1", "--i", "0.2", "--raan", "0.1", "--aop", "0.1", "--nu", "0.2"],
@@ -1131,6 +1309,7 @@ def _bind_negative_values(argv: list[str]) -> list[str]:
         "--ae",
         "--flattening",
         "--omega-e",
+        "--j2",
     }
     bound: list[str] = []
     index = 0
@@ -1152,7 +1331,7 @@ def _bind_negative_values(argv: list[str]) -> list[str]:
 
 def parse_args(argv: list[str] | None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Subsatellite ground track of a Keplerian ellipse on Earth."
+        description="Subsatellite ground track of an Earth ellipse with first-order J2."
     )
     parser.add_argument("--a", type=float, default=None, help="semi-major axis [m]")
     parser.add_argument("--e", type=float, default=None, help="eccentricity")
@@ -1167,6 +1346,12 @@ def parse_args(argv: list[str] | None) -> argparse.Namespace:
     parser.add_argument("--vx", type=float, default=None, help="inertial vx [m/s]")
     parser.add_argument("--vy", type=float, default=None, help="inertial vy [m/s]")
     parser.add_argument("--vz", type=float, default=None, help="inertial vz [m/s]")
+    parser.add_argument(
+        "--tle",
+        nargs="+",
+        default=None,
+        help="NORAD two-line elements; two 69-character lines, optional name line first",
+    )
     parser.add_argument("--greenwich", type=float, default=None, help="Greenwich angle at epoch [rad]")
     parser.add_argument("--span", type=float, default=None, help="time span from epoch [s]")
     parser.add_argument("--t0", type=float, default=None, help="start time [s]")
@@ -1182,6 +1367,12 @@ def parse_args(argv: list[str] | None) -> argparse.Namespace:
     parser.add_argument("--ae", type=float, default=None, help="ellipsoid equatorial radius [m]")
     parser.add_argument("--flattening", type=float, default=None, help="ellipsoid flattening")
     parser.add_argument("--omega-e", type=float, default=None, help="Earth sidereal rate [rad/s]")
+    parser.add_argument(
+        "--j2",
+        type=float,
+        default=None,
+        help=f"second zonal harmonic; default {J2_GSFC:.8g}; 0 is Keplerian motion",
+    )
     parser.add_argument("--out", default=None, help="PNG path")
     parser.add_argument("--check", action="store_true", help="run identity checks")
     if argv is None:
@@ -1198,8 +1389,9 @@ def main(argv: list[str] | None = None) -> int:
         elements_present = any(value is not None for value in element_flags) or ns.nu is not None or ns.M is not None
         state_flags = (ns.rx, ns.ry, ns.rz, ns.vx, ns.vy, ns.vz)
         state_present = any(value is not None for value in state_flags)
-        if elements_present and state_present:
-            raise ValueError("pass elements or a state, not both")
+        tle_present = bool(ns.tle)
+        if int(elements_present) + int(state_present) + int(tle_present) > 1:
+            raise ValueError("pass a TLE, classical elements, or an inertial state, not more than one")
         if ns.greenwich is None:
             raise ValueError("--greenwich is required")
         require_finite(ns.greenwich, "--greenwich")
@@ -1210,7 +1402,8 @@ def main(argv: list[str] | None = None) -> int:
             raise ValueError("pass --span or --t0/--t1, not both")
         if orbits_given and (span_given or window_given):
             raise ValueError("pass --orbits or a time window, not both")
-        body = resolve_body(ns.R0, ns.ae, ns.flattening, ns.omega_e)
+        body = resolve_body(ns.R0, ns.ae, ns.flattening, ns.omega_e, ns.j2)
+        tle = None
         if elements_present:
             if any(value is None for value in element_flags):
                 raise ValueError("elements mode needs --a, --e, --i, --raan, and --aop")
@@ -1227,8 +1420,23 @@ def main(argv: list[str] | None = None) -> int:
             orbit = orbit_from_state(
                 body.mu, ns.rx, ns.ry, ns.rz, ns.vx, ns.vy, ns.vz, "state"
             )
+        elif tle_present:
+            op = op_mod()
+            tle = op.parse_tle_args(ns.tle)
+            semi_major, eccentricity, inc, raan, arg_perigee, mean_anomaly = op.tle_elements(body.mu, tle)
+            orbit = orbit_from_elements(
+                body.mu,
+                semi_major,
+                eccentricity,
+                inc,
+                raan,
+                arg_perigee,
+                None,
+                mean_anomaly,
+                "tle",
+            )
         else:
-            raise ValueError("pass classical elements or an inertial state")
+            raise ValueError("pass a TLE, classical elements, or an inertial state")
         if span_given:
             require_finite(ns.span, "--span")
             if ns.span <= 0.0:
@@ -1271,7 +1479,7 @@ def main(argv: list[str] | None = None) -> int:
         points = [subsatellite_at(body, orbit, time, t0, ns.greenwich) for time in times]
         png = Path(ns.out) if ns.out else default_png_path()
         write_png(png, points)
-        report(body, orbit, ns.greenwich, t0, t1, points, png)
+        report(body, orbit, ns.greenwich, t0, t1, points, png, tle)
     except ValueError as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2
