@@ -2092,6 +2092,45 @@ Then run `python check_formulas.py`.
     M: 8
   expected: 16
 
+### sphere_of_influence_radius
+
+<!-- family: flight; symbols: D, mu2, mu1; expr: D*(mu2/mu1)**(2/5); numeric: yes -->
+
+- name: unit_ratio
+  inputs:
+    D: 32
+    mu2: 1
+    mu1: 1
+  expected: 32
+
+- name: thirty_two_over_one
+  inputs:
+    D: 32
+    mu2: 1
+    mu1: 32
+  expected: 8
+
+### sphere_of_influence_radius_from_mass
+
+<!-- family: flight; symbols: D, m2, m1; expr: D*(m2/m1)**(2/5); numeric: yes -->
+
+- name: thirty_two_over_one
+  inputs:
+    D: 32
+    m2: 1
+    m1: 32
+  expected: 8
+
+### sphere_of_influence_in_central_radii
+
+<!-- family: flight; symbols: rsoi, R0; expr: rsoi/R0; numeric: yes -->
+
+- name: ten_radii
+  inputs:
+    rsoi: 20
+    R0: 2
+  expected: 10
+
 ### vis_viva
 
 <!-- family: flight; symbols: mu, r, a; expr: (mu*(2/r - 1/a))**0.5; numeric: yes -->
@@ -5019,6 +5058,169 @@ Then run `python check_formulas.py`.
     Vp: 2
   expected: 1/2
 
+### isentropic_compressor_temperature_ratio
+
+<!-- family: aerodynamics; symbols: pi_c, g; expr: pi_c**((g - 1)/g); numeric: yes -->
+
+- name: air_two
+  inputs:
+    pi_c: 2**(7/2)
+    g: 7/5
+  expected: 2
+
+### ideal_compressor_work
+
+<!-- family: aerodynamics; symbols: cp, Tt2, tau_c; expr: cp*Tt2*(tau_c - 1); numeric: yes -->
+
+- name: unit_rise
+  inputs:
+    cp: 1000
+    Tt2: 300
+    tau_c: 2
+  expected: 300000
+
+### ideal_turbine_temperature_ratio
+
+<!-- family: aerodynamics; symbols: Tt2, Tt4, tau_c; expr: 1 - (Tt2/Tt4)*(tau_c - 1); numeric: yes -->
+
+- name: half_drop
+  inputs:
+    Tt2: 300
+    Tt4: 1200
+    tau_c: 3
+  expected: 1/2
+
+### ideal_turbine_pressure_ratio
+
+<!-- family: aerodynamics; symbols: tau_t, g; expr: tau_t**(g/(g - 1)); numeric: yes -->
+
+- name: air_half
+  inputs:
+    tau_t: 1/2
+    g: 7/5
+  expected: (1/2)**(7/2)
+
+### burner_fuel_air_ratio
+
+<!-- family: aerodynamics; symbols: cp, Tt4, Tt3, Q; expr: cp*(Tt4 - Tt3)/(Q - cp*Tt4); numeric: yes -->
+
+- name: unit_delta
+  inputs:
+    cp: 1000
+    Tt4: 1200
+    Tt3: 600
+    Q: 42000000
+  expected: 600000/(42000000 - 1200000)
+
+### ideal_turbojet_nozzle_pressure_ratio
+
+<!-- family: aerodynamics; symbols: pt0, p0, pi_c, pi_t; expr: (pt0/p0)*pi_c*pi_t; numeric: yes -->
+
+- name: product
+  inputs:
+    pt0: 2
+    p0: 1
+    pi_c: 8
+    pi_t: 1/4
+  expected: 4
+
+### ideal_nozzle_exit_velocity
+
+<!-- family: aerodynamics; symbols: cp, Tt, NPR, g; expr: (2*cp*Tt*(1 - NPR**(-(g - 1)/g)))**0.5; numeric: yes -->
+
+- name: air_npr_sixteen
+  inputs:
+    cp: 1004.5
+    Tt: 600
+    NPR: 16
+    g: 7/5
+  expected: (2*1004.5*600*(1 - 16**(-2/7)))**0.5
+
+### ideal_nozzle_exit_temperature
+
+<!-- family: aerodynamics; symbols: Tt, NPR, g; expr: Tt*NPR**(-(g - 1)/g); numeric: yes -->
+
+- name: air_half
+  inputs:
+    Tt: 800
+    NPR: 2**(7/2)
+    g: 7/5
+  expected: 400
+
+### turbojet_specific_thrust
+
+<!-- family: aerodynamics; symbols: f, Ve, V0; expr: (1 + f)*Ve - V0; numeric: yes -->
+
+- name: unit_fuel
+  inputs:
+    f: 0
+    Ve: 800
+    V0: 200
+  expected: 600
+
+- name: with_fuel
+  inputs:
+    f: 1/50
+    Ve: 1000
+    V0: 250
+  expected: (51/50)*1000 - 250
+
+### turbojet_tsfc
+
+<!-- family: aerodynamics; symbols: f, Fs; expr: f/Fs; numeric: yes -->
+
+- name: reciprocal
+  inputs:
+    f: 0.02
+    Fs: 500
+  expected: 0.00004
+
+### turbojet_thermal_efficiency
+
+<!-- family: aerodynamics; symbols: f, Ve, V0, Q; expr: ((1 + f)*Ve**2 - V0**2)/(2*f*Q); numeric: yes -->
+
+- name: static_point
+  inputs:
+    f: 0.02
+    Ve: 1000
+    V0: 0
+    Q: 4e7
+  expected: (1.02*1000**2)/(2*0.02*4e7)
+
+### turbojet_propulsive_efficiency
+
+<!-- family: aerodynamics; symbols: V0, Fs, f, Ve; expr: 2*V0*Fs/((1 + f)*Ve**2 - V0**2); numeric: yes -->
+
+- name: classic_half
+  inputs:
+    V0: 250
+    Fs: 500
+    f: 0
+    Ve: 750
+  expected: 1/2
+
+### turbojet_overall_efficiency
+
+<!-- family: aerodynamics; symbols: Fs, V0, f, Q; expr: Fs*V0/(f*Q); numeric: yes -->
+
+- name: product_path
+  inputs:
+    Fs: 500
+    V0: 250
+    f: 0.02
+    Q: 4e7
+  expected: 500*250/(0.02*4e7)
+
+### ideal_brayton_thermal_efficiency
+
+<!-- family: aerodynamics; symbols: tau_r, tau_c; expr: 1 - 1/(tau_r*tau_c); numeric: yes -->
+
+- name: double
+  inputs:
+    tau_r: 1
+    tau_c: 2
+  expected: 1/2
+
 ### sustained_turn_load_factor
 
 <!-- family: aerodynamics; symbols: q, S, T, CD0, pi, AR, e, W; expr: ((q*S*(T - q*S*CD0)*pi*AR*e)/(W**2))**0.5; numeric: yes -->
@@ -5046,6 +5248,60 @@ Then run `python check_formulas.py`.
     e: 1/2
     W: 2
   expected: (pi/2)**0.5
+
+### pullup_load_factor
+
+<!-- family: aerodynamics; symbols: V, g, R; expr: 1 + V**2/(g*R); numeric: yes -->
+
+- name: unit_two_g
+  inputs:
+    V: 10
+    g: 10
+    R: 10
+  expected: 2
+
+- name: n_equals_three
+  inputs:
+    V: 30
+    g: 10
+    R: 45
+  expected: 3
+
+### pullup_radius
+
+<!-- family: aerodynamics; symbols: V, g, n; expr: V**2/(g*(n - 1)); numeric: yes -->
+
+- name: unit_two_g
+  inputs:
+    V: 10
+    g: 10
+    n: 2
+  expected: 10
+
+- name: n_equals_three
+  inputs:
+    V: 30
+    g: 10
+    n: 3
+  expected: 45
+
+### pullup_pitch_rate
+
+<!-- family: aerodynamics; symbols: g, n, V; expr: g*(n - 1)/V; numeric: yes -->
+
+- name: unit_two_g
+  inputs:
+    g: 10
+    n: 2
+    V: 10
+  expected: 1
+
+- name: n_equals_three
+  inputs:
+    g: 10
+    n: 3
+    V: 30
+  expected: 2/3
 
 ### breguet_range_jet
 
@@ -5417,6 +5673,203 @@ Then run `python check_formulas.py`.
 
 ## Structures
 
+#### beam
+
+### beam_bending_stress
+
+<!-- family: beam; symbols: M, Z; expr: M/Z; numeric: yes -->
+
+- name: unit_section
+  inputs:
+    M: 1
+    Z: 1
+  expected: 1
+
+- name: spar_sample
+  inputs:
+    M: 856
+    Z: 1.16
+  expected: 856/1.16
+
+### beam_bending_stress_inertia
+
+<!-- family: beam; symbols: M, c, I; expr: M*c/I; numeric: yes -->
+
+- name: unit_inertia
+  inputs:
+    M: 1
+    c: 1
+    I: 1
+  expected: 1
+
+- name: matches_section_modulus
+  inputs:
+    M: 1200
+    c: 3/100
+    I: 9/100000
+  expected: 4e5
+
+### section_modulus
+
+<!-- family: beam; symbols: I, c; expr: I/c; numeric: yes -->
+
+- name: unit_modulus
+  inputs:
+    I: 1
+    c: 1
+  expected: 1
+
+- name: from_inertia_sample
+  inputs:
+    I: 9/100000
+    c: 3/100
+  expected: 3/1000
+
+#### column
+
+### euler_critical_load
+
+<!-- family: column; symbols: E, I, K, L, pi; expr: pi**2*E*I/(K*L)**2; numeric: yes -->
+
+- name: unit_pinned
+  inputs:
+    E: 1
+    I: 1
+    K: 1
+    L: 1
+    pi: pi
+  expected: pi**2
+
+- name: steel_sample
+  inputs:
+    E: 2e11
+    I: 1e-6
+    K: 1
+    L: 2
+    pi: pi
+  expected: pi**2*5e4
+
+- name: fixed_fixed_fourfold
+  inputs:
+    E: 1
+    I: 1
+    K: 1/2
+    L: 1
+    pi: pi
+  expected: 4*pi**2
+
+### euler_critical_load_fixity
+
+<!-- family: column; symbols: C, E, I, L, pi; expr: C*pi**2*E*I/L**2; numeric: yes -->
+
+- name: unit_pinned_fixity
+  inputs:
+    C: 1
+    E: 1
+    I: 1
+    L: 1
+    pi: pi
+  expected: pi**2
+
+- name: matches_end_fix_half
+  inputs:
+    C: 4
+    E: 1
+    I: 1
+    L: 1
+    pi: pi
+  expected: 4*pi**2
+
+### effective_column_length
+
+<!-- family: column; symbols: K, L; expr: K*L; numeric: yes -->
+
+- name: pinned_unit
+  inputs:
+    K: 1
+    L: 1
+  expected: 1
+
+- name: fixed_half
+  inputs:
+    K: 1/2
+    L: 2
+  expected: 1
+
+### end_fixity_coefficient
+
+<!-- family: column; symbols: K; expr: 1/K**2; numeric: yes -->
+
+- name: pinned_unity
+  inputs:
+    K: 1
+  expected: 1
+
+- name: fixed_four
+  inputs:
+    K: 1/2
+  expected: 4
+
+### radius_of_gyration
+
+<!-- family: column; symbols: I, A; expr: (I/A)**0.5; numeric: yes -->
+
+- name: unit_gyration
+  inputs:
+    I: 1
+    A: 1
+  expected: 1
+
+- name: square_sample
+  inputs:
+    I: 1e-6
+    A: 1e-3
+  expected: (1e-3)**0.5
+
+### column_slenderness
+
+<!-- family: column; symbols: K, L, I, A; expr: K*L/(I/A)**0.5; numeric: yes -->
+
+- name: unit_slenderness
+  inputs:
+    K: 1
+    L: 1
+    I: 1
+    A: 1
+  expected: 1
+
+- name: steel_sample_slenderness
+  inputs:
+    K: 1
+    L: 2
+    I: 1e-6
+    A: 1e-3
+  expected: 2/(1e-3)**0.5
+
+### euler_critical_stress
+
+<!-- family: column; symbols: E, K, L, I, A, pi; expr: pi**2*E/(K*L/(I/A)**0.5)**2; numeric: yes -->
+
+- name: unit_stress
+  inputs:
+    E: 1
+    K: 1
+    L: 1
+    I: 1
+    A: 1
+    pi: pi
+  expected: pi**2
+
+- name: steel_sample_stress
+  inputs:
+    E: 2e11
+    K: 1
+    L: 2
+    I: 1e-6
+    A: 1e-3
+    pi: pi
+  expected: pi**2*5e4/1e-3
+
 #### shell
 
 ### cylinder_hoop_stress
@@ -5467,3 +5920,896 @@ Then run `python check_formulas.py`.
     allowable: 200000
     design: 160000
   expected: 1/4
+
+## Mass properties
+
+#### mass
+
+### total_mass
+
+<!-- family: mass; symbols: m1, m2; expr: m1 + m2; numeric: yes -->
+
+- name: unit_parts
+  inputs:
+    m1: 1
+    m2: 1
+  expected: 2
+
+- name: unequal_parts
+  inputs:
+    m1: 2
+    m2: 3
+  expected: 5
+
+### mass_first_moment
+
+<!-- family: mass; symbols: m, x; expr: m*x; numeric: yes -->
+
+- name: unit_arm
+  inputs:
+    m: 1
+    x: 1
+  expected: 1
+
+- name: two_kg_at_half_metre
+  inputs:
+    m: 2
+    x: 1/2
+  expected: 1
+
+### center_of_mass_coordinate
+
+<!-- family: mass; symbols: Mx, m; expr: Mx/m; numeric: yes -->
+
+- name: unit_centroid
+  inputs:
+    Mx: 1
+    m: 1
+  expected: 1
+
+- name: two_equal_masses
+  inputs:
+    Mx: 2
+    m: 4
+  expected: 1/2
+
+### point_mass_moment
+
+<!-- family: mass; symbols: m, d1, d2; expr: m*(d1**2 + d2**2); numeric: yes -->
+
+- name: unit_offset
+  inputs:
+    m: 1
+    d1: 1
+    d2: 0
+  expected: 1
+
+- name: two_metre_diagonal
+  inputs:
+    m: 2
+    d1: 3
+    d2: 4
+  expected: 50
+
+### point_mass_product
+
+<!-- family: mass; symbols: m, d1, d2; expr: m*d1*d2; numeric: yes -->
+
+- name: unit_product
+  inputs:
+    m: 1
+    d1: 1
+    d2: 1
+  expected: 1
+
+- name: offset_pair
+  inputs:
+    m: 2
+    d1: 3
+    d2: -1
+  expected: -6
+
+### parallel_axis_moment
+
+<!-- family: mass; symbols: Icg, m, d1, d2; expr: Icg + m*(d1**2 + d2**2); numeric: yes -->
+
+- name: point_mass_transfer
+  inputs:
+    Icg: 0
+    m: 1
+    d1: 1
+    d2: 0
+  expected: 1
+
+- name: own_plus_transfer
+  inputs:
+    Icg: 2
+    m: 3
+    d1: 1
+    d2: 2
+  expected: 17
+
+### parallel_axis_product
+
+<!-- family: mass; symbols: Pcg, m, d1, d2; expr: Pcg + m*d1*d2; numeric: yes -->
+
+- name: point_mass_product_transfer
+  inputs:
+    Pcg: 0
+    m: 1
+    d1: 2
+    d2: 3
+  expected: 6
+
+- name: own_plus_product
+  inputs:
+    Pcg: 1
+    m: 2
+    d1: -1
+    d2: 4
+  expected: -7
+
+### inertia_shift_to_cg
+
+<!-- family: mass; symbols: IO, m, d1, d2; expr: IO - m*(d1**2 + d2**2); numeric: yes -->
+
+- name: unit_shift
+  inputs:
+    IO: 2
+    m: 1
+    d1: 1
+    d2: 0
+  expected: 1
+
+- name: tn575_style_shift
+  inputs:
+    IO: 50
+    m: 2
+    d1: 3
+    d2: 4
+  expected: 0
+
+## Aerothermodynamics
+
+#### aerotherm
+
+### stagnation_convective_heat_flux
+
+<!-- family: aerotherm; symbols: K, ps, Rn, hs, hw; expr: K*((ps/Rn)**0.5)*(hs - hw); numeric: yes -->
+
+- name: unit_coefficient
+  inputs:
+    K: 1
+    ps: 1
+    Rn: 1
+    hs: 2
+    hw: 1
+  expected: 1
+
+- name: air_table_coefficient
+  inputs:
+    K: 0.1113
+    ps: 1
+    Rn: 1
+    hs: 1e6
+    hw: 0
+  expected: 111300
+
+### freestream_kinetic_enthalpy
+
+<!-- family: aerotherm; symbols: V; expr: 0.5*V**2; numeric: yes -->
+
+- name: hundred_m_s
+  inputs:
+    V: 100
+  expected: 5000
+
+### wall_enthalpy_perfect
+
+<!-- family: aerotherm; symbols: cp, Tw; expr: cp*Tw; numeric: yes -->
+
+- name: unit_wall
+  inputs:
+    cp: 1004.7
+    Tw: 300
+  expected: 301410
+
+### stagnation_convective_heat_flux_velocity
+
+<!-- family: aerotherm; symbols: k, rho, Rn, V; expr: k*((rho/Rn)**0.5)*V**3; numeric: yes -->
+
+- name: unit_velocity_form
+  inputs:
+    k: 1
+    rho: 1
+    Rn: 1
+    V: 1
+  expected: 1
+
+- name: earth_air_derived_k
+  inputs:
+    k: 0.1113/(2*(101325)**0.5)
+    rho: 3.1459e-4
+    Rn: 1
+    V: 3535
+  expected: 0.1113/(2*(101325)**0.5)*((3.1459e-4)**0.5)*(3535)**3
+
+### radiative_equilibrium_wall_temperature
+
+<!-- family: aerotherm; symbols: q, eps, sigma; expr: (q/(eps*sigma))**0.25; numeric: yes -->
+
+- name: blackbody_unit
+  inputs:
+    q: 5.670374419e-8
+    eps: 1
+    sigma: 5.670374419e-8
+  expected: 1
+
+- name: gray_shuttle_like
+  inputs:
+    q: 136000
+    eps: 0.8
+    sigma: 5.670374419e-8
+  expected: (136000/(0.8*5.670374419e-8))**0.25
+
+### ballistic_coefficient
+
+<!-- family: aerotherm; symbols: m, Cd, A; expr: m/(Cd*A); numeric: yes -->
+
+- name: unit_mass_area
+  inputs:
+    m: 1000
+    Cd: 1
+    A: 1
+  expected: 1000
+
+- name: half_drag
+  inputs:
+    m: 500
+    Cd: 0.5
+    A: 2
+  expected: 500
+
+### exponential_atmosphere_density
+
+<!-- family: aerotherm; symbols: rhoref, Z, Zref, H; expr: rhoref*exp(-(Z - Zref)/H); numeric: yes -->
+
+- name: at_reference
+  inputs:
+    rhoref: 1.752288
+    Z: 0
+    Zref: 0
+    H: 6705.6
+  expected: 1.752288
+
+- name: one_scale_height
+  inputs:
+    rhoref: 1.752288
+    Z: 6705.6
+    Zref: 0
+    H: 6705.6
+  expected: 1.752288*exp(-1)
+
+### atmosphere_inverse_scale_height
+
+<!-- family: aerotherm; symbols: H; expr: 1/H; numeric: yes -->
+
+- name: allen_eggers_earth
+  inputs:
+    H: 6705.6
+  expected: 1/6705.6
+
+### allen_eggers_peak_deceleration
+
+<!-- family: aerotherm; symbols: Ve, th, H; expr: Ve**2*sin(th)/(2*exp(1)*H); numeric: yes -->
+
+- name: vertical_unit
+  inputs:
+    Ve: 1000
+    th: 1.5707963267948966
+    H: 6705.6
+  expected: 1000**2*sin(1.5707963267948966)/(2*exp(1)*6705.6)
+
+- name: thirty_degrees
+  inputs:
+    Ve: 7000
+    th: 0.5235987755982988
+    H: 6705.6
+  expected: 7000**2*sin(0.5235987755982988)/(2*exp(1)*6705.6)
+
+### allen_eggers_speed_at_peak_deceleration
+
+<!-- family: aerotherm; symbols: Ve; expr: Ve*exp(-0.5); numeric: yes -->
+
+- name: seven_km_s
+  inputs:
+    Ve: 7000
+  expected: 7000*exp(-0.5)
+
+### allen_eggers_density_at_peak_deceleration
+
+<!-- family: aerotherm; symbols: B, th, H; expr: B*sin(th)/H; numeric: yes -->
+
+- name: vertical_ballistic
+  inputs:
+    B: 100
+    th: 1.5707963267948966
+    H: 6705.6
+  expected: 100*sin(1.5707963267948966)/6705.6
+
+### allen_eggers_peak_deceleration_altitude
+
+<!-- family: aerotherm; symbols: Zref, H, rhoref, B, th; expr: Zref + H*log(rhoref*H/(B*sin(th))); numeric: yes -->
+
+- name: sea_level_reference
+  inputs:
+    Zref: 0
+    H: 6705.6
+    rhoref: 1.752288
+    B: 100
+    th: 0.5235987755982988
+  expected: 0 + 6705.6*log(1.752288*6705.6/(100*sin(0.5235987755982988)))
+
+### allen_eggers_surface_speed
+
+<!-- family: aerotherm; symbols: Ve, rhoref, H, B, th; expr: Ve*exp(-rhoref*H/(2*B*sin(th))); numeric: yes -->
+
+- name: heavy_vertical
+  inputs:
+    Ve: 7000
+    rhoref: 1.752288
+    H: 6705.6
+    B: 5000
+    th: 1.5707963267948966
+  expected: 7000*exp(-1.752288*6705.6/(2*5000*sin(1.5707963267948966)))
+
+### allen_eggers_surface_deceleration
+
+<!-- family: aerotherm; symbols: rhoref, B, Vs; expr: (rhoref/(2*B))*Vs**2; numeric: yes -->
+
+- name: unit_surface
+  inputs:
+    rhoref: 1.225
+    B: 100
+    Vs: 1000
+  expected: (1.225/(2*100))*1000**2
+
+## Spacecraft power
+
+#### power
+
+### flat_plate_solar_irradiance
+
+<!-- family: power; symbols: S, theta; expr: S*cos(theta); numeric: yes -->
+
+- name: normal_incidence
+  inputs:
+    S: 1361.6
+    theta: 0
+  expected: 1361.6
+
+- name: sixty_degrees
+  inputs:
+    S: 1000
+    theta: pi/3
+  expected: 500
+
+### solar_array_ideal_power
+
+<!-- family: power; symbols: S, A, eta, Fp; expr: S*A*eta*Fp; numeric: yes -->
+
+- name: unit_panel
+  inputs:
+    S: 1361.6
+    A: 1
+    eta: 0.3
+    Fp: 0.85
+  expected: 1361.6*0.3*0.85
+
+### solar_array_bol_power
+
+<!-- family: power; symbols: S, A, eta, Fp, Id, theta; expr: S*A*eta*Fp*Id*cos(theta); numeric: yes -->
+
+- name: normal_with_knockdowns
+  inputs:
+    S: 1361.6
+    A: 2
+    eta: 0.28
+    Fp: 0.9
+    Id: 0.85
+    theta: 0
+  expected: 1361.6*2*0.28*0.9*0.85
+
+- name: cosine_half
+  inputs:
+    S: 1000
+    A: 1
+    eta: 1
+    Fp: 1
+    Id: 1
+    theta: pi/3
+  expected: 500
+
+### solar_array_bol_power_from_specific
+
+<!-- family: power; symbols: psa, A, Id, theta; expr: psa*A*Id*cos(theta); numeric: yes -->
+
+- name: specific_normal
+  inputs:
+    psa: 300
+    A: 2
+    Id: 0.9
+    theta: 0
+  expected: 540
+
+### solar_array_life_degradation
+
+<!-- family: power; symbols: d, L; expr: (1 - d)**L; numeric: yes -->
+
+- name: five_years_half_percent
+  inputs:
+    d: 0.005
+    L: 5
+  expected: 0.995**5
+
+- name: zero_life
+  inputs:
+    d: 0.02
+    L: 0
+  expected: 1
+
+### solar_array_eol_power
+
+<!-- family: power; symbols: Pbol, Ld; expr: Pbol*Ld; numeric: yes -->
+
+- name: ten_percent_life_loss
+  inputs:
+    Pbol: 1000
+    Ld: 0.9
+  expected: 900
+
+### solar_array_orbit_average_power
+
+<!-- family: power; symbols: P, fe; expr: P*(1 - fe); numeric: yes -->
+
+- name: thirty_five_percent_eclipse
+  inputs:
+    P: 100
+    fe: 0.35
+  expected: 65
+
+### circular_orbit_eclipse_fraction
+
+<!-- family: power; symbols: re, r, beta, pi; expr: acos(((1 - (re/r)**2)**0.5)/cos(beta))/pi; numeric: yes -->
+
+- name: beta_zero_unit
+  inputs:
+    re: 3
+    r: 5
+    beta: 0
+    pi: pi
+  expected: acos((1 - (3/5)**2)**0.5)/pi
+
+- name: elevated_beta
+  inputs:
+    re: 6378137
+    r: 6378137 + 400000
+    beta: 0.2
+    pi: pi
+  expected: acos(((1 - (6378137/(6378137 + 400000))**2)**0.5)/cos(0.2))/pi
+
+### battery_energy_from_capacity_ah
+
+<!-- family: power; symbols: C_Ah, V; expr: 3600*C_Ah*V; numeric: yes -->
+
+- name: one_hundred_ah_at_twenty_eight_v
+  inputs:
+    C_Ah: 100
+    V: 28
+  expected: 3600*100*28
+
+- name: unit_wh
+  inputs:
+    C_Ah: 1
+    V: 1
+  expected: 3600
+
+### battery_depth_of_discharge
+
+<!-- family: power; symbols: E_removed, E; expr: E_removed/E; numeric: yes -->
+
+- name: twenty_percent
+  inputs:
+    E_removed: 20
+    E: 100
+  expected: 0.2
+
+- name: full_nameplate
+  inputs:
+    E_removed: 50
+    E: 50
+  expected: 1
+
+### battery_usable_energy
+
+<!-- family: power; symbols: E, DOD, eta_d; expr: E*DOD*eta_d; numeric: yes -->
+
+- name: half_dod_ninety_discharge
+  inputs:
+    E: 100000
+    DOD: 0.5
+    eta_d: 0.9
+  expected: 45000
+
+### battery_time_at_continuous_load
+
+<!-- family: power; symbols: Eu, P; expr: Eu/P; numeric: yes -->
+
+- name: forty_five_kj_at_fifty_w
+  inputs:
+    Eu: 45000
+    P: 50
+  expected: 900
+
+### battery_discharge_energy
+
+<!-- family: power; symbols: P, te, eta_d; expr: P*te/eta_d; numeric: yes -->
+
+- name: hundred_w_half_hour_at_point_eight_eight
+  inputs:
+    P: 100
+    te: 1800
+    eta_d: 0.88
+  expected: 100*1800/0.88
+
+### battery_required_nameplate_energy
+
+<!-- family: power; symbols: P, te, eta_d, DOD; expr: P*te/(eta_d*DOD); numeric: yes -->
+
+- name: twenty_percent_dod
+  inputs:
+    P: 100
+    te: 1800
+    eta_d: 0.88
+    DOD: 0.2
+  expected: 100*1800/(0.88*0.2)
+
+### battery_required_capacity_ah
+
+<!-- family: power; symbols: Ereq, V; expr: Ereq/(3600*V); numeric: yes -->
+
+- name: thirty_volt_bus
+  inputs:
+    Ereq: 3600*100*28
+    V: 28
+  expected: 100
+
+### battery_charge_energy
+
+<!-- family: power; symbols: Es, eta_c; expr: Es/eta_c; numeric: yes -->
+
+- name: ninety_two_percent_charger
+  inputs:
+    Es: 184000
+    eta_c: 0.92
+  expected: 184000/0.92
+
+### battery_recharge_power
+
+<!-- family: power; symbols: P, te, eta_c, eta_d, td; expr: P*te/(eta_c*eta_d*td); numeric: yes -->
+
+- name: leo_thirty_sixty
+  inputs:
+    P: 1000
+    te: 1800
+    eta_c: 0.92
+    eta_d: 0.88
+    td: 3600
+  expected: 1000*1800/(0.92*0.88*3600)
+
+### battery_orbit_source_power
+
+<!-- family: power; symbols: P, te, eta_c, eta_d, td; expr: P*(1 + te/(eta_c*eta_d*td)); numeric: yes -->
+
+- name: leo_thousand_watt_load
+  inputs:
+    P: 1000
+    te: 1800
+    eta_c: 0.92
+    eta_d: 0.88
+    td: 3600
+  expected: 1000*(1 + 1800/(0.92*0.88*3600))
+
+## Space communications
+
+#### comms
+
+### wavelength_from_frequency
+
+<!-- family: comms; symbols: c, f; expr: c/f; numeric: yes -->
+
+- name: three_hundred_megahertz
+  inputs:
+    c: 3e8
+    f: 3e8
+  expected: 1
+
+- name: codata_speed
+  inputs:
+    c: 299792458
+    f: 299792458
+  expected: 1
+
+### frequency_from_wavelength
+
+<!-- family: comms; symbols: c, lam; expr: c/lam; numeric: yes -->
+
+- name: one_metre
+  inputs:
+    c: 3e8
+    lam: 1
+  expected: 3e8
+
+### free_space_path_loss
+
+<!-- family: comms; symbols: pi, R, lam; expr: (4*pi*R/lam)**2; numeric: yes -->
+
+- name: unit_geometry
+  inputs:
+    pi: pi
+    R: 1
+    lam: 4*pi
+  expected: 1
+
+- name: ten_wavelengths
+  inputs:
+    pi: pi
+    R: 10
+    lam: 1
+  expected: (40*pi)**2
+
+### free_space_path_loss_db
+
+<!-- family: comms; symbols: pi, R, lam; expr: 20*log(4*pi*R/lam)/log(10); numeric: yes -->
+
+- name: unit_geometry
+  inputs:
+    pi: pi
+    R: 1
+    lam: 4*pi
+  expected: 0
+
+### antenna_gain_from_effective_aperture
+
+<!-- family: comms; symbols: pi, Ae, lam; expr: 4*pi*Ae/(lam**2); numeric: yes -->
+
+- name: isotropic_unit
+  inputs:
+    pi: pi
+    Ae: 1/(4*pi)
+    lam: 1
+  expected: 1
+
+### antenna_gain_circular_aperture
+
+<!-- family: comms; symbols: eta, pi, D, lam; expr: eta*(pi*D/lam)**2; numeric: yes -->
+
+- name: half_efficiency_unit
+  inputs:
+    eta: 1/2
+    pi: pi
+    D: 2
+    lam: pi
+  expected: 2
+
+- name: ideal_uniform
+  inputs:
+    eta: 1
+    pi: pi
+    D: 1
+    lam: pi
+  expected: 1
+
+### eirp
+
+<!-- family: comms; symbols: Pt, Gt; expr: Pt*Gt; numeric: yes -->
+
+- name: ten_watts_unity_gain
+  inputs:
+    Pt: 10
+    Gt: 1
+  expected: 10
+
+### friis_received_power
+
+<!-- family: comms; symbols: Pt, Gt, Gr, lam, pi, R; expr: Pt*Gt*Gr*(lam/(4*pi*R))**2; numeric: yes -->
+
+- name: unit_link
+  inputs:
+    Pt: 16
+    Gt: 1
+    Gr: 1
+    lam: 4*pi
+    pi: pi
+    R: 1
+  expected: 16
+
+- name: with_gains
+  inputs:
+    Pt: 4
+    Gt: 2
+    Gr: 2
+    lam: 4*pi
+    pi: pi
+    R: 1
+  expected: 16
+
+### thermal_noise_power
+
+<!-- family: comms; symbols: k, Ts, B; expr: k*Ts*B; numeric: yes -->
+
+- name: unit_kelvin_hertz
+  inputs:
+    k: 1.380649e-23
+    Ts: 1
+    B: 1
+  expected: 1.380649e-23
+
+### noise_spectral_density
+
+<!-- family: comms; symbols: k, Ts; expr: k*Ts; numeric: yes -->
+
+- name: room_like
+  inputs:
+    k: 1e-23
+    Ts: 290
+  expected: 2.9e-21
+
+### carrier_to_noise_density
+
+<!-- family: comms; symbols: Pr, k, Ts; expr: Pr/(k*Ts); numeric: yes -->
+
+- name: unit_density
+  inputs:
+    Pr: 1.380649e-20
+    k: 1.380649e-23
+    Ts: 100
+  expected: 10
+
+### carrier_to_noise_ratio
+
+<!-- family: comms; symbols: Pr, k, Ts, B; expr: Pr/(k*Ts*B); numeric: yes -->
+
+- name: ten_to_one
+  inputs:
+    Pr: 1.380649e-17
+    k: 1.380649e-23
+    Ts: 100
+    B: 1000
+  expected: 10
+
+### eb_n0_from_cn0
+
+<!-- family: comms; symbols: CN0, Rb; expr: CN0/Rb; numeric: yes -->
+
+- name: megabit_link
+  inputs:
+    CN0: 1e7
+    Rb: 1e6
+  expected: 10
+
+### link_margin_eb_n0
+
+<!-- family: comms; symbols: EbN0, EbN0req; expr: EbN0/EbN0req; numeric: yes -->
+
+- name: three_db_linear
+  inputs:
+    EbN0: 20
+    EbN0req: 10
+  expected: 2
+
+## Dynamics and control
+
+#### control
+
+### natural_frequency_mass_stiffness
+
+<!-- family: control; symbols: k, m; expr: (k/m)**0.5; numeric: yes -->
+
+- name: unit_mass_stiffness
+  inputs:
+    k: 1
+    m: 1
+  expected: 1
+
+- name: four_over_one
+  inputs:
+    k: 4
+    m: 1
+  expected: 2
+
+### damping_ratio_mass_stiffness
+
+<!-- family: control; symbols: c, k, m; expr: c/(2*(k*m)**0.5); numeric: yes -->
+
+- name: critical_unit
+  inputs:
+    c: 2
+    k: 1
+    m: 1
+  expected: 1
+
+- name: half_critical
+  inputs:
+    c: 1
+    k: 1
+    m: 1
+  expected: 1/2
+
+### damped_natural_frequency
+
+<!-- family: control; symbols: wn, zeta; expr: wn*(1 - zeta**2)**0.5; numeric: yes -->
+
+- name: undamped_unit
+  inputs:
+    wn: 1
+    zeta: 0
+  expected: 1
+
+- name: half_damping
+  inputs:
+    wn: 2
+    zeta: 1/2
+  expected: 3**0.5
+
+### second_order_percent_overshoot
+
+<!-- family: control; symbols: zeta, pi; expr: exp(-pi*zeta/(1 - zeta**2)**0.5); numeric: yes -->
+
+- name: zero_damping
+  inputs:
+    zeta: 0
+    pi: pi
+  expected: 1
+
+- name: half_damping
+  inputs:
+    zeta: 1/2
+    pi: pi
+  expected: exp(-pi/(3**0.5))
+
+### second_order_peak_time
+
+<!-- family: control; symbols: wn, zeta, pi; expr: pi/(wn*(1 - zeta**2)**0.5); numeric: yes -->
+
+- name: unit_undamped
+  inputs:
+    wn: 1
+    zeta: 0
+    pi: pi
+  expected: pi
+
+- name: half_damping
+  inputs:
+    wn: 2
+    zeta: 1/2
+    pi: pi
+  expected: pi/(3**0.5)
+
+### second_order_settling_time
+
+<!-- family: control; symbols: delta, zeta, wn; expr: -log(delta)/(zeta*wn); numeric: yes -->
+
+- name: two_percent_unit
+  inputs:
+    delta: 2/100
+    zeta: 1
+    wn: 1
+  expected: -log(2/100)
+
+- name: two_percent_four_time_constants
+  inputs:
+    delta: exp(-4)
+    zeta: 1/2
+    wn: 2
+  expected: 4

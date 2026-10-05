@@ -33,7 +33,7 @@ Jet means thrust does not change with speed, and fuel flow follows thrust. Prope
 | Best range | \(C_L = \sqrt{C_{D0}/(3k)}\) | \((L/D)_{\max}\) |
 | Best endurance | \((L/D)_{\max}\) | \(C_L = \sqrt{3 C_{D0}/k}\) |
 
-Jet best endurance and propeller best range are the same speed. The climb block always uses 1976 sea-level density, including when the speeds above use another altitude or a density the user supplied. A climb rate is printed only when `--thrust` or `--power` is passed. Without them the program still prints the sea-level speed and the thrust or power of level flight at that speed.
+Jet best endurance and propeller best range are the same speed. The climb block always uses 1976 sea-level density, including when the speeds above use another altitude or a density the user supplied. A climb rate is printed only when `--thrust` or `--power` is passed. Without them the program still prints the sea-level speed and the thrust or power of level flight at that speed. For rate of climb versus geometric altitude, service and absolute ceilings, or off-nominal temperature, use `AERO - ClimbPerformance`.
 
 ## When to run
 

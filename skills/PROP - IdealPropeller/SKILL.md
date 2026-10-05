@@ -1,5 +1,5 @@
 ---
-name: AERO - IdealPropeller
+name: PROP - IdealPropeller
 description: >-
   Run the ideal actuator-disk propeller program and report its printed
   results and PNG. Use when the user wants ideal thrust, induced velocity,
@@ -8,7 +8,7 @@ description: >-
   recompute the numbers by hand.
 ---
 
-# AERO - IdealPropeller
+# PROP - IdealPropeller
 
 Use this skill for the incompressible Rankine–Froude actuator disk. Run the program once; quote its stdout and include its PNG. Do not redraw the plot or recompute the numbers by hand.
 
@@ -43,7 +43,7 @@ The figure plots ideal thrust, induced velocity, and efficiency against true air
 Run:
 
 ```text
-python "skills/AERO - IdealPropeller/ideal_propeller.py" --power <W> --diameter <m> --speed <m/s> (--rho <kg/m^3> | --alt <m>) [--out <png>]
+python "skills/PROP - IdealPropeller/ideal_propeller.py" --power <W> --diameter <m> --speed <m/s> (--rho <kg/m^3> | --alt <m>) [--out <png>]
 ```
 
 | Flag | Meaning | Unit | Required? |

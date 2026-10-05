@@ -5,7 +5,7 @@ A formula is listed when every identity named for it passed, or when it is a def
 A definition is exempt from the identity check.
 Use only these formula ids. Do not use a formula that is absent from this file.
 
-Passed: 380
+Passed: 470
 Failed: 0
 Unchecked: 0
 
@@ -191,6 +191,9 @@ Exempt from the identity check.
 - `circular_orbit_velocity` (flight): altitude_equal_to_radius
 - `escape_velocity` (flight): altitude_equal_to_radius
 - `gravitational_parameter` (flight): product
+- `sphere_of_influence_radius` (flight): unit_ratio, thirty_two_over_one
+- `sphere_of_influence_radius_from_mass` (flight): thirty_two_over_one
+- `sphere_of_influence_in_central_radii` (flight): ten_radii
 - `vis_viva` (flight): circular, periapsis_of_ellipse, periapsis_of_hyperbola
 - `plane_change_impulse` (flight): half_turn, sixty_deg
 - `j2_nodal_rate` (flight): polar, equatorial_unit, scaled_ellipse
@@ -375,6 +378,9 @@ Exempt from the identity check.
 - `level_turn_rate` (aerodynamics): forty_five_degree_bank, sixty_degrees
 - `useful_thrust` (aerodynamics): unit_speed
 - `sustained_turn_load_factor` (aerodynamics): two_g, scaled_polar
+- `pullup_load_factor` (aerodynamics): unit_two_g, n_equals_three
+- `pullup_radius` (aerodynamics): unit_two_g, n_equals_three
+- `pullup_pitch_rate` (aerodynamics): unit_two_g, n_equals_three
 - `wheel_normal_force` (aerodynamics): half_weight
 - `rolling_friction` (aerodynamics): two_percent
 - `ground_roll_net_force` (aerodynamics): static_start
@@ -399,6 +405,20 @@ Exempt from the identity check.
 - `ideal_actuator_power_from_induced` (aerodynamics): unit_disk
 - `ideal_propulsive_efficiency` (aerodynamics): half
 - `ideal_propulsive_efficiency_from_speeds` (aerodynamics): half
+- `isentropic_compressor_temperature_ratio` (aerodynamics): air_two
+- `ideal_compressor_work` (aerodynamics): unit_rise
+- `ideal_turbine_temperature_ratio` (aerodynamics): half_drop
+- `ideal_turbine_pressure_ratio` (aerodynamics): air_half
+- `burner_fuel_air_ratio` (aerodynamics): unit_delta
+- `ideal_turbojet_nozzle_pressure_ratio` (aerodynamics): product
+- `ideal_nozzle_exit_velocity` (aerodynamics): air_npr_sixteen
+- `ideal_nozzle_exit_temperature` (aerodynamics): air_half
+- `turbojet_specific_thrust` (aerodynamics): unit_fuel, with_fuel
+- `turbojet_tsfc` (aerodynamics): reciprocal
+- `turbojet_thermal_efficiency` (aerodynamics): static_point
+- `turbojet_propulsive_efficiency` (aerodynamics): classic_half
+- `turbojet_overall_efficiency` (aerodynamics): product_path
+- `ideal_brayton_thermal_efficiency` (aerodynamics): double
 - `breguet_range_jet` (aerodynamics): weight_ratio_two, scaled_cruise
 - `breguet_endurance_jet` (aerodynamics): weight_ratio_two, scaled_cruise
 - `breguet_range_prop` (aerodynamics): weight_ratio_two, scaled_cruise
@@ -426,6 +446,91 @@ Exempt from the identity check.
 
 ## Structures
 
+- `beam_bending_stress` (beam): unit_section, spar_sample
+- `beam_bending_stress_inertia` (beam): unit_inertia, matches_section_modulus
+- `section_modulus` (beam): unit_modulus, from_inertia_sample
+- `euler_critical_load` (column): unit_pinned, steel_sample, fixed_fixed_fourfold
+- `euler_critical_load_fixity` (column): unit_pinned_fixity, matches_end_fix_half
+- `effective_column_length` (column): pinned_unit, fixed_half
+- `end_fixity_coefficient` (column): pinned_unity, fixed_four
+- `radius_of_gyration` (column): unit_gyration, square_sample
+- `column_slenderness` (column): unit_slenderness, steel_sample_slenderness
+- `euler_critical_stress` (column): unit_stress, steel_sample_stress
 - `cylinder_hoop_stress` (shell): forty_inch_cylinder
 - `margin_of_safety` (design): zero_margin, quarter_margin
 - `weld_radial_mismatch` (shell): five_percent_mismatch, unit_offset
+
+## Mass properties
+
+- `total_mass` (mass): unit_parts, unequal_parts
+- `mass_first_moment` (mass): unit_arm, two_kg_at_half_metre
+- `center_of_mass_coordinate` (mass): unit_centroid, two_equal_masses
+- `point_mass_moment` (mass): unit_offset, two_metre_diagonal
+- `point_mass_product` (mass): unit_product, offset_pair
+- `parallel_axis_moment` (mass): point_mass_transfer, own_plus_transfer
+- `parallel_axis_product` (mass): point_mass_product_transfer, own_plus_product
+- `inertia_shift_to_cg` (mass): unit_shift, tn575_style_shift
+
+## Aerothermodynamics
+
+- `stagnation_convective_heat_flux` (aerotherm): unit_coefficient, air_table_coefficient
+- `freestream_kinetic_enthalpy` (aerotherm): hundred_m_s
+- `wall_enthalpy_perfect` (aerotherm): unit_wall
+- `stagnation_convective_heat_flux_velocity` (aerotherm): unit_velocity_form, earth_air_derived_k
+- `radiative_equilibrium_wall_temperature` (aerotherm): blackbody_unit, gray_shuttle_like
+- `ballistic_coefficient` (aerotherm): unit_mass_area, half_drag
+- `exponential_atmosphere_density` (aerotherm): at_reference, one_scale_height
+- `atmosphere_inverse_scale_height` (aerotherm): allen_eggers_earth
+- `allen_eggers_peak_deceleration` (aerotherm): vertical_unit, thirty_degrees
+- `allen_eggers_speed_at_peak_deceleration` (aerotherm): seven_km_s
+- `allen_eggers_density_at_peak_deceleration` (aerotherm): vertical_ballistic
+- `allen_eggers_peak_deceleration_altitude` (aerotherm): sea_level_reference
+- `allen_eggers_surface_speed` (aerotherm): heavy_vertical
+- `allen_eggers_surface_deceleration` (aerotherm): unit_surface
+
+## Spacecraft power
+
+- `flat_plate_solar_irradiance` (power): normal_incidence, sixty_degrees
+- `solar_array_ideal_power` (power): unit_panel
+- `solar_array_bol_power` (power): normal_with_knockdowns, cosine_half
+- `solar_array_bol_power_from_specific` (power): specific_normal
+- `solar_array_life_degradation` (power): five_years_half_percent, zero_life
+- `solar_array_eol_power` (power): ten_percent_life_loss
+- `solar_array_orbit_average_power` (power): thirty_five_percent_eclipse
+- `circular_orbit_eclipse_fraction` (power): beta_zero_unit, elevated_beta
+- `battery_energy_from_capacity_ah` (power): one_hundred_ah_at_twenty_eight_v, unit_wh
+- `battery_depth_of_discharge` (power): twenty_percent, full_nameplate
+- `battery_usable_energy` (power): half_dod_ninety_discharge
+- `battery_time_at_continuous_load` (power): forty_five_kj_at_fifty_w
+- `battery_discharge_energy` (power): hundred_w_half_hour_at_point_eight_eight
+- `battery_required_nameplate_energy` (power): twenty_percent_dod
+- `battery_required_capacity_ah` (power): thirty_volt_bus
+- `battery_charge_energy` (power): ninety_two_percent_charger
+- `battery_recharge_power` (power): leo_thirty_sixty
+- `battery_orbit_source_power` (power): leo_thousand_watt_load
+
+## Space communications
+
+- `wavelength_from_frequency` (comms): three_hundred_megahertz, codata_speed
+- `frequency_from_wavelength` (comms): one_metre
+- `free_space_path_loss` (comms): unit_geometry, ten_wavelengths
+- `free_space_path_loss_db` (comms): unit_geometry
+- `antenna_gain_from_effective_aperture` (comms): isotropic_unit
+- `antenna_gain_circular_aperture` (comms): half_efficiency_unit, ideal_uniform
+- `eirp` (comms): ten_watts_unity_gain
+- `friis_received_power` (comms): unit_link, with_gains
+- `thermal_noise_power` (comms): unit_kelvin_hertz
+- `noise_spectral_density` (comms): room_like
+- `carrier_to_noise_density` (comms): unit_density
+- `carrier_to_noise_ratio` (comms): ten_to_one
+- `eb_n0_from_cn0` (comms): megabit_link
+- `link_margin_eb_n0` (comms): three_db_linear
+
+## Dynamics and control
+
+- `natural_frequency_mass_stiffness` (control): unit_mass_stiffness, four_over_one
+- `damping_ratio_mass_stiffness` (control): critical_unit, half_critical
+- `damped_natural_frequency` (control): undamped_unit, half_damping
+- `second_order_percent_overshoot` (control): zero_damping, half_damping
+- `second_order_peak_time` (control): unit_undamped, half_damping
+- `second_order_settling_time` (control): two_percent_unit, two_percent_four_time_constants

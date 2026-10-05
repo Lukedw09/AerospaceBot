@@ -10,7 +10,7 @@ description: >-
 
 # AERO - BreguetRangeEndurance
 
-Use this skill for cruise range and endurance from the Breguet integrals in `aero-formulas`. Run the program once and quote its stdout. Do not recompute the numbers by hand.
+Use this skill for cruise range and endurance from the Breguet integrals in `FormulaCatalouge`. Run the program once and quote its stdout. Do not recompute the numbers by hand.
 
 Jet fuel flow follows thrust. Weight-based thrust-specific fuel consumption \(c_t\) has SI unit \(1/\mathrm{s}\):
 

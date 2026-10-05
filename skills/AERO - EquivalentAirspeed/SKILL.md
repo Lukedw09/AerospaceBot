@@ -28,7 +28,7 @@ Equivalent airspeed is `equivalent_airspeed`:
 V_e = V\sqrt{\frac{\rho}{\rho_{\mathrm{sl}}}}.
 \]
 
-That is the sea-level speed in `freestream_dynamic_pressure` with the same \(q\). \(V_e\) is not calibrated airspeed. The compressibility correction from equivalent airspeed to calibrated airspeed is not in `aero-formulas`.
+That is the sea-level speed in `freestream_dynamic_pressure` with the same \(q\). \(V_e\) is not calibrated airspeed. The compressibility correction from equivalent airspeed to calibrated airspeed is not in `FormulaCatalouge`.
 
 Viscosity is `sutherland_viscosity` with the 1976 constants \(\beta = 1.458\times 10^{-6}\,\mathrm{kg/(s\cdot m\cdot K^{1/2})}\) and \(S = 110.4\,\mathrm{K}\). Kinematic viscosity is `kinematic_viscosity`. Reynolds number is `reynolds_number`. `Re_per_m` is that formula at \(L = 1\,\mathrm{m}\). An omitted `--length` is that one metre.
 

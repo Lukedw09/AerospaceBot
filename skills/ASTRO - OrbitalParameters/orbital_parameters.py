@@ -93,6 +93,10 @@ ASSUMPTIONS = (
     "state uses true_anomaly_cosine_from_state and the sign of position_velocity_dot; "
     "ellipse anomalies use kepler_equation, true_anomaly_sine, true_anomaly_cosine, "
     "eccentric_anomaly_sine, and eccentric_anomaly_cosine; --M is ellipse-only; "
+    "time of flight on an ellipse is Delta M / n from mean_anomaly, with a zero "
+    "mean-anomaly span equal to orbital_period (one orbit); without --nu2 or --M2 "
+    "the printed tof is one orbit; with --nu2 or --M2 it is the forward coast from "
+    "the epoch anomaly to that second anomaly; open conics print tof: none; "
     "inertial position is inertial_position_x, inertial_position_y, and "
     "inertial_position_z; ellipse velocity uses radial_velocity_eccentric and "
     "transverse_velocity_eccentric; hyperbola velocity uses vis_viva with "
@@ -182,6 +186,16 @@ class Orbit:
     vy: float
     vz: float
     tle: Tle | None = None
+
+
+@dataclass(frozen=True)
+class TimeOfFlight:
+    """Ellipse coast from the epoch anomaly to nu2, or one full orbit."""
+
+    tof: float | None
+    span: str
+    nu2: float | None
+    M2: float | None
 
 
 def print_kv(key: str, value: object) -> None:
@@ -288,6 +302,28 @@ def orbital_period(mu: float, semi_major: float) -> float:
 def mean_motion(mu: float, semi_major: float) -> float:
     """mean_motion."""
     return math.sqrt(mu / semi_major**3)
+
+
+def mean_anomaly(n: float, t: float, tp: float) -> float:
+    """mean_anomaly."""
+    return n * (t - tp)
+
+
+def time_of_flight_ellipse(mu: float, semi_major: float, mean1: float, mean2: float) -> float:
+    """Forward coast on an ellipse from mean1 to mean2.
+
+    Uses mean_anomaly inverted: Delta t = Delta M / n. A zero mean-anomaly
+    span is one full orbit (orbital_period).
+    """
+    if semi_major <= 0.0:
+        raise ValueError("time of flight needs a positive semi-major axis")
+    n = mean_motion(mu, semi_major)
+    if n <= 0.0 or not math.isfinite(n):
+        raise ValueError("mean motion is not positive")
+    delta_m = wrap_two_pi(mean2 - mean1)
+    if delta_m == 0.0:
+        return orbital_period(mu, semi_major)
+    return delta_m / n
 
 
 def mean_motion_from_rev_per_day(rev_per_day: float) -> float:
@@ -1954,7 +1990,13 @@ def viewer_issues(stdout: str, png_path: str) -> str | None:
 
 
 def print_report(
-    body: Body, orbit: Orbit, elev: float, azim: float, path: Path, viewer: Path
+    body: Body,
+    orbit: Orbit,
+    flight: TimeOfFlight,
+    elev: float,
+    azim: float,
+    path: Path,
+    viewer: Path,
 ) -> None:
     print_kv("title", PLOT_TITLE)
     print_kv("assumptions", ASSUMPTIONS)
@@ -1987,6 +2029,19 @@ def print_report(
         print_kv("M", "none")
     else:
         print_kv("M_rad", orbit.M)
+    if flight.nu2 is None:
+        print_kv("nu2", "none")
+    else:
+        print_kv("nu2_rad", flight.nu2)
+    if flight.M2 is None:
+        print_kv("M2", "none")
+    else:
+        print_kv("M2_rad", flight.M2)
+    print_kv("tof_span", flight.span)
+    if flight.tof is None:
+        print_kv("tof", "none")
+    else:
+        print_kv("tof_s", flight.tof)
     print_kv("p_m", orbit.p)
     print_kv("energy_J_kg", orbit.energy)
     print_kv("h_m2_s", orbit.h)
@@ -2132,12 +2187,44 @@ def resolve_request(ns: argparse.Namespace, body: Body) -> Orbit:
     )
 
 
+def resolve_time_of_flight(
+    mu: float,
+    orbit: Orbit,
+    nu2: float | None,
+    mean2: float | None,
+) -> TimeOfFlight:
+    """Forward ellipse coast from the epoch anomaly, or one orbit when no end is given."""
+    if nu2 is not None and mean2 is not None:
+        raise ValueError("pass at most one of --nu2 or --M2")
+    if orbit.conic != "ellipse" or orbit.a is None or orbit.M is None or orbit.period is None:
+        if nu2 is not None or mean2 is not None:
+            raise ValueError("time of flight between anomalies is defined on an ellipse only")
+        return TimeOfFlight(tof=None, span="none", nu2=None, M2=None)
+    if nu2 is None and mean2 is None:
+        return TimeOfFlight(tof=orbit.period, span="one_orbit", nu2=None, M2=None)
+    if mean2 is not None:
+        require_finite(mean2, "--M2")
+        eccentric2 = solve_kepler(mean2, orbit.e)
+        end_nu = nu_from_eccentric(orbit.e, eccentric2)
+        end_m = wrap_pi(mean2)
+    else:
+        assert nu2 is not None
+        require_finite(nu2, "--nu2")
+        end_nu = wrap_pi(nu2)
+        end_m = wrap_pi(kepler_equation(eccentric_from_true(orbit.e, end_nu), orbit.e))
+    tof = time_of_flight_ellipse(mu, orbit.a, orbit.M, end_m)
+    delta_m = wrap_two_pi(end_m - orbit.M)
+    span = "one_orbit" if delta_m == 0.0 else "anomaly_pair"
+    return TimeOfFlight(tof=tof, span=span, nu2=end_nu, M2=end_m)
+
+
 def run(ns: argparse.Namespace) -> int:
     body = resolve_body(ns.R0, ns.flattening, ns.j2, ns.ae)
     elev, azim = resolve_camera(ns.elev, ns.azim)
     orbit = resolve_request(ns, body)
     if body.j2 > 0.0 and orbit.conic != "ellipse":
         raise ValueError("J2 secular rates are defined on an ellipse only")
+    flight = resolve_time_of_flight(body.mu, orbit, ns.nu2, ns.M2)
     script_dir = Path(__file__).resolve().parent
     out_path = Path(ns.out) if ns.out else script_dir / "orbital_parameters.png"
     out_path = out_path.resolve()
@@ -2145,7 +2232,7 @@ def run(ns: argparse.Namespace) -> int:
     scene = build_scene(body, orbit, elev, azim)
     plot_orbit(out_path, scene)
     write_viewer_html(viewer_path, scene)
-    print_report(body, orbit, elev, azim, out_path, viewer_path)
+    print_report(body, orbit, flight, elev, azim, out_path, viewer_path)
     if ns.open:
         webbrowser.open(viewer_path.as_uri())
     return 0
@@ -2241,6 +2328,10 @@ _UNCHANGED_WHEN_FLATTENED = (
     "omega_rad",
     "nu_rad",
     "M_rad",
+    "nu2",
+    "M2",
+    "tof_span",
+    "tof_s",
     "p_m",
     "energy_J_kg",
     "h_m2_s",
@@ -2540,6 +2631,13 @@ def _checklist_issue(
             return f"{name} / ellipse motion"
         if "period_s" not in values or "ra_m" not in values or "M_rad" not in values:
             return f"{name} / stdout ellipse"
+        if (
+            values.get("tof_span") != "one_orbit"
+            or "tof_s" not in values
+            or values.get("nu2") != "none"
+            or values.get("M2") != "none"
+        ):
+            return f"{name} / stdout ellipse time of flight"
         if not scene.show_wedge or len(scene.wedge_km) < 3:
             return f"{name} / wedge"
     else:
@@ -2551,7 +2649,13 @@ def _checklist_issue(
             return f"{name} / hyperbola rate"
         if not (scene.kepler.nu_min < orbit.nu < scene.kepler.nu_max):
             return f"{name} / hyperbola window {scene.kepler.nu_min} {orbit.nu} {scene.kepler.nu_max}"
-        if values.get("period") != "none" or values.get("apoapsis") != "none" or values.get("M") != "none":
+        if (
+            values.get("period") != "none"
+            or values.get("apoapsis") != "none"
+            or values.get("M") != "none"
+            or values.get("tof") != "none"
+            or values.get("tof_span") != "none"
+        ):
             return f"{name} / stdout hyperbola"
         if not scene.show_wedge:
             return f"{name} / wedge"
@@ -2701,6 +2805,18 @@ def run_check() -> int:
     expected_period = 16.0 * math.pi
     if simple.period is None or not close_enough(simple.period, expected_period, expected_period):
         return fail("periapsis period")
+    if simple.M is None or simple.a is None:
+        return fail("periapsis mean anomaly")
+    one_orbit = time_of_flight_ellipse(1.0, simple.a, simple.M, simple.M)
+    if not close_enough(one_orbit, expected_period, expected_period):
+        return fail("one-orbit time of flight")
+    half_orbit = time_of_flight_ellipse(1.0, simple.a, 0.0, math.pi)
+    if not close_enough(half_orbit, 0.5 * expected_period, expected_period):
+        return fail("half-orbit time of flight")
+    # mean_anomaly is the defining relation M = n*(t - tp); invert for Delta t.
+    n_simple = mean_motion(1.0, simple.a)
+    if not close_enough(mean_anomaly(n_simple, half_orbit, 0.0), math.pi, 1.0):
+        return fail("mean_anomaly does not recover the half-orbit coast")
     from_speed = specific_orbital_energy_from_speed(speed_y, 1.0, 2.0)
     if not close_enough(from_speed, specific_orbital_energy(1.0, 4.0), 1.0):
         return fail("energy from speed does not match specific_orbital_energy")
@@ -3107,6 +3223,10 @@ def run_check() -> int:
             "omega_rad",
             "nu_rad",
             "M_rad",
+            "nu2",
+            "M2",
+            "tof_span",
+            "tof_s",
             "p_m",
             "energy_J_kg",
             "h_m2_s",
@@ -3146,6 +3266,45 @@ def run_check() -> int:
             return fail("Keplerian nodal rate")
         if "period: none" in text or "apoapsis: none" in text:
             return fail("ellipse omitted the period or apoapsis")
+        if values.get("tof_span") != "one_orbit" or values.get("nu2") != "none" or values.get("M2") != "none":
+            return fail("default time of flight is not one orbit")
+        if abs(float(values["tof_s"]) - float(values["period_s"])) > 1e-6 * float(values["period_s"]):
+            return fail("one-orbit tof does not match period")
+        tof_out = str(Path(tmp) / "tof.png")
+        code_tof, text_tof, err_tof = invoke(
+            [
+                "--a",
+                "4",
+                "--e",
+                "0.5",
+                "--i",
+                "0",
+                "--raan",
+                "0",
+                "--aop",
+                "0",
+                "--nu",
+                "0",
+                "--nu2",
+                str(math.pi),
+                "--R0",
+                "1",
+                "--flattening",
+                "0",
+                "--out",
+                tof_out,
+            ]
+        )
+        if code_tof != 0:
+            return fail(f"anomaly-pair tof failed: {err_tof}")
+        tof_values = parse_stdout(text_tof)
+        if tof_values.get("tof_span") != "anomaly_pair":
+            return fail("apoapsis coast did not mark anomaly_pair")
+        period_printed = float(tof_values["period_s"])
+        if abs(float(tof_values["tof_s"]) - 0.5 * period_printed) > 1e-6 * period_printed:
+            return fail("apoapsis coast is not half a period")
+        if abs(float(tof_values["nu2_rad"]) - math.pi) > 1e-6:
+            return fail("printed nu2")
         issue = viewer_issues(text, out)
         if issue:
             return fail(issue)
@@ -3271,10 +3430,17 @@ def run_check() -> int:
             return fail(f"hyperbola main returned {code}: {err}")
         if not Path(hyper_out).read_bytes().startswith(b"\x89PNG"):
             return fail("hyperbola run did not write a PNG")
-        if "period: none" not in text or "apoapsis: none" not in text or "M: none" not in text:
-            return fail("hyperbola stdout still has a period, apoapsis, or mean anomaly")
+        if (
+            "period: none" not in text
+            or "apoapsis: none" not in text
+            or "M: none" not in text
+            or "tof: none" not in text
+        ):
+            return fail("hyperbola stdout still has a period, apoapsis, mean anomaly, or tof")
         if parse_stdout(text).get("conic") != "hyperbola":
             return fail("hyperbola conic label")
+        if parse_stdout(text).get("tof_span") != "none":
+            return fail("hyperbola tof_span")
         hyper_issue = viewer_issues(text, hyper_out)
         if hyper_issue:
             return fail(hyper_issue)
@@ -3417,6 +3583,8 @@ def run_check() -> int:
         ["--a", "-2e7", "--e", "1.4", "--i", "0.2", "--raan", "0.1", "--aop", "0.1", "--M", "0.2"],
         ["--a", "-2e7", "--e", "1.4", "--i", "0.2", "--raan", "0.1", "--aop", "0.1", "--nu", "3"],
         ["--a", "-2e7", "--e", "1.4", "--i", "0.2", "--raan", "0.1", "--aop", "0.1", "--nu", "0.5", "--j2"],
+        ["--a", "-2e7", "--e", "1.4", "--i", "0.2", "--raan", "0.1", "--aop", "0.1", "--nu", "0.5", "--nu2", "0.6"],
+        ["--a", "1e7", "--e", "0.1", "--i", "0.2", "--raan", "0.1", "--aop", "0.1", "--nu", "0.2", "--nu2", "0.3", "--M2", "0.4"],
         ["--ae", "6378137", "--a", "1e7", "--e", "0.1", "--i", "0.2", "--raan", "0.1", "--aop", "0.1", "--nu", "0.2"],
         ["--rx", "1", "--ry", "0", "--rz", "0", "--vx", "1", "--vy", "0", "--vz", "0"],
         [],
@@ -3432,6 +3600,7 @@ def run_check() -> int:
 
     print("check: pass")
     print_kv("unit_period_s", simple.period)
+    print_kv("unit_tof_s", one_orbit)
     print_kv("unit_h_m2_s", simple.h)
     print_kv("inclined_nu_rad", inclined.nu)
     return 0
@@ -3458,6 +3627,8 @@ def _bind_negative_values(argv: list[str]) -> list[str]:
         "--aop",
         "--nu",
         "--M",
+        "--nu2",
+        "--M2",
         "--rx",
         "--ry",
         "--rz",
@@ -3500,6 +3671,18 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--aop", type=float, default=None, help="argument of periapsis [rad]")
     parser.add_argument("--nu", type=float, default=None, help="true anomaly [rad]")
     parser.add_argument("--M", type=float, default=None, help="mean anomaly [rad], ellipse only")
+    parser.add_argument(
+        "--nu2",
+        type=float,
+        default=None,
+        help="end true anomaly for time of flight [rad], ellipse only",
+    )
+    parser.add_argument(
+        "--M2",
+        type=float,
+        default=None,
+        help="end mean anomaly for time of flight [rad], ellipse only",
+    )
     parser.add_argument("--rx", type=float, default=None, help="inertial position x [m]")
     parser.add_argument("--ry", type=float, default=None, help="inertial position y [m]")
     parser.add_argument("--rz", type=float, default=None, help="inertial position z [m]")

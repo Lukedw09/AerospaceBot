@@ -5,9 +5,16 @@ description: >-
   context, then either calculate with it or present it with every variable and
   unit defined. Use when the user asks for an aerospace equation, a flight or
   orbital calculation, atmosphere properties, a motor-case stress or margin of
-  safety, or what a formula's symbols and units mean. Use only
-  formulas listed in checks/check.md. Definitions listed there are exempt
-  from the identity check.
+  safety, elastic Euler column buckling load or critical stress, center of mass or rigid-body inertia, stagnation-point heating,
+  radiative-equilibrium wall temperature, Allen-Eggers ballistic-entry peak
+  deceleration or peak-load altitude in an exponential atmosphere, solar-array beginning- or end-of-life
+  power, circular-orbit eclipse fraction, battery usable energy or required
+  capacity with depth of discharge and charge/discharge efficiency, vacuum
+  free-space path loss, Friis received power, antenna gain from aperture
+  efficiency, carrier-to-noise, Eb/N0, link margin, linear second-order step
+  overshoot or settling time, ideal Brayton turbojet specific thrust or TSFC,
+  or what a formula's symbols and units mean. Use only formulas listed in
+  checks/check.md. Definitions listed there are exempt from the identity check.
 ---
 
 # Aero Formulas
@@ -16,7 +23,7 @@ Read [formulas.md](formulas.md) before answering. Use only a formula whose id is
 
 ## Select the formula
 
-1. Start in the category that matches the question: Compressible flow, Atmosphere, Rocket propulsion (including two-body orbits and anomalies), Aerodynamics, or Structures. Read another category only if that one does not contain a fit.
+1. Start in the category that matches the question: Compressible flow, Atmosphere, Rocket propulsion (including two-body orbits and anomalies), Aerodynamics (including ideal propeller and ideal Brayton turbojet), Structures, Mass properties, Aerothermodynamics, Spacecraft power, Space communications, or Dynamics and control. Read another category only if that one does not contain a fit.
 2. Use the user's wording, known quantities, and requested result to choose the formula that fits.
 3. Reject any formula that is not listed in [checks/check.md](checks/check.md). A listed definition is allowed.
 4. If more than one listed formula fits, choose the one that uses the quantities the user already has. If the choice is still ambiguous, ask which result they want before calculating.

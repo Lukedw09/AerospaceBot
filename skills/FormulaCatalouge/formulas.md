@@ -6,13 +6,18 @@ The file is grouped so a search can start in one category:
 
 - Compressible flow: perfect-gas thermodynamics, isentropic flow, area-Mach, shocks, Prandtl-Meyer expansion, Taylor–Maccoll flow on a circular cone, calorically imperfect air, Newtonian viscosity, and Reynolds number.
 - Atmosphere: the 1976 U.S. Standard Atmosphere from the surface to 1000 km, including geopotential and gravity, the seven hydrostatic layers below 86 km, kinetic temperature above 86 km, and the transport properties of that model. Moist-air point properties (saturation vapor pressure, humidity, and the density of one dry-air-plus-water parcel) are recorded separately from those dry hydrostatic layers and from the Glenn fit. A three-zone NASA Glenn curve fit is recorded separately.
-- Rocket propulsion: thrust, impulse, mass ratio, nozzles, solid- and liquid-propellant relations, powered-ascent gravity, drag, and steering losses from a spherical body, two-body orbital speed, period, half-period coast, energy, plane-change impulse, anomalies, mean motion, the conversion between classical elements and an inertial state, Greenwich angle, Earth-fixed axes, and geodetic latitude on an oblate spheroid.
-- Aerodynamics: incompressible Bernoulli, force and moment coefficients, the two-dimensional Prandtl–Glauert compressibility correction, the isentropic critical pressure coefficient and critical Mach number, trapezoidal wing planform, aspect ratio, induced drag, finite-wing lift-curve slope and induced angle, NACA four-digit mean-line and thickness ordinates, thin-section lift and quarter-chord moment, stall speed, equivalent airspeed, load factor, coordinated level-turn bank, radius, and rate, the sustained-turn load factor from a parabolic polar with thrust equal to drag, takeoff and landing ground-roll force, acceleration, and the constant-thrust distance and time integrals, ideal actuator-disk propeller thrust, induced velocity, and propulsive efficiency, steady unpowered glide angle, sink rate, and range from height, Breguet range and endurance for jet and propeller cruise, and the stick-fixed neutral point and static margin.
-- Structures: thin-wall motor-case hoop stress, margin of safety, and longitudinal-weld radial mismatch.
+- Rocket propulsion: thrust, impulse, mass ratio, nozzles, solid- and liquid-propellant relations, powered-ascent gravity, drag, and steering losses from a spherical body, two-body orbital speed, period, half-period coast, energy, plane-change impulse, Laplace sphere of influence, anomalies, mean motion, the conversion between classical elements and an inertial state, Greenwich angle, Earth-fixed axes, and geodetic latitude on an oblate spheroid.
+- Aerodynamics: incompressible Bernoulli, force and moment coefficients, the two-dimensional Prandtl–Glauert compressibility correction, the isentropic critical pressure coefficient and critical Mach number, trapezoidal wing planform, aspect ratio, induced drag, finite-wing lift-curve slope and induced angle, NACA four-digit mean-line and thickness ordinates, thin-section lift and quarter-chord moment, stall speed, equivalent airspeed, load factor, coordinated level-turn bank, radius, and rate, the sustained-turn load factor from a parabolic polar with thrust equal to drag, symmetric pull-up load factor, radius, and pitch rate, takeoff and landing ground-roll force, acceleration, and the constant-thrust distance and time integrals, ideal actuator-disk propeller thrust, induced velocity, and propulsive efficiency, ideal air-breathing Brayton turbojet specific thrust, TSFC, and thermal/propulsive/overall efficiency, steady unpowered glide angle, sink rate, and range from height, Breguet range and endurance for jet and propeller cruise, and the stick-fixed neutral point and static margin.
+- Structures: pure beam / spar bending stress and elastic section modulus, elastic Euler column buckling with end-fix factor, thin-wall motor-case hoop stress, margin of safety, and longitudinal-weld radial mismatch.
+- Mass properties: total mass, center-of-mass coordinate, point-mass moments and products of inertia, parallel-axis transfer of a part inertia to a parallel axis, and the shift of a reference-origin inertia to the system CG.
+- Aerothermodynamics: stagnation-point convective heating on a blunt nose (Sutton–Graves heat-transfer coefficient and cold-wall freestream-density form), radiative-equilibrium wall temperature, and Allen–Eggers nonlifting ballistic-entry peak deceleration in an exponential atmosphere.
+- Spacecraft power: flat-plate solar-array beginning- and end-of-life power with packing and inherent degradation, compound life degradation, circular-orbit eclipse fraction for orbit-average power, and battery energy budget with depth of discharge, charge and discharge efficiencies, and orbit energy balance.
+- Space communications: vacuum free-space path loss, Friis received power, circular-aperture antenna gain with aperture efficiency, thermal noise \(kTB\), carrier-to-noise density, \(E_b/N_0\), and link margin against a required \(E_b/N_0\).
+- Dynamics and control: linear constant-coefficient second-order unit-step metrics from natural frequency and damping ratio, or from mass, stiffness, and viscous damping (damped frequency, percent overshoot, peak time, envelope settling time).
 
-The rocket symbol \(k\) is the same ratio of specific heats as \(\gamma\). Standard sea-level gravitational acceleration is \(g_0 = 9.80665\,\mathrm{m/s}^2\).
+The rocket symbol \(k\) is the same ratio of specific heats as \(\gamma\). In the dynamics-and-control records \(k\) is stiffness (N/m), not that ratio. Standard sea-level gravitational acceleration is \(g_0 = 9.80665\,\mathrm{m/s}^2\).
 
-Each formula is also written as a script record. In those records \(\gamma\) is `g`, powers are `**`, and the expression is the quantity named by the record. `partial`, `integral`, `log`, `exp`, `sin`, `cos`, `tan`, `cot`, `atan`, and `asin` are function calls.
+Each formula is also written as a script record. In those records \(\gamma\) is `g`, powers are `**`, and the expression is the quantity named by the record. `partial`, `integral`, `log`, `exp`, `sin`, `cos`, `tan`, `cot`, `atan`, `asin`, and `acos` are function calls.
 
 # Compressible flow
 
@@ -2717,6 +2722,62 @@ symbols: G, M
 
 Assumptions: point-mass or spherical inverse-square gravity. NIST CODATA 2022 gives \(G = 6.67430\times 10^{-11}\,\mathrm{m}^3\,\mathrm{kg}^{-1}\,\mathrm{s}^{-2}\). For Earth, \(\mu \approx g_0 R_0^{2}\) with the radius used in the circular-orbit and escape formulas. In this section \(M\) is mass, not Mach number or moment.
 
+## Sphere of influence
+
+Classical Laplace radius of the sphere of influence of a secondary body of gravitational parameter \(\mu_2\) about a primary of gravitational parameter \(\mu_1\), separated by center-to-center distance \(D\). Burrows, NASA TM X-53485, derives the exact non-spherical activity surface and records the isotropic patched-conic approximation that keeps the leading mass-ratio power.
+
+\[
+r_{\mathrm{SOI}} = D\left(\frac{\mu_2}{\mu_1}\right)^{2/5} = D\left(\frac{m_2}{m_1}\right)^{2/5}
+\]
+
+```formula
+## sphere_of_influence_radius
+family: flight
+expr: D*(mu2/mu1)**(2/5)
+symbols: D, mu2, mu1
+```
+
+```formula
+## sphere_of_influence_radius_from_mass
+family: flight
+expr: D*(m2/m1)**(2/5)
+symbols: D, m2, m1
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(r_{\mathrm{SOI}}\) | Sphere-of-influence radius about the secondary | m |
+| \(D\) | Distance between the two body centers | m |
+| \(\mu_1\) | Gravitational parameter of the primary (central) body | m³/s² |
+| \(\mu_2\) | Gravitational parameter of the secondary (third) body | m³/s² |
+| \(m_1\) | Mass of the primary | kg |
+| \(m_2\) | Mass of the secondary | kg |
+
+Assumptions: restricted three-body patched-conic handoff. Inverse-square point masses, \(\mu_2<\mu_1\) (equivalently \(m_2<m_1\)), and the isotropic Laplace form that omits Burrows’ angle-dependent Tisserand corrections. \(r_{\mathrm{SOI}}\) is measured from the secondary center. With \(\mu=GM\), the mass and \(\mu\) forms are identical. Swapping the labels gives the reciprocal sphere of the primary relative to the secondary, \(D(\mu_1/\mu_2)^{2/5}\).
+
+## Sphere of influence in central-body radii
+
+Laplace sphere-of-influence radius divided by the central-body radius \(R_0\).
+
+\[
+\frac{r_{\mathrm{SOI}}}{R_0}
+\]
+
+```formula
+## sphere_of_influence_in_central_radii
+family: flight
+expr: rsoi/R0
+symbols: rsoi, R0
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(r_{\mathrm{SOI}}/R_0\) | Sphere of influence in central-body radii | dimensionless |
+| \(r_{\mathrm{SOI}}\) | Sphere-of-influence radius about the secondary | m |
+| \(R_0\) | Central-body radius | m |
+
+Assumptions: same Laplace radius as `sphere_of_influence_radius`. \(R_0>0\). For Earth, the default two-body radius is \(R_0=6.3742\times 10^{6}\,\mathrm{m}\) unless the user gives another value.
+
 ## Vis-viva speed
 
 Relative speed on a Keplerian two-body orbit, from conservation of specific mechanical energy. NASA SP *The Orbital Mechanics of Flight Mechanics* develops the inverse-square two-body problem from which this follows.
@@ -4657,7 +4718,7 @@ Assumptions: the derivative is at constant \(K\).
 
 # Aerodynamics
 
-Incompressible flow and the dimensionless force and moment coefficients. Freestream dynamic pressure \(q_{\infty}\) is the dynamic-pressure relation in Compressible flow evaluated far ahead of the body. In this category \(V\) is flow speed. The two-dimensional Prandtl–Glauert factor follows NACA TN 1127. The isentropic critical pressure coefficient is `pressure_coefficient_from_mach` at local Mach 1 on the same stagnation streamline as NACA Report 1135. Critical Mach number follows NACA TN 1813: the freestream Mach at which that critical coefficient equals the Prandtl–Glauert correction of the incompressible minimum pressure coefficient. Wing geometry and induced drag follow NASA Glenn's Beginner's Guide (public-domain educational pages). The finite-wing lift curve follows NASA TP-2414 and NACA TN 1862. NACA four-digit thickness and mean-line ordinates follow NACA Report 460 and NASA TM X-3284. Thin-section lift, zero-lift angle, and quarter-chord moment follow Munk, NACA Report 142, applied to that mean line. Stall speed and load factor follow the usual force definitions used in FAA-H-8083 and NASA SP-367. Unaccelerated rate of climb is the specific excess power \((T-D)V/W\) of the X-57 power-off-glide note, with climb angle from that vertical component as in FAA-H-8083-25C Chapter 11. Coordinated level-turn bank, radius, and rate follow FAA-H-8083-25C Chapter 5. The sustained-turn load factor is that level-turn \(n\) with `drag_polar` when thrust equals drag. Takeoff ground roll on a level dry runway follows Diehl, NACA Report 450, with Hartman TN 557 resistance \(\mu(W-L)+D\) and Wetmore Report 583 rolling friction. Landing ground roll from contact to rest follows Gustafson, NACA WR L-245, with the same resistance, the same \(a=gF/W\), and Diehl’s integrals run from touchdown speed to zero. The default touchdown factor \(1.3\) is the FAA-H-8083-3C final-approach multiple of landing stall. Ideal propeller thrust, disk speed, induced velocity, and propulsive efficiency follow NASA Glenn's actuator-disk pages, with the incompressible ideal-efficiency definition of NACA RM L53A07. Steady unpowered glide angle, horizontal range from a height, and the force balance \(L=W\cos a\), \(D=W\sin a\) follow those same Glenn glide pages. Sink rate is the vertical component of true airspeed on that path. Breguet propeller range and endurance follow NACA Report 234. Breguet jet range follows Guynn (NASA Langley) and the cruise derivation in NASA TN D-6707. The stick-fixed neutral point and static margin follow NACA TN 1670.
+Incompressible flow and the dimensionless force and moment coefficients. Freestream dynamic pressure \(q_{\infty}\) is the dynamic-pressure relation in Compressible flow evaluated far ahead of the body. In this category \(V\) is flow speed. The two-dimensional Prandtl–Glauert factor follows NACA TN 1127. The isentropic critical pressure coefficient is `pressure_coefficient_from_mach` at local Mach 1 on the same stagnation streamline as NACA Report 1135. Critical Mach number follows NACA TN 1813: the freestream Mach at which that critical coefficient equals the Prandtl–Glauert correction of the incompressible minimum pressure coefficient. Wing geometry and induced drag follow NASA Glenn's Beginner's Guide (public-domain educational pages). The finite-wing lift curve follows NASA TP-2414 and NACA TN 1862. NACA four-digit thickness and mean-line ordinates follow NACA Report 460 and NASA TM X-3284. Thin-section lift, zero-lift angle, and quarter-chord moment follow Munk, NACA Report 142, applied to that mean line. Stall speed and load factor follow the usual force definitions used in FAA-H-8083 and NASA SP-367. Unaccelerated rate of climb is the specific excess power \((T-D)V/W\) of the X-57 power-off-glide note, with climb angle from that vertical component as in FAA-H-8083-25C Chapter 11. Coordinated level-turn bank, radius, and rate follow FAA-H-8083-25C Chapter 5. The sustained-turn load factor is that level-turn \(n\) with `drag_polar` when thrust equals drag. Symmetric pull-up load factor, flight-path radius, and pitch rate follow Johnson, NASA/TP-2009-215402 (NDARC), for an instantaneous wings-level pull-up from level flight. Takeoff ground roll on a level dry runway follows Diehl, NACA Report 450, with Hartman TN 557 resistance \(\mu(W-L)+D\) and Wetmore Report 583 rolling friction. Landing ground roll from contact to rest follows Gustafson, NACA WR L-245, with the same resistance, the same \(a=gF/W\), and Diehl’s integrals run from touchdown speed to zero. The default touchdown factor \(1.3\) is the FAA-H-8083-3C final-approach multiple of landing stall. Ideal propeller thrust, disk speed, induced velocity, and propulsive efficiency follow NASA Glenn's actuator-disk pages, with the incompressible ideal-efficiency definition of NACA RM L53A07. Steady unpowered glide angle, horizontal range from a height, and the force balance \(L=W\cos a\), \(D=W\sin a\) follow those same Glenn glide pages. Sink rate is the vertical component of true airspeed on that path. Breguet propeller range and endurance follow NACA Report 234. Breguet jet range follows Guynn (NASA Langley) and the cruise derivation in NASA TN D-6707. The stick-fixed neutral point and static margin follow NACA TN 1670.
 
 ## Bernoulli's relation
 
@@ -5920,7 +5981,54 @@ symbols: q, S, T, CD0, pi, AR, e, W
 | \(e\) | Oswald efficiency | dimensionless |
 | \(W\) | Weight | N |
 
-Assumptions: steady, coordinated, constant-altitude flight so \(L\cos\phi = W\) and \(T = D\). \(T > q S C_{D0}\) or \(n\) is not real. \(0 < e \le 1\). This \(n\) is the bank the engine can hold at that speed. It is not the stall limit. A turn still needs \(n > 1\). For constant useful power, replace \(T\) by `useful_thrust`. At the maximum-\(L/D\) condition \(C_D = 2 C_{D0}\), constant thrust gives the peak \(n = (T/W)(L/D)_{\max}\).
+Assumptions: steady, coordinated, constant-altitude flight so \(L\cos\phi = W\) and \(T = D\). \(T > q S C_{D0}\) or \(n\) is not real. \(0 < e \le 1\). This \(n\) is the bank the engine can hold at that speed. It is not the stall limit. A turn still needs \(n > 1\). For constant useful power, replace \(T\) by `useful_thrust`. At the maximum-\(L/D\) condition \(C_D = 2 C_{D0}\), constant thrust gives the peak \(n = (T/W)(L/D)_{\max}\). The same \(n\) at \(T = D\) and \(L = nW\) is the sustained load factor available in a symmetric pull-up at that speed.
+
+## Symmetric pull-up
+
+Instantaneous wings-level pull-up in the vertical plane, started from straight and level flight. Lift exceeds weight, so the path curves upward with flight-path radius \(R\). With flight-path angle \(\gamma = 0\) at initiation, the normal force balance is \(L - W = m V^{2}/R\) with \(m = W/g\). Johnson, NASA/TP-2009-215402 (NDARC), writes that balance as \(n = 1 + V^{2}/(gR)\) for a constant-load-factor pull-up segment, with pitch rate \(\dot{\theta} = V/R\).
+
+\[
+n = 1 + \frac{V^{2}}{g R}
+\]
+
+```formula
+## pullup_load_factor
+family: aerodynamics
+expr: 1 + V**2/(g*R)
+symbols: V, g, R
+```
+
+\[
+R = \frac{V^{2}}{g(n - 1)}
+\]
+
+```formula
+## pullup_radius
+family: aerodynamics
+expr: V**2/(g*(n - 1))
+symbols: V, g, n
+```
+
+\[
+\omega = \frac{g(n - 1)}{V}
+\]
+
+```formula
+## pullup_pitch_rate
+family: aerodynamics
+expr: g*(n - 1)/V
+symbols: g, n, V
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(n\) | Load factor | dimensionless |
+| \(R\) | Pull-up flight-path radius | m |
+| \(\omega\) | Pitch rate \(\dot{\theta}\) | rad/s |
+| \(V\) | True airspeed | m/s |
+| \(g\) | Gravitational acceleration | m/s² |
+
+Assumptions: wings-level symmetric pull-up initiated from horizontal flight so \(\gamma = 0\) and \(L - W = m V^{2}/R\). \(n > 1\) so the radius is finite and positive. \(\omega = V/R\). Equivalently \(n = 1 + V\omega/g\). Use \(g = 9.80665\,\mathrm{m/s}^{2}\) unless the user gives another value. This is an instantaneous (point) performance statement at the given speed; a sustained circular loop at constant properties is not implied. Incompressible dynamic pressure \(\frac{1}{2}\rho V^{2}\) sets the stall limit: the largest \(n\) at a speed is `load_factor` from `lift_force` with \(C_{L,\max}\), the same speed–stall relation as `stall_speed` with \(W\) replaced by \(nW\). The engine-limited sustained \(n\) at a speed is `sustained_turn_load_factor`, with thrust equal to drag at \(L = nW\).
 
 ## Takeoff ground roll
 
@@ -6293,6 +6401,179 @@ symbols: V0, Vp
 | \(\eta\) | Ideal propulsive efficiency | dimensionless |
 
 Assumptions: incompressible, inviscid, uniformly loaded actuator disk of zero thickness. No swirl, no tip loss, and no blade profile drag. \(D > 0\), \(A > 0\), \(\rho > 0\), \(V_0 > 0\), \(V_e > V_0\), and \(v_i > 0\). Then \(0 < \eta < 1\). \(P\) is shaft power in this ideal model, not the useful power \(T V_0\). Useful power is `useful_thrust` times speed after this \(\eta\), or equivalently \(T V_0\). Static hover \(V_0 = 0\) makes \(\eta = 0\) and is not these flight records. Compressible actuator-disk solutions in RM L53A07 are not these records.
+
+## Ideal turbojet (Brayton)
+
+Parametric ideal air-breathing turbojet from the NASA Glenn Brayton / component pages (V77), with efficiency and TSFC definitions from Morris TM 78653 (V78). Calorically perfect gas with constant \(c_p\) and \(\gamma\). Perfect inlet recovery, isentropic compressor and turbine, constant-pressure burner with \(\mathrm{BPR}=1\) and burner efficiency 1, adiabatic fully expanded nozzle (\(p_e=p_0\)), no fan, and no afterburner. Freestream totals use `stagnation_temperature` and `stagnation_pressure`. \(T_{t2}=T_{t0}\) and \(p_{t2}=p_{t0}\). Turbine inlet temperature is \(T_{t4}\). Compressor pressure ratio is \(\pi_c=p_{t3}/p_{t2}\).
+
+Isentropic compressor temperature ratio and work per unit airflow:
+
+\[
+\tau_c = \pi_c^{(\gamma-1)/\gamma},\qquad
+w_c = c_p T_{t2}(\tau_c - 1) = c_p(T_{t3}-T_{t2})
+\]
+
+```formula
+## isentropic_compressor_temperature_ratio
+family: aerodynamics
+expr: pi_c**((g - 1)/g)
+symbols: pi_c, g
+```
+
+```formula
+## ideal_compressor_work
+family: aerodynamics
+expr: cp*Tt2*(tau_c - 1)
+symbols: cp, Tt2, tau_c
+```
+
+Ideal compressor–turbine shaft match (component efficiencies 1; fuel mass neglected in the match, as on the Glenn matching page):
+
+\[
+\pi_t^{(\gamma-1)/\gamma} = 1 - \frac{T_{t2}}{T_{t4}}(\tau_c - 1)
+\]
+
+```formula
+## ideal_turbine_temperature_ratio
+family: aerodynamics
+expr: 1 - (Tt2/Tt4)*(tau_c - 1)
+symbols: Tt2, Tt4, tau_c
+```
+
+```formula
+## ideal_turbine_pressure_ratio
+family: aerodynamics
+expr: tau_t**(g/(g - 1))
+symbols: tau_t, g
+```
+
+Burner fuel–air ratio from the energy balance with heating value \(Q\) and burner efficiency 1:
+
+\[
+f = \frac{c_p(T_{t4}-T_{t3})}{Q - c_p T_{t4}}
+\]
+
+```formula
+## burner_fuel_air_ratio
+family: aerodynamics
+expr: cp*(Tt4 - Tt3)/(Q - cp*Tt4)
+symbols: cp, Tt4, Tt3, Q
+```
+
+Nozzle pressure ratio for the ideal single-spool turbojet (\(\mathrm{BPR}=1\), perfect nozzle) and exit velocity and static temperature:
+
+\[
+\mathrm{NPR} = \frac{p_{t0}}{p_0}\,\pi_c\,\pi_t,\qquad
+V_e = \sqrt{2 c_p T_{t5}\left(1 - \mathrm{NPR}^{-(\gamma-1)/\gamma}\right)},\qquad
+T_e = T_{t5}\,\mathrm{NPR}^{-(\gamma-1)/\gamma}
+\]
+
+with \(T_{t5}=T_{t4}\tau_t\) and \(T_{t8}=T_{t5}\).
+
+```formula
+## ideal_turbojet_nozzle_pressure_ratio
+family: aerodynamics
+expr: (pt0/p0)*pi_c*pi_t
+symbols: pt0, p0, pi_c, pi_t
+```
+
+```formula
+## ideal_nozzle_exit_velocity
+family: aerodynamics
+expr: (2*cp*Tt*(1 - NPR**(-(g - 1)/g)))**0.5
+symbols: cp, Tt, NPR, g
+```
+
+```formula
+## ideal_nozzle_exit_temperature
+family: aerodynamics
+expr: Tt*NPR**(-(g - 1)/g)
+symbols: Tt, NPR, g
+```
+
+Specific thrust and mass-based thrust-specific fuel consumption:
+
+\[
+F_s = (1+f)V_e - V_0,\qquad
+c_t = \frac{f}{F_s}
+\]
+
+```formula
+## turbojet_specific_thrust
+family: aerodynamics
+expr: (1 + f)*Ve - V0
+symbols: f, Ve, V0
+```
+
+```formula
+## turbojet_tsfc
+family: aerodynamics
+expr: f/Fs
+symbols: f, Fs
+```
+
+Thermal, propulsive, and overall efficiencies (Morris; fuel heat \(f Q\) per unit airflow):
+
+\[
+\eta_{\mathrm{th}} = \frac{(1+f)V_e^{2}-V_0^{2}}{2 f Q},\qquad
+\eta_p = \frac{2 V_0 F_s}{(1+f)V_e^{2}-V_0^{2}},\qquad
+\eta_o = \frac{F_s V_0}{f Q} = \eta_{\mathrm{th}}\eta_p
+\]
+
+```formula
+## turbojet_thermal_efficiency
+family: aerodynamics
+expr: ((1 + f)*Ve**2 - V0**2)/(2*f*Q)
+symbols: f, Ve, V0, Q
+```
+
+```formula
+## turbojet_propulsive_efficiency
+family: aerodynamics
+expr: 2*V0*Fs/((1 + f)*Ve**2 - V0**2)
+symbols: V0, Fs, f, Ve
+```
+
+```formula
+## turbojet_overall_efficiency
+family: aerodynamics
+expr: Fs*V0/(f*Q)
+symbols: Fs, V0, f, Q
+```
+
+Ideal Brayton cycle thermal efficiency from the overall compression ratio \(\pi_r\pi_c\), with ram temperature ratio \(\tau_r=T_{t0}/T_0\):
+
+\[
+\eta_{\mathrm{Brayton}} = 1 - \frac{1}{(\pi_r\pi_c)^{(\gamma-1)/\gamma}} = 1 - \frac{1}{\tau_r\tau_c}
+\]
+
+```formula
+## ideal_brayton_thermal_efficiency
+family: aerodynamics
+expr: 1 - 1/(tau_r*tau_c)
+symbols: tau_r, tau_c
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(\pi_c\) | Compressor pressure ratio \(p_{t3}/p_{t2}\) (script `pi_c`) | dimensionless |
+| \(\tau_c\) | Compressor total-temperature ratio \(T_{t3}/T_{t2}\) (script `tau_c`) | dimensionless |
+| \(\pi_t\) | Turbine pressure ratio \(p_{t5}/p_{t4}\) (script `pi_t`) | dimensionless |
+| \(\tau_t\) | Turbine total-temperature ratio \(T_{t5}/T_{t4}\) (script `tau_t`) | dimensionless |
+| \(\tau_r\) | Ram total-temperature ratio \(T_{t0}/T_0\) (script `tau_r`) | dimensionless |
+| \(T_{t2}, T_{t3}, T_{t4}, T_{t5}\) | Station total temperatures (scripts `Tt2`, `Tt3`, `Tt4`, `Tt`) | K |
+| \(p_{t0}, p_0\) | Freestream total and static pressure (scripts `pt0`, `p0`) | Pa |
+| \(\mathrm{NPR}\) | Nozzle pressure ratio \(p_{t8}/p_0\) (script `NPR`) | dimensionless |
+| \(c_p\) | Specific heat at constant pressure (script `cp`) | J/(kg·K) |
+| \(Q\) | Fuel lower heating value | J/kg |
+| \(f\) | Fuel–air mass ratio | dimensionless |
+| \(V_0, V_e\) | Flight speed and fully expanded exit speed (scripts `V0`, `Ve`) | m/s |
+| \(F_s\) | Specific thrust (script `Fs`) | m/s |
+| \(c_t\) | Mass-based TSFC | kg/(N·s) |
+| \(\gamma\) | Ratio of specific heats (script `g`) | dimensionless |
+| \(\eta_{\mathrm{th}}, \eta_p, \eta_o\) | Thermal, propulsive, and overall efficiency | dimensionless |
+
+Assumptions: calorically perfect gas; ideal components; fully expanded nozzle; no afterburner; no fan; no real maps. \(T_{t4}>T_{t3}\), \(Q>c_p T_{t4}\), \(\pi_c>1\), \(\mathrm{NPR}>1\), and \(F_s>0\). Static \(V_0=0\) makes \(\eta_p=\eta_o=0\). The Brayton closed form is the heat-engine thermal efficiency of the same overall pressure ratio; the kinetic `turbojet_thermal_efficiency` is the flight definition used with TSFC.
 
 ## Breguet range and endurance
 
@@ -6690,7 +6971,157 @@ Assumptions: two-dimensional, inviscid, incompressible thin-section flow. Camber
 
 # Structures
 
-Thin-shell relations written out in NASA SP-8025, *Solid Rocket Motor Metal Cases* (April 1970). Buckling, fracture mechanics, and weight scaling in that monograph are cited to other documents and are not recorded here. In this category \(R\) is cylinder radius. The load ratio in the margin-of-safety definition is not called \(R\).
+Pure bending of a beam, spar, longeron, or boom follows NACA Report 82 and NACA TN 2754. Elastic Euler column buckling of a concentrically loaded prismatic strut follows the AFFDL Stress Analysis Manual with the effective-length form restated in NASA TM X-73305; NACA Report 82 states the pin-ended Euler load for high slenderness. Thin-shell motor-case relations are written out in NASA SP-8025, *Solid Rocket Motor Metal Cases* (April 1970). Shell buckling, fracture mechanics, and weight scaling in that monograph are cited to other documents and are not recorded here. In the shell records \(R\) is cylinder radius. The load ratio in the margin-of-safety definition is not called \(R\). In the beam and column records \(I\) is the second moment of area about the buckling or bending axis, not polar moment and not impulse.
+
+## Pure bending stress
+
+Elastic normal stress from a bending moment alone on a prismatic member. NACA Report 82 writes the extreme-fiber form
+
+\[
+\sigma = \frac{M c}{I}
+\]
+
+and the section-modulus form used for spars
+
+\[
+\sigma = \frac{M}{Z}
+\]
+
+```formula
+## beam_bending_stress
+family: beam
+expr: M/Z
+symbols: M, Z
+```
+
+```formula
+## beam_bending_stress_inertia
+family: beam
+expr: M*c/I
+symbols: M, c, I
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(\sigma\) | Extreme-fiber bending stress (tension or compression) | Pa |
+| \(M\) | Bending moment about the neutral axis | N·m |
+| \(Z\) | Elastic section modulus | m³ |
+| \(I\) | Second moment of area about the neutral axis | m⁴ |
+| \(c\) | Distance from the neutral axis to the extreme fiber | m |
+
+Assumptions: linear-elastic material, plane sections remain plane, the moment is about a principal neutral axis, the cross section is prismatic at the station, and there is no axial force in this record. Axial-plus-bending \(P/A + M/Z\) from Report 82 is a separate combination. Shear and torsion are omitted. \(\sigma\) is the magnitude of the extreme-fiber normal stress; sign convention (tension versus compression) is left to the user. Historical English units in the report are restated in SI here.
+
+## Section modulus
+
+Elastic section modulus of a cross section. NACA TN 2754 defines the wing-root section modulus as the second moment of area of the root section divided by the greatest distance from the neutral axis. With that \(Z\), Report 82’s \(M/Z\) matches \(Mc/I\).
+
+\[
+Z = \frac{I}{c}
+\]
+
+```formula
+## section_modulus
+family: beam
+expr: I/c
+symbols: I, c
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(Z\) | Elastic section modulus | m³ |
+| \(I\) | Second moment of area about the neutral axis | m⁴ |
+| \(c\) | Distance from the neutral axis to the extreme fiber | m |
+
+Assumptions: elastic (not plastic) section modulus. \(c > 0\). The TN 2754 wing-sizing charts that use this definition are not part of this record.
+
+## Elastic Euler column buckling
+
+Critical compressive load of a straight, concentrically loaded, prismatic long column that buckles while the material is still linear-elastic. NACA Report 82 writes the pin-ended form \(P=\pi^{2}EI/L^{2}\). NASA TM X-73305 writes the same load with an effective length \(L'\) that accounts for end fixity:
+
+\[
+P_{\mathrm{cr}} = \frac{\pi^{2} E I}{(L')^{2}}
+\]
+
+The AFFDL Stress Analysis Manual writes the equivalent stress forms
+
+\[
+\frac{P_{\mathrm{cr}}}{A} = \frac{C \pi^{2} E}{(L/\rho)^{2}} = \frac{\pi^{2} E}{(L'/\rho)^{2}}
+\]
+
+with radius of gyration \(\rho=\sqrt{I/A}\) and coefficient of constraint \(C=(L/L')^{2}\). The program end-fix factor is \(K=L'/L=1/\sqrt{C}\), so
+
+\[
+P_{\mathrm{cr}} = \frac{\pi^{2} E I}{(K L)^{2}},\qquad
+L' = K L,\qquad
+C = \frac{1}{K^{2}}.
+\]
+
+Idealized classical ends (AFFDL Table 2-1, with fixed–pinned taken as the usual \(C=2\) rather than the table’s \(2.05\)): pinned–pinned \(K=1\), fixed–fixed \(K=1/2\), fixed–pinned \(K=1/\sqrt{2}\), fixed–free \(K=2\).
+
+```formula
+## euler_critical_load
+family: column
+expr: pi**2*E*I/(K*L)**2
+symbols: E, I, K, L, pi
+```
+
+```formula
+## euler_critical_load_fixity
+family: column
+expr: C*pi**2*E*I/L**2
+symbols: C, E, I, L, pi
+```
+
+```formula
+## effective_column_length
+family: column
+expr: K*L
+symbols: K, L
+```
+
+```formula
+## end_fixity_coefficient
+family: column
+expr: 1/K**2
+symbols: K
+```
+
+```formula
+## radius_of_gyration
+family: column
+expr: (I/A)**0.5
+symbols: I, A
+```
+
+```formula
+## column_slenderness
+family: column
+expr: K*L/(I/A)**0.5
+symbols: K, L, I, A
+```
+
+```formula
+## euler_critical_stress
+family: column
+expr: pi**2*E/(K*L/(I/A)**0.5)**2
+symbols: E, K, L, I, A, pi
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(P_{\mathrm{cr}}\) | Elastic Euler critical compressive load | N |
+| \(E\) | Young’s modulus | Pa |
+| \(I\) | Second moment of area about the buckling axis | m⁴ |
+| \(L\) | Unsupported length between ends | m |
+| \(L'\) | Effective length, distance between inflection points | m |
+| \(K\) | End-fix factor, \(L'/L\) | dimensionless |
+| \(C\) | Coefficient of constraint (end-fixity), \((L/L')^{2}\) | dimensionless |
+| \(A\) | Cross-sectional area | m² |
+| \(\rho\) | Radius of gyration, \(\sqrt{I/A}\) | m |
+| \(K L/\rho\) | Effective slenderness ratio | dimensionless |
+| \(\sigma_{\mathrm{cr}}\) | Average critical stress, \(P_{\mathrm{cr}}/A\) | Pa |
+
+Assumptions: concentric axial compression, initially straight prismatic member, stable cross section (no local crippling), homogeneous isotropic linear-elastic material, and critical stress below the proportional limit (and below compressive yield when that stress is supplied). The Euler load alone does not replace a short-column or tangent-modulus curve. Eccentricity, initial crookedness, and inelastic Engesser–von Kármán / Johnson formulas are omitted. \(E,I,L,K,A>0\).
 
 ## Cylinder hoop stress
 
@@ -6770,3 +7201,1419 @@ Dividing by the membrane hoop stress \(pR/t\) shows that the bending stress is \
 | \(t\) | Wall thickness | m |
 
 Assumptions: elastic bending from radial mismatch at a longitudinal weld in a thin cylinder. Residual stress and angular mismatch are separate effects. SP-8025 adds example fractions of yield strength for those effects and states that the fractions change with the design, so they are not part of this expression. On the sample cylinder \(p = 1000\,\mathrm{psi}\), \(R = 20\,\mathrm{in}\), \(t = 0.1\,\mathrm{in}\), a 5 percent mismatch is \(\delta = 0.005\,\mathrm{in}\) and \(\sigma_h = 30000\,\mathrm{psi}\).
+
+# Mass properties
+
+Rigid, non-rotating assemblies of point masses or uniform parts with a stated CG follow NASA TM X-1754 and NACA TN 575. Positions are in one common body frame. Fuel slosh and time-varying CG are omitted. In these records \(I\) is a mass moment of inertia (kg·m²), not a second moment of area. Products of inertia use the \(P_{xy}=\int x y\,\mathrm{d}m\) convention of TM X-1754; the inertia tensor places \(-P_{xy}\) in the off-diagonal slots.
+
+## Total mass
+
+Sum of the part masses. For two parts the script is the two-term sum; the program sums every part.
+
+\[
+m = m_1 + m_2
+\]
+
+```formula
+## total_mass
+family: mass
+expr: m1 + m2
+symbols: m1, m2
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(m\) | Total mass | kg |
+| \(m_1, m_2\) | Part masses | kg |
+
+Assumptions: rigid assembly. Masses are positive. The program accepts one or more parts and sums them all.
+
+## Mass first moment
+
+First mass moment of one part about a reference plane (or axis origin) along one body axis.
+
+\[
+M_x = m x
+\]
+
+```formula
+## mass_first_moment
+family: mass
+expr: m*x
+symbols: m, x
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(M_x\) | First mass moment (script result) | kg·m |
+| \(m\) | Part mass | kg |
+| \(x\) | Part CG coordinate along that axis | m |
+
+Assumptions: the coordinate is measured in the common body frame from the user origin.
+
+## Center-of-mass coordinate
+
+One body-axis coordinate of the system center of mass. NASA TM X-1754 and NACA TN 575 both divide the summed first moment by the total mass.
+
+\[
+\bar{x} = \frac{M_x}{m}
+\]
+
+```formula
+## center_of_mass_coordinate
+family: mass
+expr: Mx/m
+symbols: Mx, m
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(\bar{x}\) | Center-of-mass coordinate on that axis | m |
+| \(M_x\) | Summed first mass moment on that axis (script `Mx`) | kg·m |
+| \(m\) | Total mass | kg |
+
+Assumptions: \(m > 0\). The \(y\) and \(z\) coordinates use the same record with their first moments. Uniform gravity is not required; this is the mass centroid.
+
+## Point-mass moment of inertia
+
+Moment of inertia of a concentrated mass about a reference axis parallel to a body axis. NACA TN 575 writes \(w(y^{2}+z^{2})\) for the \(x\)-axis contribution; with mass in place of weight the SI form is
+
+\[
+I_{xx} = m(d_1^{2} + d_2^{2})
+\]
+
+```formula
+## point_mass_moment
+family: mass
+expr: m*(d1**2 + d2**2)
+symbols: m, d1, d2
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(I_{xx}\) | Moment about the axis (script result) | kg·m² |
+| \(m\) | Part mass | kg |
+| \(d_1, d_2\) | The two coordinates perpendicular to that axis | m |
+
+Assumptions: the mass is concentrated at the stated CG. For \(I_{xx}\) take \(d_1=y\) and \(d_2=z\); for \(I_{yy}\) take \(x\) and \(z\); for \(I_{zz}\) take \(x\) and \(y\). Coordinates are from the axis origin in use (user origin or system CG).
+
+## Point-mass product of inertia
+
+Product of inertia of a concentrated mass for a pair of body axes. NASA TM X-1754 adds \(m x y\) (and cyclic) when transferring to the system CG.
+
+\[
+P_{xy} = m\, d_1 d_2
+\]
+
+```formula
+## point_mass_product
+family: mass
+expr: m*d1*d2
+symbols: m, d1, d2
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(P_{xy}\) | Product of inertia (script result) | kg·m² |
+| \(m\) | Part mass | kg |
+| \(d_1, d_2\) | The two coordinates for that product pair | m |
+
+Assumptions: concentrated mass. For \(P_{xy}\) take \(d_1=x\) and \(d_2=y\); likewise \(P_{xz}\) and \(P_{yz}\).
+
+## Parallel-axis moment transfer
+
+Moment of inertia about a parallel axis through a chosen origin from the moment about a parallel axis through the part CG. NASA TM X-1754 writes \(I_{xx}=I_{xx,\mathrm{cg}}+m(y^{2}+z^{2})\) with \(x,y,z\) measured from the system CG.
+
+\[
+I = I_{\mathrm{cg}} + m(d_1^{2} + d_2^{2})
+\]
+
+```formula
+## parallel_axis_moment
+family: mass
+expr: Icg + m*(d1**2 + d2**2)
+symbols: Icg, m, d1, d2
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(I\) | Moment about the parallel target axis | kg·m² |
+| \(I_{\mathrm{cg}}\) | Moment about the parallel axis through the part CG (script `Icg`) | kg·m² |
+| \(m\) | Part mass | kg |
+| \(d_1, d_2\) | Part-CG coordinates relative to the target origin, perpendicular to the axis | m |
+
+Assumptions: the two axes are parallel. \(I_{\mathrm{cg}}\) is already resolved into axes parallel to the body frame. A point mass has \(I_{\mathrm{cg}}=0\).
+
+## Parallel-axis product transfer
+
+Product of inertia about a parallel pair of axes through a chosen origin from the product about the parallel pair through the part CG. NASA TM X-1754 writes \(P_{xy}=P_{xy,\mathrm{cg}}+m x y\).
+
+\[
+P = P_{\mathrm{cg}} + m\, d_1 d_2
+\]
+
+```formula
+## parallel_axis_product
+family: mass
+expr: Pcg + m*d1*d2
+symbols: Pcg, m, d1, d2
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(P\) | Product about the target origin | kg·m² |
+| \(P_{\mathrm{cg}}\) | Product about the part CG (script `Pcg`) | kg·m² |
+| \(m\) | Part mass | kg |
+| \(d_1, d_2\) | Part-CG coordinates relative to the target origin for that product pair | m |
+
+Assumptions: axes remain parallel to the body frame. A point mass has \(P_{\mathrm{cg}}=0\).
+
+## Inertia shift from origin to CG
+
+Moment of inertia about a parallel axis through the system CG from the same moment about a parallel axis through the user origin. NACA TN 575 writes \(I_y = I_{y'} - W(x_{\mathrm{cg}}^{2}+z_{\mathrm{cg}}^{2})\); with mass in place of weight,
+
+\[
+I_{\mathrm{cg}} = I_O - m(d_1^{2} + d_2^{2})
+\]
+
+```formula
+## inertia_shift_to_cg
+family: mass
+expr: IO - m*(d1**2 + d2**2)
+symbols: IO, m, d1, d2
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(I_{\mathrm{cg}}\) | Moment about the parallel CG axis | kg·m² |
+| \(I_O\) | Moment about the parallel origin axis (script `IO`) | kg·m² |
+| \(m\) | Total mass | kg |
+| \(d_1, d_2\) | System-CG coordinates from the origin, perpendicular to the axis | m |
+
+Assumptions: the origin and CG axes are parallel. The same shift applies to each diagonal moment. Off-diagonal products shift by subtracting \(m\,\bar{x}\bar{y}\) (and cyclic).
+
+# Aerothermodynamics
+
+Stagnation-point convective heating on an axisymmetric blunt nose follows Sutton and Graves, NASA TR R-376. The Stefan–Boltzmann constant is the NIST CODATA 2022 value. Radiative-equilibrium wall temperature for an insulated gray surface against a cold sink follows the NASA Goddard thermal-design short course. Freestream dynamic pressure is `freestream_dynamic_pressure` in Aerodynamics. Perfect-gas freestream enthalpy uses the 1976 dry-air gas constant when temperature is known. These records do not add a separate dissociation or ionization model beyond what is already folded into the Sutton–Graves air coefficient.
+
+Nonlifting ballistic entry in an exponential atmosphere follows Allen and Eggers, NACA TN 4047 (Report 1381). Constant \(C_D\), gravity neglected relative to drag, and a straight path at the entry flight-path angle give closed forms for peak deceleration and its altitude. That motion analysis is a companion to stagnation heat flux, not a full trajectory or a heating integral.
+
+## Stagnation-point convective heat flux (heat-transfer coefficient)
+
+Convective heat flux at the stagnation point of a blunt axisymmetric body. Equation (33) of NASA TR R-376 defines the heat-transfer coefficient \(K\) by
+
+\[
+\dot{q} = K \sqrt{\frac{p_s}{R_n}}\,(h_s - h_w)
+\]
+
+with \(p_s\) in atmospheres (\(1\,\mathrm{atm} = 101325\,\mathrm{Pa}\)). Table II of that report gives \(K = 0.1113\,\mathrm{kg/(s\cdot m^{3/2}\cdot atm^{1/2})}\) for Earth air.
+
+```formula
+## stagnation_convective_heat_flux
+family: aerotherm
+expr: K*((ps/Rn)**0.5)*(hs - hw)
+symbols: K, ps, Rn, hs, hw
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(\dot{q}\) | Stagnation-point convective heat flux | W/m² |
+| \(K\) | Sutton–Graves heat-transfer coefficient | kg/(s·m^{3/2}·atm^{1/2}) |
+| \(p_s\) | Stagnation pressure (script `ps`) | atm |
+| \(R_n\) | Effective nose radius (script `Rn`) | m |
+| \(h_s\) | Stagnation-edge specific enthalpy | J/kg |
+| \(h_w\) | Wall specific enthalpy | J/kg |
+
+Assumptions: laminar stagnation-point boundary layer on an axisymmetric blunt body; chemical equilibrium gas mixture as in TR R-376; \(p_s\) is in atmospheres. The program that uses freestream density and speed for \(p_s\) takes the Newtonian / strong-shock estimate \(p_s = \rho_\infty V_\infty^{2}/(101325\,\mathrm{Pa/atm})\). Perfect-gas wall and freestream enthalpies below do not model dissociation of molecules at very high speed beyond that estimate.
+
+## Freestream kinetic enthalpy
+
+Specific kinetic enthalpy of the freestream, used as the hypersonic cold-wall stagnation enthalpy when freestream thermal enthalpy is omitted:
+
+\[
+h_{\mathrm{kin}} = \frac{1}{2} V^{2}
+\]
+
+```formula
+## freestream_kinetic_enthalpy
+family: aerotherm
+expr: 0.5*V**2
+symbols: V
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(h_{\mathrm{kin}}\) | Freestream kinetic enthalpy | J/kg |
+| \(V\) | Freestream speed | m/s |
+
+Assumptions: adiabatic energy equation with freestream static enthalpy neglected relative to \(V^{2}/2\), or added separately as \(c_p T\). No dissociation.
+
+## Wall enthalpy (perfect gas)
+
+\[
+h_w = c_p T_w
+\]
+
+```formula
+## wall_enthalpy_perfect
+family: aerotherm
+expr: cp*Tw
+symbols: cp, Tw
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(h_w\) | Wall specific enthalpy | J/kg |
+| \(c_p\) | Specific heat at constant pressure (script `cp`) | J/(kg·K) |
+| \(T_w\) | Wall temperature (script `Tw`) | K |
+
+Assumptions: calorically perfect gas at the wall. For 1976 dry air, \(c_p = \gamma R^{*} /(M_0(\gamma-1))\) with \(\gamma = 1.4\). No wall catalysis model beyond the Sutton–Graves fully catalytic correlation already in \(K\).
+
+## Stagnation-point convective heat flux (cold-wall velocity form)
+
+Cold-wall engineering form used when freestream density and speed are the known state. With \(h_s - h_w = V^{2}/2\) and \(p_s = \rho V^{2}/(101325\,\mathrm{Pa/atm})\), `stagnation_convective_heat_flux` reduces to
+
+\[
+\dot{q} = k \sqrt{\frac{\rho}{R_n}}\, V^{3}, \qquad k = \frac{K}{2\sqrt{101325}}
+\]
+
+For Earth air, \(K = 0.1113\) gives \(k = 1.74826\times 10^{-4}\) in SI (\(\dot{q}\) in W/m², \(\rho\) in kg/m³, \(R_n\) in m, \(V\) in m/s).
+
+```formula
+## stagnation_convective_heat_flux_velocity
+family: aerotherm
+expr: k*((rho/Rn)**0.5)*V**3
+symbols: k, rho, Rn, V
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(\dot{q}\) | Cold-wall stagnation convective heat flux | W/m² |
+| \(k\) | Earth-air velocity-form coefficient | kg^{1/2}/m |
+| \(\rho\) | Freestream density (script `rho`) | kg/m³ |
+| \(R_n\) | Effective nose radius (script `Rn`) | m |
+| \(V\) | Freestream speed | m/s |
+
+Assumptions: cold wall (\(h_w \ll h_s\)); freestream thermal enthalpy neglected in \(h_s\); Newtonian \(p_s = \rho V^{2}\). Does not account for dissociation of molecules or other real-gas effects beyond the Sutton–Graves air \(K\). Not a radiative heating rate.
+
+## Radiative-equilibrium wall temperature
+
+For an insulated gray surface that reradiates the absorbed convective flux to a cold sink,
+
+\[
+T_w = \left(\frac{\dot{q}}{\varepsilon\,\sigma}\right)^{1/4}
+\]
+
+with the CODATA 2022 Stefan–Boltzmann constant \(\sigma = 5.670374419\times 10^{-8}\,\mathrm{W/(m^{2}\cdot K^{4})}\).
+
+```formula
+## radiative_equilibrium_wall_temperature
+family: aerotherm
+expr: (q/(eps*sigma))**0.25
+symbols: q, eps, sigma
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(T_w\) | Radiative-equilibrium wall temperature | K |
+| \(\dot{q}\) | Net heat flux into the surface (script `q`) | W/m² |
+| \(\varepsilon\) | Hemispherical emissivity (script `eps`) | dimensionless |
+| \(\sigma\) | Stefan–Boltzmann constant (script `sigma`) | W/(m²·K⁴) |
+
+Assumptions: steady state, no conduction into the wall, no incident solar or shock-layer radiation, and sink temperature negligible compared with \(T_w\). \(0 < \varepsilon \le 1\).
+
+## Ballistic coefficient
+
+Mass over drag area. With SI mass this is
+
+\[
+B = \frac{m}{C_D A}
+\]
+
+Allen and Eggers write the same grouping as \(m/(C_D A)\) inside the exponential atmosphere solution (TN 4047). Weight-based ballistic coefficients \(W/(C_D A)\) are not this record.
+
+```formula
+## ballistic_coefficient
+family: aerotherm
+expr: m/(Cd*A)
+symbols: m, Cd, A
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(B\) | Ballistic coefficient | kg/m² |
+| \(m\) | Vehicle mass | kg |
+| \(C_D\) | Drag coefficient (script `Cd`) | dimensionless |
+| \(A\) | Reference area for drag | m² |
+
+Assumptions: \(C_D\) and \(A\) use the same reference as the drag force \(D=C_D q A\). \(m>0\), \(C_D>0\), \(A>0\).
+
+## Exponential atmosphere density
+
+Isothermal / constant scale-height density used by Allen and Eggers,
+
+\[
+\rho = \rho_{\mathrm{ref}}\exp\left(-\frac{Z-Z_{\mathrm{ref}}}{H}\right)
+\]
+
+with density scale height \(H=1/\beta\) when their inverse scale height is \(\beta\).
+
+```formula
+## exponential_atmosphere_density
+family: aerotherm
+expr: rhoref*exp(-(Z - Zref)/H)
+symbols: rhoref, Z, Zref, H
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(\rho\) | Density at geometric altitude \(Z\) | kg/m³ |
+| \(\rho_{\mathrm{ref}}\) | Reference density (script `rhoref`) | kg/m³ |
+| \(Z\) | Geometric altitude | m |
+| \(Z_{\mathrm{ref}}\) | Reference altitude for \(\rho_{\mathrm{ref}}\) (script `Zref`) | m |
+| \(H\) | Density scale height | m |
+
+Assumptions: constant \(H\). TN 4047 Earth fit uses \(\rho_{\mathrm{ref}}=0.0034\,\mathrm{slug/ft}^{3}\) at \(Z_{\mathrm{ref}}=0\) with \(H=22000\,\mathrm{ft}\) (\(\rho_{\mathrm{ref}}=1.752288\,\mathrm{kg/m}^{3}\), \(H=6705.6\,\mathrm{m}\) in SI). This is not the piecewise 1976 hydrostatic atmosphere.
+
+## Atmosphere inverse scale height
+
+\[
+\beta = \frac{1}{H}
+\]
+
+```formula
+## atmosphere_inverse_scale_height
+family: aerotherm
+expr: 1/H
+symbols: H
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(\beta\) | Inverse density scale height | 1/m |
+| \(H\) | Density scale height | m |
+
+Assumptions: \(H>0\). Allen–Eggers \(\beta\) in TN 4047 is this quantity, not the ballistic coefficient.
+
+## Allen–Eggers peak deceleration
+
+Peak drag deceleration for a nonlifting ballistic entry when that peak occurs above the surface (TN 4047 eqs. (15)–(17)). With scale height \(H=1/\beta\),
+
+\[
+a_{\max} = \frac{V_E^{2}\sin\theta_E}{2 e H}
+\]
+
+Independent of \(m\), \(C_D\), and \(A\). \(\theta_E\) is the entry flight-path angle below the local horizontal. \(e=\exp(1)\).
+
+```formula
+## allen_eggers_peak_deceleration
+family: aerotherm
+expr: Ve**2*sin(th)/(2*exp(1)*H)
+symbols: Ve, th, H
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(a_{\max}\) | Peak deceleration magnitude | m/s² |
+| \(V_E\) | Entry speed (script `Ve`) | m/s |
+| \(\theta_E\) | Entry flight-path angle below local horizontal (script `th`) | rad |
+| \(H\) | Density scale height | m |
+
+Assumptions: constant \(C_D\); exponential atmosphere; gravity neglected relative to drag; straight path at \(\theta_E\); peak altitude positive. \(0<\theta_E\le\pi/2\). Not a lifting entry and not a full trajectory integration.
+
+## Allen–Eggers speed at peak deceleration
+
+Speed at the altitude of peak deceleration when that altitude is positive (TN 4047 eq. (16)):
+
+\[
+V_1 = \frac{V_E}{\sqrt{e}} = V_E\exp(-1/2)
+\]
+
+```formula
+## allen_eggers_speed_at_peak_deceleration
+family: aerotherm
+expr: Ve*exp(-0.5)
+symbols: Ve
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(V_1\) | Speed at peak deceleration | m/s |
+| \(V_E\) | Entry speed (script `Ve`) | m/s |
+
+Assumptions: same as `allen_eggers_peak_deceleration` with positive peak altitude. About 60.65% of entry speed.
+
+## Allen–Eggers density at peak deceleration
+
+Density at the altitude of peak deceleration when that altitude is positive:
+
+\[
+\rho_1 = \frac{B\sin\theta_E}{H}
+\]
+
+with ballistic coefficient \(B=m/(C_D A)\).
+
+```formula
+## allen_eggers_density_at_peak_deceleration
+family: aerotherm
+expr: B*sin(th)/H
+symbols: B, th, H
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(\rho_1\) | Density at peak deceleration | kg/m³ |
+| \(B\) | Ballistic coefficient \(m/(C_D A)\) | kg/m² |
+| \(\theta_E\) | Entry flight-path angle (script `th`) | rad |
+| \(H\) | Density scale height | m |
+
+Assumptions: same straight-path Allen–Eggers model. Equivalent to \(\rho_1=\beta m\sin\theta_E/(C_D A)\).
+
+## Allen–Eggers peak-deceleration altitude
+
+Geometric altitude of peak deceleration when that altitude is above the reference surface (TN 4047 eq. (15), restated with \(H=1/\beta\) and \(B=m/(C_D A)\)):
+
+\[
+Z_1 = Z_{\mathrm{ref}} + H\ln\left(\frac{\rho_{\mathrm{ref}} H}{B\sin\theta_E}\right)
+\]
+
+```formula
+## allen_eggers_peak_deceleration_altitude
+family: aerotherm
+expr: Zref + H*log(rhoref*H/(B*sin(th)))
+symbols: Zref, H, rhoref, B, th
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(Z_1\) | Altitude of peak deceleration | m |
+| \(Z_{\mathrm{ref}}\) | Reference altitude for \(\rho_{\mathrm{ref}}\) (script `Zref`) | m |
+| \(H\) | Density scale height | m |
+| \(\rho_{\mathrm{ref}}\) | Reference density (script `rhoref`) | kg/m³ |
+| \(B\) | Ballistic coefficient | kg/m² |
+| \(\theta_E\) | Entry flight-path angle (script `th`) | rad |
+
+Assumptions: same as `allen_eggers_peak_deceleration`. Valid only when \(Z_1\) is above the impact surface (usually \(Z=0\)). Independent of entry speed. If \(Z_1\) is negative, the in-flight maximum is at the surface and the sea-level records below apply.
+
+## Allen–Eggers surface speed (heavy vehicle)
+
+When the formal peak altitude is below the surface, the maximum in-flight deceleration is at \(Z=Z_{\mathrm{imp}}\) (TN 4047 sea-level case). With \(Z_{\mathrm{imp}}=Z_{\mathrm{ref}}=0\),
+
+\[
+V_s = V_E\exp\left(-\frac{\rho_{\mathrm{ref}} H}{2 B\sin\theta_E}\right)
+\]
+
+```formula
+## allen_eggers_surface_speed
+family: aerotherm
+expr: Ve*exp(-rhoref*H/(2*B*sin(th)))
+symbols: Ve, rhoref, H, B, th
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(V_s\) | Speed at the surface (impact altitude) | m/s |
+| \(V_E\) | Entry speed (script `Ve`) | m/s |
+| \(\rho_{\mathrm{ref}}\) | Surface / reference density (script `rhoref`) | kg/m³ |
+| \(H\) | Density scale height | m |
+| \(B\) | Ballistic coefficient | kg/m² |
+| \(\theta_E\) | Entry flight-path angle (script `th`) | rad |
+
+Assumptions: \(Z_{\mathrm{ref}}=0\) and impact at sea level, as in TN 4047. For a nonzero reference altitude, evaluate density at the impact altitude with `exponential_atmosphere_density` and replace \(\rho_{\mathrm{ref}}\) by that density with the same \(H\).
+
+## Allen–Eggers surface deceleration (heavy vehicle)
+
+Deceleration magnitude at the surface for the heavy-vehicle case,
+
+\[
+a_s = \frac{\rho_{\mathrm{ref}}}{2 B}\, V_s^{2}
+\]
+
+```formula
+## allen_eggers_surface_deceleration
+family: aerotherm
+expr: (rhoref/(2*B))*Vs**2
+symbols: rhoref, B, Vs
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(a_s\) | Surface deceleration magnitude | m/s² |
+| \(\rho_{\mathrm{ref}}\) | Surface density (script `rhoref`) | kg/m³ |
+| \(B\) | Ballistic coefficient | kg/m² |
+| \(V_s\) | Speed at the surface (script `Vs`) | m/s |
+
+Assumptions: drag deceleration \(a=(C_D\rho A/(2m))V^{2}=\rho V^{2}/(2B)\). Use with `allen_eggers_surface_speed` when the formal \(Z_1\) is below the surface.
+
+# Spacecraft power
+
+Flat-plate solar-array electrical power for preliminary sizing. Cell efficiency, cosine incidence, packing of cells on the substrate, and multiplicative beginning- and end-of-life degradation follow NASA SP-8074. The default 1 AU solar constant is the NASA GSFC / TSIS-1 value \(S = 1361.6\,\mathrm{W/m}^{2}\). Circular-orbit eclipse fraction under a cylindrical umbra is from Rickman (NASA JSC). Battery nameplate energy, depth of discharge, usable energy with discharge efficiency, required capacity for an eclipse load, recharge power, and sunlit array power for orbit energy balance follow NASA MSFC *Electrical Power Systems for Cubesats* (NTRS 20180007969). Cell electrochemistry, thermal runaway, and Peukert beyond a single efficiency factor are omitted.
+
+## Flat-plate solar irradiance
+
+Incident solar irradiance on a flat plate whose outward normal is at angle \(\theta\) from the Sun. NASA SP-8074 states that incident energy varies nearly as \(\cos\theta\), and array output is reduced by approximately the same factor (edge effects beyond about \(40^\circ\) are omitted here).
+
+\[
+G = S\cos\theta
+\]
+
+```formula
+## flat_plate_solar_irradiance
+family: power
+expr: S*cos(theta)
+symbols: S, theta
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(G\) | Incident irradiance on the plate | W/m² |
+| \(S\) | Solar constant (irradiance at the orbit, normal to the Sun) | W/m² |
+| \(\theta\) | Sun incidence angle from the plate normal (script `theta`) | rad |
+
+Assumptions: flat plate, no albedo or Earth IR, \(\lvert\theta\rvert\le\pi/2\). For \(\lvert\theta\rvert>\pi/2\) the plate is dark and \(G=0\) in the program. Edge-effect departure from the cosine law is omitted.
+
+## Ideal array power (packed cells)
+
+Electrical power of an array of area \(A\) at normal incidence before inherent and life degradation. Cell efficiency is maximum power per unit cell area over incident sunlight power per unit area (SP-8074). Packing factor \(F_{\mathrm{p}}\) is the fraction of substrate area occupied by active cells after spacing.
+
+\[
+P_{0} = S A \eta F_{\mathrm{p}}
+\]
+
+```formula
+## solar_array_ideal_power
+family: power
+expr: S*A*eta*Fp
+symbols: S, A, eta, Fp
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(P_{0}\) | Ideal packed-array power at normal incidence | W |
+| \(S\) | Solar constant | W/m² |
+| \(A\) | Array (substrate) area | m² |
+| \(\eta\) | Cell conversion efficiency (script `eta`) | dimensionless |
+| \(F_{\mathrm{p}}\) | Packing factor (script `Fp`) | dimensionless |
+
+Assumptions: \(0 < \eta \le 1\), \(0 < F_{\mathrm{p}} \le 1\), \(A>0\), \(S>0\). Temperature and spectral corrections beyond \(\eta\) are omitted.
+
+## Beginning-of-life array power
+
+Instantaneous beginning-of-life (BOL) array power with inherent degradation \(I_{\mathrm{d}}\) (assembly, mismatch, coverslide, and related knockdowns at the start of life) and cosine incidence.
+
+\[
+P_{\mathrm{BOL}} = P_{0}\, I_{\mathrm{d}}\cos\theta = S A \eta F_{\mathrm{p}} I_{\mathrm{d}}\cos\theta
+\]
+
+```formula
+## solar_array_bol_power
+family: power
+expr: S*A*eta*Fp*Id*cos(theta)
+symbols: S, A, eta, Fp, Id, theta
+```
+
+When the user supplies a beginning-of-life specific power \(p_{\mathrm{sa}}\) (W/m²) that already equals \(S\eta F_{\mathrm{p}}\) at the stated solar constant and normal incidence,
+
+\[
+P_{\mathrm{BOL}} = p_{\mathrm{sa}} A\, I_{\mathrm{d}}\cos\theta
+\]
+
+```formula
+## solar_array_bol_power_from_specific
+family: power
+expr: psa*A*Id*cos(theta)
+symbols: psa, A, Id, theta
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(P_{\mathrm{BOL}}\) | Instantaneous BOL array power | W |
+| \(I_{\mathrm{d}}\) | Inherent degradation factor (script `Id`) | dimensionless |
+| \(p_{\mathrm{sa}}\) | BOL specific power before inherent degradation (script `psa`) | W/m² |
+| \(\theta\) | Sun incidence angle from the plate normal | rad |
+
+Assumptions: \(0 < I_{\mathrm{d}} \le 1\). Same cosine limits as `flat_plate_solar_irradiance`. No temperature model beyond what is folded into \(\eta\) or \(p_{\mathrm{sa}}\).
+
+## Life degradation factor
+
+Remaining power fraction after \(L\) years at a constant fractional degradation rate \(d\) per year (compound).
+
+\[
+L_{\mathrm{d}} = (1 - d)^{L}
+\]
+
+```formula
+## solar_array_life_degradation
+family: power
+expr: (1 - d)**L
+symbols: d, L
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(L_{\mathrm{d}}\) | Life degradation (remaining fraction) at end of life | dimensionless |
+| \(d\) | Fractional degradation per year | 1/year |
+| \(L\) | Mission life | year |
+
+Assumptions: \(0 \le d < 1\), \(L \ge 0\). Radiation is represented only by this constant annual rate, not by an equivalent-fluence calculation.
+
+## End-of-life array power
+
+\[
+P_{\mathrm{EOL}} = P_{\mathrm{BOL}}\, L_{\mathrm{d}}
+\]
+
+```formula
+## solar_array_eol_power
+family: power
+expr: Pbol*Ld
+symbols: Pbol, Ld
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(P_{\mathrm{EOL}}\) | Instantaneous end-of-life array power | W |
+| \(P_{\mathrm{BOL}}\) | Instantaneous BOL array power (script `Pbol`) | W |
+| \(L_{\mathrm{d}}\) | Life degradation factor (script `Ld`) | dimensionless |
+
+Assumptions: life degradation multiplies the instantaneous BOL power at the same incidence angle.
+
+## Orbit-average array power
+
+Orbit-average electrical power when the array produces constant power \(P\) in sunlight and zero in eclipse (sun-tracking flat plate at fixed incidence during the sunlit arc).
+
+\[
+P_{\mathrm{avg}} = P\,(1 - f_{\mathrm{e}})
+\]
+
+```formula
+## solar_array_orbit_average_power
+family: power
+expr: P*(1 - fe)
+symbols: P, fe
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(P_{\mathrm{avg}}\) | Orbit-average array power | W |
+| \(P\) | Instantaneous sunlit array power (BOL or EOL) | W |
+| \(f_{\mathrm{e}}\) | Eclipse fraction of the orbit (script `fe`) | dimensionless |
+
+Assumptions: power is zero in umbra and constant in sunlight. Penumbra is omitted. \(0 \le f_{\mathrm{e}} < 1\).
+
+## Circular-orbit eclipse fraction
+
+Fraction of a circular orbit spent in a cylindrical planetary umbra. Rickman: terminator half-angle \(\phi\) from
+
+\[
+\cos\phi = \frac{\sqrt{1-(r_{e}/r)^{2}}}{\cos\beta}, \qquad f_{\mathrm{e}} = \frac{\phi}{\pi}
+\]
+
+with \(r = r_{e}+h\). No eclipse when \(\lvert\beta\rvert \ge \arcsin(r_{e}/r)\).
+
+```formula
+## circular_orbit_eclipse_fraction
+family: power
+expr: acos(((1 - (re/r)**2)**0.5)/cos(beta))/pi
+symbols: re, r, beta, pi
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(f_{\mathrm{e}}\) | Eclipse time fraction | dimensionless |
+| \(r_{e}\) | Planet radius (script `re`) | m |
+| \(r\) | Circular-orbit radius from the planet center (script `r`) | m |
+| \(\beta\) | Beta angle (Sun to orbit plane) (script `beta`) | rad |
+
+Assumptions: circular orbit, spherical planet, cylindrical umbra (no penumbra), \(\lvert\beta\rvert < \arcsin(r_{e}/r)\), and \(r > r_{e}\). The expression is undefined outside that beta range; the program then sets \(f_{\mathrm{e}}=0\).
+
+## Battery nameplate energy from ampere-hours
+
+Nameplate stored energy of a battery rated at ampere-hour capacity \(C_{\mathrm{Ah}}\) on a bus (or average discharge) voltage \(V\). NASA MSFC Electrical Power Systems for Cubesats treats capacity in ampere-hours and energy in watt-hours; the SI form multiplies by \(3600\,\mathrm{s/h}\).
+
+\[
+E = 3600\, C_{\mathrm{Ah}} V
+\]
+
+```formula
+## battery_energy_from_capacity_ah
+family: power
+expr: 3600*C_Ah*V
+symbols: C_Ah, V
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(E\) | Nameplate battery energy | J |
+| \(C_{\mathrm{Ah}}\) | Nameplate ampere-hour capacity (script `C_Ah`) | A·h |
+| \(V\) | Bus or average discharge voltage | V |
+
+Assumptions: \(C_{\mathrm{Ah}}>0\), \(V>0\). One watt-hour is \(3600\,\mathrm{J}\). No Peukert rate correction beyond efficiencies supplied elsewhere.
+
+## Battery depth of discharge
+
+Fraction of nameplate capacity removed during a discharge. MSFC: ampere-hours removed over nameplate ampere-hours. With energy, the same ratio is
+
+\[
+\mathrm{DOD} = \frac{E_{\mathrm{removed}}}{E}
+\]
+
+```formula
+## battery_depth_of_discharge
+family: power
+expr: E_removed/E
+symbols: E_removed, E
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(\mathrm{DOD}\) | Depth of discharge (script `DOD`) | dimensionless |
+| \(E_{\mathrm{removed}}\) | Chemical energy removed from the nameplate store (script `E_removed`) | J |
+| \(E\) | Nameplate battery energy | J |
+
+Assumptions: \(E>0\), \(0\le E_{\mathrm{removed}}\le E\). Cycle-life limits that choose a design \(\mathrm{DOD}\) are not this definition.
+
+## Battery usable energy at the load
+
+Energy that can be delivered to the load when nameplate energy \(E\) is used only down to a design depth of discharge \(\mathrm{DOD}\) and the discharge path efficiency is \(\eta_d\).
+
+\[
+E_{\mathrm{u}} = E\,\mathrm{DOD}\,\eta_d
+\]
+
+```formula
+## battery_usable_energy
+family: power
+expr: E*DOD*eta_d
+symbols: E, DOD, eta_d
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(E_{\mathrm{u}}\) | Usable energy at the load | J |
+| \(E\) | Nameplate battery energy | J |
+| \(\mathrm{DOD}\) | Allowed depth of discharge | dimensionless |
+| \(\eta_d\) | Discharge efficiency (script `eta_d`) | dimensionless |
+
+Assumptions: \(0<\mathrm{DOD}\le 1\), \(0<\eta_d\le 1\). No cell electrochemistry or thermal-runaway model. Peukert effects enter only through the single factor \(\eta_d\).
+
+## Time at continuous load
+
+Duration a constant load \(P\) can be supplied from usable energy \(E_{\mathrm{u}}\).
+
+\[
+t = \frac{E_{\mathrm{u}}}{P}
+\]
+
+```formula
+## battery_time_at_continuous_load
+family: power
+expr: Eu/P
+symbols: Eu, P
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(t\) | Time at continuous load | s |
+| \(E_{\mathrm{u}}\) | Usable energy at the load (script `Eu`) | J |
+| \(P\) | Continuous load power | W |
+
+Assumptions: \(P>0\), \(E_{\mathrm{u}}\ge 0\).
+
+## Battery discharge energy for a load interval
+
+Chemical energy that must be removed from the nameplate store to deliver constant power \(P\) to the load for duration \(t_e\) through discharge efficiency \(\eta_d\). MSFC stored-energy form with the separate ampere-hour battery efficiency of that course folded into the user-supplied \(\eta_d\) (and \(\eta_c\) on charge).
+
+\[
+E_s = \frac{P\, t_e}{\eta_d}
+\]
+
+```formula
+## battery_discharge_energy
+family: power
+expr: P*te/eta_d
+symbols: P, te, eta_d
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(E_s\) | Chemical energy removed from the store | J |
+| \(P\) | Load power during the interval | W |
+| \(t_e\) | Interval duration (script `te`) | s |
+| \(\eta_d\) | Discharge efficiency | dimensionless |
+
+Assumptions: \(P>0\), \(t_e>0\), \(0<\eta_d\le 1\).
+
+## Required nameplate battery energy
+
+Nameplate energy required so that a discharge of energy \(E_s\) does not exceed the design depth of discharge.
+
+\[
+E_{\mathrm{req}} = \frac{E_s}{\mathrm{DOD}} = \frac{P\, t_e}{\eta_d\,\mathrm{DOD}}
+\]
+
+```formula
+## battery_required_nameplate_energy
+family: power
+expr: P*te/(eta_d*DOD)
+symbols: P, te, eta_d, DOD
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(E_{\mathrm{req}}\) | Required nameplate energy | J |
+| \(\mathrm{DOD}\) | Allowed depth of discharge | dimensionless |
+
+Assumptions: same as `battery_discharge_energy`, and \(0<\mathrm{DOD}\le 1\).
+
+## Required ampere-hour capacity
+
+\[
+C_{\mathrm{Ah,req}} = \frac{E_{\mathrm{req}}}{3600\, V}
+\]
+
+```formula
+## battery_required_capacity_ah
+family: power
+expr: Ereq/(3600*V)
+symbols: Ereq, V
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(C_{\mathrm{Ah,req}}\) | Required nameplate ampere-hour capacity | A·h |
+| \(E_{\mathrm{req}}\) | Required nameplate energy (script `Ereq`) | J |
+| \(V\) | Bus or average discharge voltage | V |
+
+Assumptions: \(V>0\), \(E_{\mathrm{req}}>0\).
+
+## Battery charge energy from the array
+
+Array-side energy that must be delivered into the charger to restore chemical energy \(E_s\) at charge efficiency \(\eta_c\).
+
+\[
+E_c = \frac{E_s}{\eta_c}
+\]
+
+```formula
+## battery_charge_energy
+family: power
+expr: Es/eta_c
+symbols: Es, eta_c
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(E_c\) | Energy drawn from the array for recharge | J |
+| \(E_s\) | Chemical energy to restore (script `Es`) | J |
+| \(\eta_c\) | Charge (charger) efficiency (script `eta_c`) | dimensionless |
+
+Assumptions: \(0<\eta_c\le 1\), \(E_s\ge 0\).
+
+## Battery recharge power during sunlight
+
+Average power that must be available above the load during the sunlit interval \(t_d\) to restore \(E_c\).
+
+\[
+P_R = \frac{E_c}{t_d} = \frac{P\, t_e}{\eta_c\eta_d\, t_d}
+\]
+
+```formula
+## battery_recharge_power
+family: power
+expr: P*te/(eta_c*eta_d*td)
+symbols: P, te, eta_c, eta_d, td
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(P_R\) | Average recharge power during sunlight | W |
+| \(t_d\) | Sunlit duration (script `td`) | s |
+
+Assumptions: \(t_d>0\). Same efficiency limits as above.
+
+## Orbit-average array power for energy balance
+
+Sunlit array power that closes the energy balance for a constant load \(P\) over one orbit of eclipse duration \(t_e\) and sunlight duration \(t_d\), with charge and discharge efficiencies. MSFC top-level form without additional distribution knockdowns; those knockdowns are omitted here and must be folded into \(P\) or the efficiencies if needed.
+
+\[
+P_{\mathrm{sa}} = P\left(1+\frac{t_e}{\eta_c\eta_d\, t_d}\right)
+\]
+
+```formula
+## battery_orbit_source_power
+family: power
+expr: P*(1 + te/(eta_c*eta_d*td))
+symbols: P, te, eta_c, eta_d, td
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(P_{\mathrm{sa}}\) | Required constant sunlit array power | W |
+| \(P\) | Constant spacecraft load | W |
+
+Assumptions: constant load in sun and eclipse, zero array power in eclipse, and surplus sunlit power goes to charging. If the sunlit array is below the load, the battery supplies that difference at \(\eta_d\). Distribution and converter efficiencies outside \(\eta_c\) and \(\eta_d\) are omitted. Orbit-average array power from `solar_array_orbit_average_power` is \(P_{\mathrm{sa}}(1-f_{\mathrm{e}})\) with \(f_{\mathrm{e}}=t_e/(t_e+t_d)\).
+
+# Space communications
+
+Vacuum free-space radio link budget. Wavelength and frequency use the NIST CODATA 2022 speed of light \(c = 299792458\,\mathrm{m/s}\). Boltzmann’s constant is the CODATA 2022 value \(k = 1.380649\times 10^{-23}\,\mathrm{J/K}\). Free-space path loss and Friis received power follow Jamnejad. Circular-aperture gain with aperture efficiency follows Dabul, NASA TN D-3405. Thermal noise \(P_n=kTB\) is the same note; carrier-to-noise is Kalil’s \(\mathrm{CNR}=P_r/(kTB)\). \(E_b/N_0=(C/N_0)/R_b\) and margin against a required \(E_b/N_0\) follow Kerczewski, NASA TM 89898. Atmosphere, rain, polarization mismatch, pointing loss, and modulation details beyond a supplied \(E_b/N_0\) requirement are omitted.
+
+## Wavelength from frequency
+
+\[
+\lambda = \frac{c}{f}
+\]
+
+```formula
+## wavelength_from_frequency
+family: comms
+expr: c/f
+symbols: c, f
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(\lambda\) | Wavelength (script `lam` in related records) | m |
+| \(c\) | Speed of light in vacuum | m/s |
+| \(f\) | Carrier frequency | Hz |
+
+Assumptions: \(f>0\). Use \(c=299792458\,\mathrm{m/s}\) unless the user gives another value.
+
+## Frequency from wavelength
+
+\[
+f = \frac{c}{\lambda}
+\]
+
+```formula
+## frequency_from_wavelength
+family: comms
+expr: c/lam
+symbols: c, lam
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(f\) | Carrier frequency | Hz |
+| \(c\) | Speed of light in vacuum | m/s |
+| \(\lambda\) | Wavelength (script `lam`) | m |
+
+Assumptions: \(\lambda>0\).
+
+## Free-space path loss
+
+Multiplying free-space (space) loss between isotropic antennas at range \(R\):
+
+\[
+L_{\mathrm{fs}} = \left(\frac{4\pi R}{\lambda}\right)^{2}
+\]
+
+```formula
+## free_space_path_loss
+family: comms
+expr: (4*pi*R/lam)**2
+symbols: pi, R, lam
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(L_{\mathrm{fs}}\) | Free-space path loss (power ratio \(>1\)) | dimensionless |
+| \(R\) | Slant range | m |
+| \(\lambda\) | Wavelength (script `lam`) | m |
+| \(\pi\) | Circle constant | dimensionless |
+
+Assumptions: vacuum free space; far-field plane-wave Friis geometry; \(R>0\), \(\lambda>0\). No atmosphere or rain.
+
+## Free-space path loss in decibels
+
+\[
+L_{\mathrm{fs,dB}} = 10\log_{10} L_{\mathrm{fs}} = 20\log_{10}\!\left(\frac{4\pi R}{\lambda}\right)
+\]
+
+```formula
+## free_space_path_loss_db
+family: comms
+expr: 20*log(4*pi*R/lam)/log(10)
+symbols: pi, R, lam
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(L_{\mathrm{fs,dB}}\) | Free-space path loss | dB |
+| \(R\) | Slant range | m |
+| \(\lambda\) | Wavelength (script `lam`) | m |
+
+Assumptions: same as `free_space_path_loss`. Script `log` is the natural logarithm.
+
+## Antenna gain from effective aperture
+
+\[
+G = \frac{4\pi A_e}{\lambda^{2}}
+\]
+
+```formula
+## antenna_gain_from_effective_aperture
+family: comms
+expr: 4*pi*Ae/(lam**2)
+symbols: pi, Ae, lam
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(G\) | Antenna power gain relative to isotropic | dimensionless |
+| \(A_e\) | Effective aperture area (script `Ae`) | m² |
+| \(\lambda\) | Wavelength (script `lam`) | m |
+
+Assumptions: \(A_e>0\), \(\lambda>0\). Perfect polarization match when used in Friis.
+
+## Circular-aperture antenna gain
+
+Ideal uniform illumination gives \(G=(\pi D/\lambda)^{2}\). With aperture efficiency \(\eta\),
+
+\[
+G = \eta\left(\frac{\pi D}{\lambda}\right)^{2}
+\]
+
+```formula
+## antenna_gain_circular_aperture
+family: comms
+expr: eta*(pi*D/lam)**2
+symbols: eta, pi, D, lam
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(G\) | Antenna power gain relative to isotropic | dimensionless |
+| \(\eta\) | Aperture efficiency (script `eta`) | dimensionless |
+| \(D\) | Antenna diameter | m |
+| \(\lambda\) | Wavelength (script `lam`) | m |
+
+Assumptions: circular projected aperture; \(0 < \eta \le 1\); \(D>0\); \(\lambda>0\). Equivalent to `antenna_gain_from_effective_aperture` with \(A_e=\eta\pi D^{2}/4\).
+
+## Effective isotropic radiated power
+
+\[
+\mathrm{EIRP} = P_t G_t
+\]
+
+```formula
+## eirp
+family: comms
+expr: Pt*Gt
+symbols: Pt, Gt
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(\mathrm{EIRP}\) | Effective isotropic radiated power | W |
+| \(P_t\) | Transmitter power into the antenna (script `Pt`) | W |
+| \(G_t\) | Transmit antenna gain (script `Gt`) | dimensionless |
+
+Assumptions: \(P_t>0\), \(G_t>0\). No transmitter line loss beyond what is already folded into \(P_t\) or \(G_t\).
+
+## Friis received power
+
+\[
+P_r = \frac{P_t G_t G_r}{L_{\mathrm{fs}}} = P_t G_t G_r\left(\frac{\lambda}{4\pi R}\right)^{2}
+\]
+
+```formula
+## friis_received_power
+family: comms
+expr: Pt*Gt*Gr*(lam/(4*pi*R))**2
+symbols: Pt, Gt, Gr, lam, pi, R
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(P_r\) | Received power at the antenna terminals | W |
+| \(P_t\) | Transmit power (script `Pt`) | W |
+| \(G_t\) | Transmit antenna gain (script `Gt`) | dimensionless |
+| \(G_r\) | Receive antenna gain (script `Gr`) | dimensionless |
+| \(\lambda\) | Wavelength (script `lam`) | m |
+| \(R\) | Slant range | m |
+
+Assumptions: vacuum free space; matched polarization; no atmosphere, rain, pointing, or circuit loss beyond the stated gains and power. \(P_t,G_t,G_r,R,\lambda>0\).
+
+## Thermal noise power
+
+\[
+P_n = k T_s B
+\]
+
+```formula
+## thermal_noise_power
+family: comms
+expr: k*Ts*B
+symbols: k, Ts, B
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(P_n\) | Noise power in bandwidth \(B\) | W |
+| \(k\) | Boltzmann constant | J/K |
+| \(T_s\) | System noise temperature (script `Ts`) | K |
+| \(B\) | Noise bandwidth | Hz |
+
+Assumptions: \(T_s>0\), \(B>0\). Use \(k=1.380649\times 10^{-23}\,\mathrm{J/K}\) unless the user gives another value. \(T_s\) is the equivalent system temperature referred to the receiver input.
+
+## Noise spectral density
+
+\[
+N_0 = k T_s
+\]
+
+```formula
+## noise_spectral_density
+family: comms
+expr: k*Ts
+symbols: k, Ts
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(N_0\) | One-sided noise power spectral density (script `N0`) | W/Hz |
+| \(k\) | Boltzmann constant | J/K |
+| \(T_s\) | System noise temperature (script `Ts`) | K |
+
+Assumptions: \(T_s>0\).
+
+## Carrier-to-noise density
+
+\[
+\frac{C}{N_0} = \frac{P_r}{k T_s}
+\]
+
+```formula
+## carrier_to_noise_density
+family: comms
+expr: Pr/(k*Ts)
+symbols: Pr, k, Ts
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(C/N_0\) | Carrier-to-noise density ratio | 1/Hz |
+| \(P_r\) | Received carrier power (script `Pr`) | W |
+| \(k\) | Boltzmann constant | J/K |
+| \(T_s\) | System noise temperature (script `Ts`) | K |
+
+Assumptions: \(P_r>0\), \(T_s>0\). Carrier power equals Friis received power when no other receive losses are stated.
+
+## Carrier-to-noise ratio
+
+\[
+\frac{C}{N} = \frac{P_r}{k T_s B}
+\]
+
+```formula
+## carrier_to_noise_ratio
+family: comms
+expr: Pr/(k*Ts*B)
+symbols: Pr, k, Ts, B
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(C/N\) | Carrier-to-noise power ratio | dimensionless |
+| \(P_r\) | Received carrier power (script `Pr`) | W |
+| \(k\) | Boltzmann constant | J/K |
+| \(T_s\) | System noise temperature (script `Ts`) | K |
+| \(B\) | Noise bandwidth | Hz |
+
+Assumptions: \(B>0\). Equals Kalil’s \(\mathrm{CNR}=P_r/(kTB)\).
+
+## Energy per bit to noise density
+
+\[
+\frac{E_b}{N_0} = \frac{C/N_0}{R_b}
+\]
+
+```formula
+## eb_n0_from_cn0
+family: comms
+expr: CN0/Rb
+symbols: CN0, Rb
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(E_b/N_0\) | Energy per bit over noise density | dimensionless |
+| \(C/N_0\) | Carrier-to-noise density (script `CN0`) | 1/Hz |
+| \(R_b\) | Information bit rate (script `Rb`) | bit/s |
+
+Assumptions: \(R_b>0\). Equivalent to \(E_b/N_0=P_r/(k T_s R_b)\) when \(C/N_0=P_r/(k T_s)\). No coding or modulation model beyond the user’s bit rate and required \(E_b/N_0\).
+
+## Link margin on \(E_b/N_0\)
+
+Ratio of achieved \(E_b/N_0\) to a required value:
+
+\[
+M = \frac{(E_b/N_0)}{(E_b/N_0)_{\mathrm{req}}}
+\]
+
+```formula
+## link_margin_eb_n0
+family: comms
+expr: EbN0/EbN0req
+symbols: EbN0, EbN0req
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(M\) | Link margin (power ratio) | dimensionless |
+| \(E_b/N_0\) | Achieved ratio (script `EbN0`) | dimensionless |
+| \((E_b/N_0)_{\mathrm{req}}\) | Required ratio (script `EbN0req`) | dimensionless |
+
+Assumptions: \((E_b/N_0)_{\mathrm{req}}>0\). Margin in decibels is \(10\log_{10} M\). The requirement is supplied by the user; modulation BER curves are not computed here.
+
+# Dynamics and control
+
+Linear, constant-coefficient, single-input second-order response follows NASA/TM-2016-218227 (Casiano), NASA TM X-53036 (Garner), NASA/TM-2010-216897 (Connolly and Kopasakis), and the NASA Glenn loop-shaping note NTRS 20070034948. The plant is the unity-gain form
+
+\[
+G(s)=\frac{\omega_n^{2}}{s^{2}+2\zeta\omega_n s+\omega_n^{2}}
+\]
+
+or the mechanical SDOF \(m\ddot{x}+c\dot{x}+kx=F\). In this category \(k\) is stiffness, not the rocket ratio of specific heats. Rise time from 10% to 90% of the final value is read from the unit-step solution in the program and is not a separate closed-form record here.
+
+## Natural frequency from mass and stiffness
+
+Undamped natural frequency of a single-degree-of-freedom spring–mass plant. Matching Casiano’s normalized oscillator to \(m\ddot{x}+c\dot{x}+kx=F\) gives
+
+\[
+\omega_n = \sqrt{\frac{k}{m}}
+\]
+
+```formula
+## natural_frequency_mass_stiffness
+family: control
+expr: (k/m)**0.5
+symbols: k, m
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(\omega_n\) | Undamped natural frequency | rad/s |
+| \(k\) | Stiffness | N/m |
+| \(m\) | Mass | kg |
+
+Assumptions: linear spring, constant mass, no Coulomb friction. \(m>0\), \(k>0\).
+
+## Damping ratio from mass, stiffness, and damping
+
+Viscous damping ratio of that same SDOF plant:
+
+\[
+\zeta = \frac{c}{2\sqrt{k m}}
+\]
+
+```formula
+## damping_ratio_mass_stiffness
+family: control
+expr: c/(2*(k*m)**0.5)
+symbols: c, k, m
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(\zeta\) | Damping ratio | dimensionless |
+| \(c\) | Viscous damping coefficient | N·s/m |
+| \(k\) | Stiffness | N/m |
+| \(m\) | Mass | kg |
+
+Assumptions: linear viscous damper in parallel with the spring. Critical damping is \(c_c=2\sqrt{km}\), so \(\zeta=c/c_c\). The case is underdamped when \(0\le\zeta<1\), critically damped when \(\zeta=1\), and overdamped when \(\zeta>1\). \(m>0\), \(k>0\), \(c\ge 0\).
+
+## Damped natural frequency
+
+Oscillation frequency of the underdamped free or step response (Casiano equation (7); Garner’s \(\omega_d\)):
+
+\[
+\omega_d = \omega_n\sqrt{1-\zeta^{2}}
+\]
+
+```formula
+## damped_natural_frequency
+family: control
+expr: wn*(1 - zeta**2)**0.5
+symbols: wn, zeta
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(\omega_d\) | Damped natural frequency | rad/s |
+| \(\omega_n\) | Undamped natural frequency (script `wn`) | rad/s |
+| \(\zeta\) | Damping ratio (script `zeta`) | dimensionless |
+
+Assumptions: \(0\le\zeta<1\) and \(\omega_n>0\). Not used when \(\zeta\ge 1\).
+
+## Second-order percent overshoot
+
+Fractional peak overshoot of the underdamped unit-step response (Garner; Connolly and Kopasakis). Percent overshoot is 100 times this value:
+
+\[
+M_p = \exp\left(-\frac{\pi\zeta}{\sqrt{1-\zeta^{2}}}\right)
+\]
+
+```formula
+## second_order_percent_overshoot
+family: control
+expr: exp(-pi*zeta/(1 - zeta**2)**0.5)
+symbols: zeta, pi
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(M_p\) | Fractional overshoot \((y_{\max}-1)/1\) | dimensionless |
+| \(\zeta\) | Damping ratio (script `zeta`) | dimensionless |
+| \(\pi\) | Circle constant (script `pi`) | dimensionless |
+
+Assumptions: underdamped unity-gain second-order plant, unit step, zero initial conditions. \(0\le\zeta<1\). Overshoot is zero when \(\zeta\ge 1\).
+
+## Second-order peak time
+
+Time of the first peak of the underdamped unit-step response. Garner states that the peak occurs when \(\omega_d t_p=\pi\):
+
+\[
+t_p = \frac{\pi}{\omega_n\sqrt{1-\zeta^{2}}}
+\]
+
+```formula
+## second_order_peak_time
+family: control
+expr: pi/(wn*(1 - zeta**2)**0.5)
+symbols: wn, zeta, pi
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(t_p\) | Peak time | s |
+| \(\omega_n\) | Undamped natural frequency (script `wn`) | rad/s |
+| \(\zeta\) | Damping ratio (script `zeta`) | dimensionless |
+| \(\pi\) | Circle constant (script `pi`) | dimensionless |
+
+Assumptions: underdamped unity-gain second-order plant, unit step. \(0\le\zeta<1\), \(\omega_n>0\). Not used when \(\zeta\ge 1\).
+
+## Second-order settling time
+
+Envelope settling time to a fractional band \(\delta\) about the final value (Garner’s \(t_s=k/(\zeta\omega_n)\) with \(k=-\ln\delta\); Connolly’s \(4.6/\sigma\) is the \(\delta=0.01\) case; the Glenn loop-shaping note’s four time constants is the \(\delta=0.02\) case):
+
+\[
+t_s = \frac{-\ln\delta}{\zeta\omega_n}
+\]
+
+```formula
+## second_order_settling_time
+family: control
+expr: -log(delta)/(zeta*wn)
+symbols: delta, zeta, wn
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(t_s\) | Settling time | s |
+| \(\delta\) | Fractional settling band (script `delta`) | dimensionless |
+| \(\zeta\) | Damping ratio (script `zeta`) | dimensionless |
+| \(\omega_n\) | Undamped natural frequency (script `wn`) | rad/s |
+
+Assumptions: underdamped or lightly damped envelope \(e^{-\zeta\omega_n t}\). Default band is 2% so \(\delta=0.02\). A 5% band uses \(\delta=0.05\). Requires \(\zeta>0\), \(\omega_n>0\), and \(0<\delta<1\). This is an envelope estimate; the program may also report the first time the analytical step response stays inside the band.
