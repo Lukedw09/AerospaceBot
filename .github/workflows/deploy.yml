@@ -46,5 +46,7 @@ jobs:
           role-duration-seconds: 7200
           aws-region: us-east-1
       - uses: aws-actions/setup-sam@v2
+      - name: Sign in to Amazon's public image registry
+        run: aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws
       - name: Deploy the stack, publish the account pages, and clear the cache
         run: python .github/scripts/deploy.py
