@@ -26,7 +26,7 @@ from app.catalog import Tool, load_catalog, repo_root_from, tool_by_name
 from app.config import Settings, load_settings
 from app.formulas import lookup_formula
 from app.pictures import publish, rewrite
-from app.runner import run_tool
+from app.runner import release_job, run_tool
 from app.usage import UsageStore
 
 _identity: ContextVar[Identity | None] = ContextVar("identity", default=None)
@@ -126,20 +126,23 @@ def dispatch_calculation(name: str, arguments: dict[str, Any]) -> str:
         repo_root=root,
         timeout_sec=settings.tool_timeout_sec,
     )
-    elapsed = time.perf_counter() - started
-    sub = identity.sub if identity else "local"
-    if result.exit_code == 0:
-        links = publish(result.files, sub, settings)
-        text = rewrite(result.text, links)
-    else:
-        text = result.text
-    if not settings.auth_disabled and identity is not None and not result.missing_input:
-        store.commit(identity.sub)
-    print(
-        f"tool {name} sub {sub} exit {result.exit_code} seconds {elapsed:.3f}",
-        file=sys.stderr,
-    )
-    return text
+    try:
+        elapsed = time.perf_counter() - started
+        sub = identity.sub if identity else "local"
+        if result.exit_code == 0:
+            links = publish(result.files, sub, settings)
+            text = rewrite(result.text, links)
+        else:
+            text = result.text
+        if not settings.auth_disabled and identity is not None and not result.missing_input:
+            store.commit(identity.sub)
+        print(
+            f"tool {name} sub {sub} exit {result.exit_code} seconds {elapsed:.3f}",
+            file=sys.stderr,
+        )
+        return text
+    finally:
+        release_job(result.job_dir)
 
 
 def dispatch_formula(formula_id: str, values_json: str | None = None) -> str:
@@ -327,6 +330,11 @@ class _Guard:
             await _empty(send, 204, self.settings)
             return
         path = scope.get("path", "")
+        # JSON responses travel on POST. A GET would open an SSE stream that
+        # Lambda holds until its timeout, and that exhausts the account limit.
+        if scope.get("type") == "http" and scope.get("method") == "GET" and path.rstrip("/") == "/mcp":
+            await _method_not_allowed(send)
+            return
         current = _settings_for_scope(scope, self.settings)
         if (
             scope.get("type") == "http"
@@ -402,6 +410,22 @@ async def _unauthorized(send, settings: Settings, message: str) -> None:
             "headers": [
                 (b"content-type", b"application/json"),
                 (b"www-authenticate", _www(settings).encode("utf-8")),
+                (b"access-control-allow-origin", b"*"),
+            ],
+        }
+    )
+    await send({"type": "http.response.body", "body": body})
+
+
+async def _method_not_allowed(send) -> None:
+    body = b'{"error":"this server accepts POST"}'
+    await send(
+        {
+            "type": "http.response.start",
+            "status": 405,
+            "headers": [
+                (b"content-type", b"application/json"),
+                (b"allow", b"POST, OPTIONS"),
                 (b"access-control-allow-origin", b"*"),
             ],
         }

@@ -5,15 +5,17 @@ from __future__ import annotations
 import asyncio
 import math
 import os
+import shutil
 import unittest
 from pathlib import Path
+from unittest import mock
 
 os.environ["AUTH_DISABLED"] = "1"
 
 from app.catalog import load_catalog, repo_root_from, tool_by_name
 from app.config import Settings
 from app.formulas import lookup_formula
-from app.runner import run_tool
+from app.runner import result_root_for, run_tool
 from app.server import INSTRUCTIONS, _Guard, build_server, dispatch_calculation, dispatch_formula
 
 ROOT = repo_root_from(Path(__file__).resolve())
@@ -60,6 +62,23 @@ class RunnerTests(unittest.TestCase):
         self.assertTrue(result.missing_input)
         self.assertIn("missing", result.text.lower())
         self.assertNotIn("At_m2", result.text)
+
+    def test_lambda_writes_under_tmp(self) -> None:
+        tool = tool_by_name(load_catalog(ROOT), "throat_sizing")
+        assert tool is not None
+        with mock.patch.dict(os.environ, {"AWS_LAMBDA_FUNCTION_NAME": "aerospace"}):
+            root = result_root_for(ROOT)
+            result = run_tool(
+                tool,
+                {"thrust": 1500, "cf": 1.5, "pc": 2e6, "cstar": 1600},
+                repo_root=ROOT,
+            )
+        self.assertEqual(root, Path("/tmp/aerospace-results"))
+        self.assertEqual(result.exit_code, 0)
+        assert result.job_dir is not None
+        self.assertEqual(result.job_dir.parent, root)
+        self.assertTrue(result.job_dir.is_dir())
+        shutil.rmtree(result.job_dir, ignore_errors=True)
 
 
 class FormulaTests(unittest.TestCase):
@@ -178,6 +197,40 @@ class PluginCases(unittest.TestCase):
         headers = dict(sent[0]["headers"])
         self.assertIn(b"resource_metadata", headers[b"www-authenticate"])
         self.assertIn(b"https://plugin.example/.well-known/oauth-protected-resource", headers[b"www-authenticate"])
+
+    def test_get_mcp_does_not_open_a_stream(self) -> None:
+        settings = Settings(
+            auth_disabled=False,
+            repo_root="",
+            usage_table="",
+            picture_bucket="",
+            daily_tool_cap=20,
+            tool_timeout_sec=60,
+            result_link_hours=24,
+            usage_timezone="America/New_York",
+            cognito_user_pool_id="pool",
+            cognito_client_id="client",
+            cognito_region="us-east-1",
+            public_base_url="",
+            account_site_url="",
+        )
+
+        async def receive():
+            return {"type": "http.request", "body": b"", "more_body": False}
+
+        sent: list[dict] = []
+
+        async def send(message):
+            sent.append(message)
+
+        async def inner(scope, receive, send):
+            raise AssertionError("GET /mcp must not open a stream")
+
+        scope = {"type": "http", "method": "GET", "path": "/mcp", "headers": []}
+        asyncio.run(_Guard(inner, settings)(scope, receive, send))
+        self.assertEqual(sent[0]["status"], 405)
+        headers = dict(sent[0]["headers"])
+        self.assertIn(b"POST", headers[b"allow"])
 
 
 if __name__ == "__main__":

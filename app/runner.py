@@ -19,6 +19,7 @@ class RunResult:
     text: str
     missing_input: bool
     files: list[Path] = field(default_factory=list)
+    job_dir: Path | None = None
 
 
 def _coerce(flag: Flag, raw: object) -> list[str]:
@@ -102,6 +103,47 @@ def _output_path(job_dir: Path, option: str, help_text: str) -> Path:
     return job_dir / f"{stem}{suffix}"
 
 
+def result_root_for(repo_root: Path) -> Path:
+    """Directory a run may create. Lambda mounts /var/task read-only."""
+    if os.environ.get("AWS_LAMBDA_FUNCTION_NAME"):
+        return Path("/tmp/aerospace-results")
+    preferred = repo_root / "app" / "data" / "results"
+    if _creatable(preferred):
+        return preferred
+    return Path(os.environ.get("TMPDIR", "/tmp")) / "aerospace-results"
+
+
+def _creatable(path: Path) -> bool:
+    current = path
+    while not current.exists():
+        parent = current.parent
+        if parent == current:
+            return False
+        current = parent
+    return current.is_dir() and os.access(current, os.W_OK)
+
+
+def release_job(job_dir: Path | None) -> None:
+    """Remove a scratch directory. Local result files stay for inspection."""
+    if job_dir is None:
+        return
+    resolved = job_dir.resolve()
+    roots = [
+        Path(os.environ.get("TMPDIR", "/tmp")).resolve(),
+        Path("/tmp/aerospace-results").resolve(),
+    ]
+    ephemeral = False
+    for root in roots:
+        try:
+            resolved.relative_to(root)
+        except ValueError:
+            continue
+        ephemeral = True
+        break
+    if ephemeral:
+        shutil.rmtree(job_dir, ignore_errors=True)
+
+
 def run_tool(
     tool: Tool,
     arguments: dict[str, object],
@@ -110,7 +152,7 @@ def run_tool(
     timeout_sec: int = 60,
     result_root: Path | None = None,
 ) -> RunResult:
-    job_dir = (result_root or repo_root / "app" / "data" / "results") / uuid.uuid4().hex
+    job_dir = (result_root or result_root_for(repo_root)) / uuid.uuid4().hex
     job_dir.mkdir(parents=True, exist_ok=True)
     argv = [os.environ.get("PYTHON", "python"), str(tool.script)]
     for flag in tool.flags:
@@ -120,20 +162,23 @@ def run_tool(
     env = os.environ.copy()
     env["MPLCONFIGDIR"] = str(job_dir / "mpl")
     (job_dir / "mpl").mkdir(exist_ok=True)
-    completed = subprocess.run(
-        argv,
-        cwd=repo_root,
-        capture_output=True,
-        text=True,
-        timeout=timeout_sec,
-        env=env,
-        shell=False,
-    )
+    try:
+        completed = subprocess.run(
+            argv,
+            cwd=repo_root,
+            capture_output=True,
+            text=True,
+            timeout=timeout_sec,
+            env=env,
+            shell=False,
+        )
+    except subprocess.TimeoutExpired:
+        return RunResult(124, "the program timed out", False, [], job_dir)
     stdout = completed.stdout or ""
     stderr = completed.stderr or ""
     missing = completed.returncode != 0 and "missing" in stderr.lower()
     if completed.returncode != 0:
         detail = stderr.strip() or stdout.strip() or f"exit {completed.returncode}"
-        return RunResult(completed.returncode, detail, missing, [])
+        return RunResult(completed.returncode, detail, missing, [], job_dir)
     text, files = _rewrite_paths(stdout.strip(), job_dir, repo_root)
-    return RunResult(0, text, False, files)
+    return RunResult(0, text, False, files, job_dir)
