@@ -183,17 +183,11 @@ Resources:
       Name: !Sub "${AWS::StackName}-forward-host"
       AutoPublish: true
       FunctionConfig:
-        Comment: Pass the site host through to the function
+        Comment: CloudFront rejects functions that set x-forwarded-proto
         Runtime: cloudfront-js-2.0
       FunctionCode: |
         function handler(event) {
-          var request = event.request;
-          var host = request.headers.host && request.headers.host.value;
-          if (host) {
-            request.headers["x-forwarded-host"] = {value: host};
-            request.headers["x-forwarded-proto"] = {value: "https"};
-          }
-          return request;
+          return event.request;
         }
 
   SiteOAC:
