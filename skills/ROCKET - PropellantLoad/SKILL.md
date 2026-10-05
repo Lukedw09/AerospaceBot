@@ -29,7 +29,7 @@ Bulk density uses only these constants when `--pair` supplies density:
 1. Use this skill when the user asks for propellant mass or tank volume from mass flow and burn time.
 2. Convert all inputs to SI before the call (kg/s, s, kg/m³). State the converted units in the reply. Do not invent values the user did not give.
 3. Mixture ratio \(r\) (oxidizer/fuel) is required. Do not invent a missing \(r\).
-4. If the user gives both oxidizer and fuel density, pass those flags. If density is omitted, pass `--pair` from a listed pair. Do not invent a density.
+4. If the user gives both oxidizer and fuel density, pass those flags. If density is omitted, pass `--pair` from a listed pair. `LOX/RP-1` is `LOX/RP1`. `LCH4`, `LNG`, and `methane` are `CH4`. `NTO` is `N2O4`. `hydrazine` is `N2H4`. `Aerozine-50` is `A50`. Also listed: `LOX/Methanol` and `LOX/Propane`. Do not invent a density.
 
 ## Flags
 
@@ -44,7 +44,7 @@ python "skills/ROCKET - PropellantLoad/propellant_load.py" --mdot <kg/s> --tb <s
 | `--mdot` | Total propellant mass flow \(\dot{m}\) | kg/s | Required |
 | `--tb` | Burn time \(t_b\) | s | Required |
 | `--r` | Mixture ratio, oxidizer/fuel | dimensionless | Required |
-| `--pair` | `oxName/fuelName`. Spaces around `/` are allowed. Case is preserved (`Ethanol`). | — | Required when densities are omitted |
+| `--pair` | `oxName/fuelName`. Spaces around `/` are allowed. Known names fold to the card (`RP-1` is `RP1`, `Ethanol` stays `Ethanol`). | — | Required when densities are omitted |
 | `--rho-ox` | Oxidizer density \(\rho_o\) | kg/m³ | Required with `--rho-fuel` when `--pair` is not used for density |
 | `--rho-fuel` | Fuel density \(\rho_f\) | kg/m³ | Required with `--rho-ox` when `--pair` is not used for density |
 

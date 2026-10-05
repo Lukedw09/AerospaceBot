@@ -118,6 +118,22 @@ def run_check() -> int:
     if pair != "LOX/RP1":
         print(f"CHECK FAIL: pair = {pair!r}, expected 'LOX/RP1'", file=sys.stderr)
         return 1
+    try:
+        alias = load_pair_densities("LOX/RP-1")
+        hydrazine = load_pair_densities("N2O4/hydrazine")
+        aerozine = load_pair_densities("NTO/Aerozine-50")
+    except TableError as exc:
+        print(f"CHECK FAIL: alias lookup: {exc}", file=sys.stderr)
+        return 1
+    if alias[4] != "LOX/RP1" or abs(alias[0] - 1141.0) > CHECK_TOL:
+        print(f"CHECK FAIL: LOX/RP-1 resolved to {alias}", file=sys.stderr)
+        return 1
+    if hydrazine[4] != "N2O4/N2H4" or abs(hydrazine[2] - 1008.0) > CHECK_TOL:
+        print(f"CHECK FAIL: hydrazine resolved to {hydrazine}", file=sys.stderr)
+        return 1
+    if aerozine[4] != "N2O4/A50" or abs(aerozine[2] - 899.0) > CHECK_TOL:
+        print(f"CHECK FAIL: Aerozine-50 resolved to {aerozine}", file=sys.stderr)
+        return 1
 
     print("check: pass")
     print_kv("m_p_kg", m_p)

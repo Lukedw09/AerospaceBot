@@ -24,6 +24,12 @@ Bulk density uses only these constants:
 | LOX | LH2 | 1141 kg/m³ | 90 K | 71 kg/m³ | 20 K |
 | N2O4 | MMH | 1443 kg/m³ | 293 K | 878 kg/m³ | 293 K |
 | N2O4 | UDMH | 1443 kg/m³ | 293 K | 791 kg/m³ | 293 K |
+| N2O4 | N2H4 | 1443 kg/m³ | 293 K | 1008 kg/m³ | 293 K |
+| N2O4 | A50 | 1443 kg/m³ | 293 K | 899 kg/m³ | 298 K |
+| LOX | Methanol | 1141 kg/m³ | 90 K | 792 kg/m³ | 293 K |
+| LOX | Propane | 1141 kg/m³ | 90 K | 582 kg/m³ | 231 K |
+
+`RP-1` is `RP1`. `LCH4`, `LNG`, and `methane` are `CH4`. `NTO` is `N2O4`. `hydrazine` is `N2H4`. `Aerozine-50` is `A50`. Case and hyphens do not matter. `N2H4`, `A50`, `Methanol`, and `Propane` supply liquid density only. They have no frozen performance table.
 
 `1/rho_b = r/((r+1)*rho_ox) + 1/((r+1)*rho_f)`. Density impulse is `rho_b * Isp`.
 
@@ -44,7 +50,7 @@ python "skills/ROCKET - PerformanceParameters/src/performance.py" --pair LOX/RP1
 
 | Flag | Meaning |
 | --- | --- |
-| `--pair` | Repeatable. `oxName/fuelName`. Spaces around `/` are allowed. Case is preserved (`Ethanol`). Several pairs are overlaid on one plot. |
+| `--pair` | Repeatable. `oxName/fuelName`. Spaces around `/` are allowed. Known names fold to the card (`RP-1` is `RP1`). Several pairs are overlaid on one plot. |
 | `--pc` | Chamber pressure, Pa. Required on a point call. |
 | `--eps` | \(A_e/A_t\), at least 1. Required on a point call. |
 | `--pa` | Ambient pressure, Pa. Required on a point call. Omitted `pa` is an error. |

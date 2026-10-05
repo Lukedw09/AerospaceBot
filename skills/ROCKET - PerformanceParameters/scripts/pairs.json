@@ -66,6 +66,54 @@
       "rho_ox_T_K": 293,
       "rho_fuel_kg_m3": 791,
       "rho_fuel_T_K": 293
+    },
+    {
+      "oxName": "N2O4",
+      "fuelName": "N2H4",
+      "of_min": 1.0,
+      "of_max": 2.0,
+      "of_step": 0.1,
+      "rho_ox_kg_m3": 1443,
+      "rho_ox_T_K": 293,
+      "rho_fuel_kg_m3": 1008,
+      "rho_fuel_T_K": 293,
+      "cea": false
+    },
+    {
+      "oxName": "N2O4",
+      "fuelName": "A50",
+      "of_min": 1.4,
+      "of_max": 2.6,
+      "of_step": 0.1,
+      "rho_ox_kg_m3": 1443,
+      "rho_ox_T_K": 293,
+      "rho_fuel_kg_m3": 899,
+      "rho_fuel_T_K": 298,
+      "cea": false
+    },
+    {
+      "oxName": "LOX",
+      "fuelName": "Methanol",
+      "of_min": 1.0,
+      "of_max": 2.2,
+      "of_step": 0.1,
+      "rho_ox_kg_m3": 1141,
+      "rho_ox_T_K": 90,
+      "rho_fuel_kg_m3": 792,
+      "rho_fuel_T_K": 293,
+      "cea": false
+    },
+    {
+      "oxName": "LOX",
+      "fuelName": "Propane",
+      "of_min": 2.2,
+      "of_max": 4.0,
+      "of_step": 0.1,
+      "rho_ox_kg_m3": 1141,
+      "rho_ox_T_K": 90,
+      "rho_fuel_kg_m3": 582,
+      "rho_fuel_T_K": 231,
+      "cea": false
     }
   ]
 }

@@ -75,6 +75,7 @@ class PairSpec:
     rho_ox_T_K: float
     rho_fuel_kg_m3: float
     rho_fuel_T_K: float
+    cea: bool = True
 
 
 @dataclass(frozen=True)
@@ -104,13 +105,49 @@ def pc_pa_from_bar(pc_bar: float) -> float:
     return pc_bar * PA_PER_BAR
 
 
+# Common spellings of the card names stored in pairs.json and the frozen tables.
+_CARDS = {
+    "lox": "LOX",
+    "n2o4": "N2O4",
+    "nto": "N2O4",
+    "rp1": "RP1",
+    "ch4": "CH4",
+    "lch4": "CH4",
+    "lng": "CH4",
+    "methane": "CH4",
+    "lh2": "LH2",
+    "ethanol": "Ethanol",
+    "mmh": "MMH",
+    "udmh": "UDMH",
+    "n2h4": "N2H4",
+    "hydrazine": "N2H4",
+    "a50": "A50",
+    "aerozine50": "A50",
+    "az50": "A50",
+    "methanol": "Methanol",
+    "meoh": "Methanol",
+    "propane": "Propane",
+}
+
+
+def _card_name(token: str) -> str:
+    folded = token.strip().casefold()
+    folded = folded.replace("–", "-").replace("—", "-").replace("_", "").replace(" ", "")
+    if folded in _CARDS:
+        return _CARDS[folded]
+    hyphenless = folded.replace("-", "")
+    if hyphenless in _CARDS:
+        return _CARDS[hyphenless]
+    return token.strip()
+
+
 def canonical_pair(text: str) -> str:
-    """oxName/fuelName with spaces around the slash removed. Case is kept."""
+    """oxName/fuelName. Spaces around the slash are removed. Known names fold to the card."""
     if "/" not in text:
         raise TableError(f"pair must be oxName/fuelName, got {text!r}")
     ox, fuel = text.split("/", 1)
-    ox = ox.strip()
-    fuel = fuel.strip()
+    ox = _card_name(ox)
+    fuel = _card_name(fuel)
     if not ox or not fuel or "/" in fuel:
         raise TableError(f"pair must be oxName/fuelName, got {text!r}")
     return f"{ox}/{fuel}"
@@ -214,6 +251,9 @@ def load_pairs(path: Path | None = None) -> PairCatalog:
             raise TableError(f"{pair} of_max must be >= of_min")
         if rho_ox <= 0 or rho_fuel <= 0:
             raise TableError(f"{pair} densities must be > 0")
+        cea = row.get("cea", True)
+        if not isinstance(cea, bool):
+            raise TableError(f"{pair} cea must be true or false")
         pairs[pair] = PairSpec(
             oxName=ox,
             fuelName=fuel,
@@ -225,6 +265,7 @@ def load_pairs(path: Path | None = None) -> PairCatalog:
             rho_ox_T_K=t_ox,
             rho_fuel_kg_m3=rho_fuel,
             rho_fuel_T_K=t_fuel,
+            cea=cea,
         )
     return PairCatalog(pc_bar=tuple(pressures), pairs=pairs)
 

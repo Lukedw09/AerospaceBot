@@ -15,7 +15,7 @@ os.environ["AUTH_DISABLED"] = "1"
 from app.catalog import load_catalog, repo_root_from, tool_by_name
 from app.config import Settings
 from app.formulas import lookup_formula
-from app.runner import result_root_for, run_tool
+from app.runner import _output_path, result_root_for, run_tool
 from app.server import INSTRUCTIONS, _Guard, build_server, dispatch_calculation, dispatch_formula
 
 ROOT = repo_root_from(Path(__file__).resolve())
@@ -118,6 +118,26 @@ class RunnerTests(unittest.TestCase):
         self.assertEqual(result.exit_code, 0, result.text)
         self.assertIn("mode: point", result.text)
         self.assertNotIn("graph:", result.text)
+
+    def test_payload_point_does_not_receive_a_sweep_plot(self) -> None:
+        tool = tool_by_name(load_catalog(ROOT), "payload_to_deltav")
+        assert tool is not None
+        result = run_tool(
+            tool,
+            {"stages": 1, "stage": ["mp=100,inert=10,isp-vac=300"], "payload": 5},
+            repo_root=ROOT,
+        )
+        self.assertEqual(result.exit_code, 0, result.text)
+        self.assertIn("mode: deltav", result.text)
+        self.assertNotIn("graph:", result.text)
+
+    def test_orbit_plot_stays_a_png_when_the_help_mentions_html(self) -> None:
+        path = _output_path(
+            Path("/tmp/aerospace-results/job"),
+            "--out",
+            "PNG path; the HTML viewer uses the same stem",
+        )
+        self.assertEqual(path.suffix, ".png")
 
 
 class FormulaTests(unittest.TestCase):

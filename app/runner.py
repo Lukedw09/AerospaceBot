@@ -108,6 +108,8 @@ def _output_path(job_dir: Path, option: str, help_text: str) -> Path:
     stem = option[2:].replace("-", "_")
     if "pdf" in lowered:
         suffix = ".pdf"
+    elif "png" in lowered:
+        suffix = ".png"
     elif "html" in lowered:
         suffix = ".html"
     elif "table" in lowered or "ordinate" in lowered or "text" in lowered:

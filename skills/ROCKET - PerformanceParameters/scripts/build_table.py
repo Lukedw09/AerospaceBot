@@ -162,6 +162,8 @@ def main() -> int:
     catalog = load_pairs()
     built_utc = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     for spec in catalog.pairs.values():
+        if not spec.cea:
+            continue
         # Native constructor only. No cea_obj_w_units and no unit kwargs.
         cea = CEA_Obj(oxName=spec.oxName, fuelName=spec.fuelName)
         ratios = mixture_grid(spec.of_min, spec.of_max, spec.of_step)
