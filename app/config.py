@@ -53,7 +53,7 @@ def load_settings(repo_root: str) -> Settings:
         repo_root=repo_root,
         usage_table=os.environ.get("USAGE_TABLE", ""),
         picture_bucket=os.environ.get("PICTURE_BUCKET", ""),
-        daily_tool_cap=int(os.environ.get("DAILY_TOOL_CAP", "20")),
+        daily_tool_cap=int(os.environ.get("DAILY_TOOL_CAP", "2000")),
         tool_timeout_sec=int(os.environ.get("TOOL_TIMEOUT_SEC", "60")),
         result_link_hours=int(os.environ.get("RESULT_LINK_HOURS", "24")),
         usage_timezone=os.environ.get("USAGE_TIMEZONE", "America/New_York"),
