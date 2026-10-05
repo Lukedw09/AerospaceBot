@@ -35,6 +35,12 @@ class CatalogTests(unittest.TestCase):
         options = {flag.option for flag in throat.flags}
         self.assertNotIn("--check", options)
         self.assertNotIn("--out", options)
+        grain = tool_by_name(tools, "circular_port_grain_history")
+        assert grain is not None
+        grain_options = {flag.option for flag in grain.flags}
+        self.assertIn("--outer", grain_options)
+        self.assertNotIn("--out", grain_options)
+        self.assertIn("--outer", grain.required_options())
 
 
 class RunnerTests(unittest.TestCase):
@@ -79,6 +85,39 @@ class RunnerTests(unittest.TestCase):
         self.assertEqual(result.job_dir.parent, root)
         self.assertTrue(result.job_dir.is_dir())
         shutil.rmtree(result.job_dir, ignore_errors=True)
+
+    def test_outer_radius_is_not_the_plot_path(self) -> None:
+        tool = tool_by_name(load_catalog(ROOT), "circular_port_grain_history")
+        assert tool is not None
+        result = run_tool(
+            tool,
+            {
+                "a": 1e-5,
+                "n": 0.5,
+                "port": 0.02,
+                "length": 0.4,
+                "outer": 0.05,
+                "throat": 0.0005,
+                "rho": 1800,
+                "cstar": 1550,
+            },
+            repo_root=ROOT,
+        )
+        self.assertEqual(result.exit_code, 0, result.text)
+        self.assertNotIn("invalid float", result.text)
+        self.assertIn("graph:", result.text)
+
+    def test_expansion_point_does_not_receive_a_sweep_plot(self) -> None:
+        tool = tool_by_name(load_catalog(ROOT), "expansion_match")
+        assert tool is not None
+        result = run_tool(
+            tool,
+            {"pc": 2e6, "alt": 0},
+            repo_root=ROOT,
+        )
+        self.assertEqual(result.exit_code, 0, result.text)
+        self.assertIn("mode: point", result.text)
+        self.assertNotIn("graph:", result.text)
 
 
 class FormulaTests(unittest.TestCase):

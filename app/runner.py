@@ -10,7 +10,7 @@ import uuid
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from app.catalog import Flag, Tool
+from app.catalog import Flag, Tool, is_output_option
 
 
 @dataclass
@@ -63,6 +63,20 @@ def _rewrite_paths(stdout: str, job_dir: Path, cwd: Path) -> tuple[str, list[Pat
     return "\n".join(lines), files
 
 
+def _given(arguments: dict[str, object], name: str) -> bool:
+    value = arguments.get(name)
+    return value is not None and value is not False
+
+
+def _point_run_rejects_plot(help_text: str, arguments: dict[str, object]) -> bool:
+    """A single altitude or delta-v point rejects a sweep plot path."""
+    if "sweep" not in help_text.lower():
+        return False
+    if _given(arguments, "alt") and not _given(arguments, "alt_min") and not _given(arguments, "alt_max"):
+        return True
+    return _given(arguments, "dv") or _given(arguments, "payload")
+
+
 def _output_flags(script: Path) -> list[tuple[str, str]]:
     """Output-path flags are not user inputs. The runner fills them."""
     tree = ast.parse(script.read_text(encoding="utf-8"))
@@ -76,7 +90,7 @@ def _output_flags(script: Path) -> list[tuple[str, str]]:
         if not node.args or not isinstance(node.args[0], ast.Constant):
             continue
         option = node.args[0].value
-        if not isinstance(option, str) or not option.startswith("--out"):
+        if not isinstance(option, str) or not is_output_option(option):
             continue
         help_text = ""
         for keyword in node.keywords:
@@ -158,6 +172,8 @@ def run_tool(
     for flag in tool.flags:
         argv.extend(_coerce(flag, arguments.get(flag.dest)))
     for option, help_text in _output_flags(tool.script):
+        if _point_run_rejects_plot(help_text, arguments):
+            continue
         argv.extend([option, str(_output_path(job_dir, option, help_text))])
     env = os.environ.copy()
     env["MPLCONFIGDIR"] = str(job_dir / "mpl")

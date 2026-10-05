@@ -9,6 +9,13 @@ from pathlib import Path
 
 EXCLUDED_SCRIPTS = {"build_table.py", "check_formulas.py"}
 EXCLUDED_FLAGS = {"--check", "--open"}
+
+
+def is_output_option(option: str) -> bool:
+    """File outputs are --out and --out-coeff. --outer is a radius."""
+    return option == "--out" or option.startswith("--out-")
+
+
 FRONTMATTER = re.compile(r"^---\n(.*?)\n---\n", re.DOTALL)
 RUN_PATH = re.compile(r'python\s+"([^"]+\.py)"')
 FLAG_ROW = re.compile(
@@ -135,7 +142,7 @@ def flags_from_script(script: Path, required: set[str]) -> list[Flag]:
             continue
         if not option.startswith("--"):
             continue
-        if option in EXCLUDED_FLAGS or option.startswith("--out"):
+        if option in EXCLUDED_FLAGS or is_output_option(option):
             continue
         if option in seen:
             continue
