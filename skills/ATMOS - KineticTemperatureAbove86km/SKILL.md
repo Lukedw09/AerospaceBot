@@ -25,7 +25,7 @@ with \(T_c = 263.1905\,\mathrm{K}\), \(A = -76.3232\,\mathrm{K}\), \(a = -19.942
 3. Thermosphere linear ramp, \(110\)–\(120\,\mathrm{km}\): `kinetic_temperature_linear` with \(T_9 = 240\,\mathrm{K}\) and \(L_{K,9} = 12\,\mathrm{K/km}\), so \(T_{10} = 360\,\mathrm{K}\) at \(120\,\mathrm{km}\).
 4. Exosphere, \(120\)–\(1000\,\mathrm{km}\): `reduced_geopotential` and `exospheric_temperature` toward \(T_\infty = 1000\,\mathrm{K}\) (mean solar activity) with \(\lambda = 0.01875\,\mathrm{km}^{-1}\).
 
-This is not the hydrostatic molecular-scale model below 86 km and not the NASA Glenn three-zone fit. Pressure and density above 86 km need species number densities and are omitted here.
+This is not the hydrostatic molecular-scale model below 86 km and not the NASA Glenn three-zone fit. Pressure and density above 86 km need species number densities and belong to `ATMOS - DensityAbove86km`. They are omitted here.
 
 ## When to run
 

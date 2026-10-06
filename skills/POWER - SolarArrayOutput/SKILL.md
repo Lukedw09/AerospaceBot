@@ -10,7 +10,7 @@ description: >-
 
 # POWER - SolarArrayOutput
 
-Use this skill for flat-plate spacecraft solar-array electrical power. Run the program once; quote its stdout and include the PNG when `graph:` is printed. Do not redraw the plot or recompute the numbers by hand.
+Use this skill for flat-plate spacecraft solar-array electrical power. Run the program once; quote its stdout and include the PNG when `graph:` is printed. Do not redraw the plot or recompute the numbers by hand. The end-of-life orbit-average power must meet `P_avg_W` from `POWER - DutyCycleLoad` when that load list is the design case.
 
 Ideal packed power at normal incidence is `solar_array_ideal_power`:
 

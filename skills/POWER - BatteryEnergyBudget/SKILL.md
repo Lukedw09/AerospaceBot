@@ -12,7 +12,7 @@ description: >-
 
 # POWER - BatteryEnergyBudget
 
-Use this skill for a spacecraft battery energy budget with depth of discharge and charge/discharge efficiencies. Run the program once; quote its stdout and include the PNG when `graph:` is printed. Do not redraw the plot or recompute the numbers by hand.
+Use this skill for a spacecraft battery energy budget with depth of discharge and charge/discharge efficiencies. Run the program once; quote its stdout and include the PNG when `graph:` is printed. Do not redraw the plot or recompute the numbers by hand. Eclipse load and duration may come from `POWER - DutyCycleLoad` (`P_eclipse_W` as `--load`, `t_eclipse_s` as `--eclipse`).
 
 Nameplate energy from ampere-hours is `battery_energy_from_capacity_ah`:
 

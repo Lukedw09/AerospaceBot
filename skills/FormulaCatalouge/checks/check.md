@@ -5,7 +5,7 @@ A formula is listed when every identity named for it passed, or when it is a def
 A definition is exempt from the identity check.
 Use only these formula ids. Do not use a formula that is absent from this file.
 
-Passed: 470
+Passed: 553
 Failed: 0
 Unchecked: 0
 
@@ -148,6 +148,9 @@ Exempt from the identity check.
 - `glenn_zone_pressure_power` (atmosphere): square
 - `glenn_zone_pressure_exponential` (atmosphere): cancel_exponent, one_e_fold_drop
 - `glenn_density` (atmosphere): glenn_gas
+- `molecular_diffusion_coefficient` (atmosphere): reference_temperature
+- `species_mass_density` (atmosphere): one_kmol_per_cubic_metre
+- `thermosphere_pressure` (atmosphere): unit_density
 
 ## Rocket propulsion
 
@@ -204,6 +207,9 @@ Exempt from the identity check.
 - `specific_orbital_energy_from_speed` (flight): circular_energy
 - `orbital_period` (flight): unit_orbit, axis_four
 - `elliptic_half_period` (flight): unit_coast, axis_four
+- `hohmann_phase_angle` (flight): quarter_coast, fast_target
+- `synodic_period` (flight): twice_and_one, either_order
+- `inclined_excess_speed` (flight): coplanar_reduction, equal_speed_half_turn
 - `periapsis_radius` (flight): eccentricity_one_half, hyperbola
 - `apoapsis_radius` (flight): eccentricity_one_half
 - `orbit_eccentricity` (flight): two_and_six
@@ -292,6 +298,26 @@ Exempt from the identity check.
 - `oxidizer_flow` (rocket): same_split
 - `average_propellant_density` (rocket): mass_ratio_three
 - `characteristic_length` (rocket): definition
+- `injector_orifice_mass_flow` (rocket): round_trip
+- `injector_orifice_area` (rocket): round_trip
+- `injector_jet_velocity` (rocket): twenty
+- `injector_pressure_drop` (rocket): round_trip
+- `circular_orifice_diameter` (rocket): four_holes
+- `injector_manifold_pressure` (rocket): chamber_plus_drop
+- `feed_supply_pressure` (rocket): two_metre_lift
+- `pump_volume_flow` (rocket): two_kg_s
+- `pump_hydraulic_power` (rocket): four_hundred_watts
+- `pump_shaft_power` (rocket): seventy_percent
+- `pump_drive_power` (rocket): pump_and_drive
+- `bartz_gas_side_coefficient` (rocket): sp125_a1_throat
+- `gas_side_heat_flux` (rocket): stated_wall
+- `sp125_prandtl` (rocket): gamma_1_222
+- `sp125_specific_heat` (rocket): lox_rp1_sample
+- `sp125_viscosity` (rocket): sample_6140_R
+- `coolant_heat_rate` (rocket): hundred_kelvin
+- `coolant_outlet_temperature` (rocket): hundred_kelvin
+- `coolant_capacity` (rocket): one_hundred_fifty
+- `coolant_min_flow` (rocket): hold_450
 - `solid_mass_flow` (rocket): steady_regression
 - `burning_rate` (rocket): square_root_pressure
 - `burning_area_ratio` (rocket): ratio_200
@@ -309,6 +335,8 @@ Exempt from the identity check.
 - `remaining_web_time` (rocket): constant_rate
 - `burn_rate_temperature_sensitivity` (rocket): definition, exempt from the identity check
 - `pressure_temperature_sensitivity` (rocket): definition, exempt from the identity check
+- `vacuum_propellant_mass` (rocket): mass_ratio_e
+- `vacuum_wet_mass` (rocket): mass_ratio_e
 
 ## Aerodynamics
 
@@ -419,6 +447,34 @@ Exempt from the identity check.
 - `turbojet_propulsive_efficiency` (aerodynamics): classic_half
 - `turbojet_overall_efficiency` (aerodynamics): product_path
 - `ideal_brayton_thermal_efficiency` (aerodynamics): double
+- `ideal_ramjet_nozzle_pressure_ratio` (aerodynamics): ram_four
+- `ideal_ramjet_brayton_thermal_efficiency` (aerodynamics): double_ram
+- `adiabatic_diffuser_temperature` (aerodynamics): three_hundred, static_sea
+- `inlet_exit_total_pressure` (aerodynamics): half, perfect
+- `pitot_inlet_recovery` (aerodynamics): shock_only, with_duct
+- `compressor_temperature_ratio_efficiency` (aerodynamics): ideal_air_two, half_efficient
+- `compressor_work_efficiency` (aerodynamics): unit_rise, half_efficient
+- `compressor_stage_count` (aerodynamics): eight_from_two, two_stages
+- `burner_fuel_air_ratio_efficiency` (aerodynamics): unit_delta, half_burner
+- `burner_exit_total_pressure` (aerodynamics): lossless, two_percent
+- `turbine_temperature_ratio_from_work` (aerodynamics): ideal_half, with_fuel
+- `turbine_pressure_ratio_from_efficiency` (aerodynamics): air_half, four_fifths
+- `afterburner_fuel_air_ratio` (aerodynamics): no_core_fuel, with_core_fuel
+- `afterburner_exit_total_pressure` (aerodynamics): lossless, five_percent
+- `nozzle_exit_velocity_efficiency` (aerodynamics): ideal_half_drop, quarter_efficiency
+- `specific_thrust_with_pressure` (aerodynamics): balanced, unbalanced
+- `turbofan_core_pressure_ratio` (aerodynamics): ten, four
+- `turbofan_shaft_work` (aerodynamics): core_only, with_bypass
+- `turbofan_specific_thrust` (aerodynamics): no_bypass, equal_streams
+- `turbofan_tsfc` (aerodynamics): no_bypass, bypass
+- `turbofan_thermal_efficiency` (aerodynamics): static_core, bypass_only_jet
+- `turbofan_propulsive_efficiency` (aerodynamics): classic_half, static
+- `turbofan_overall_efficiency` (aerodynamics): no_bypass, with_bypass
+- `airflow_from_thrust` (aerodynamics): ten, two
+- `capture_area` (aerodynamics): unit, sea_level
+- `circular_capture_diameter` (aerodynamics): unit_area, four
+- `compressible_mass_flow_parameter` (aerodynamics): sonic_unit_gas, rest
+- `annulus_area_from_mass_flow` (aerodynamics): unit, half
 - `breguet_range_jet` (aerodynamics): weight_ratio_two, scaled_cruise
 - `breguet_endurance_jet` (aerodynamics): weight_ratio_two, scaled_cruise
 - `breguet_range_prop` (aerodynamics): weight_ratio_two, scaled_cruise
@@ -443,6 +499,7 @@ Exempt from the identity check.
 - `naca4_glauert_A1` (aerodynamics): circular_arc_two_percent
 - `naca4_glauert_A2` (aerodynamics): circular_arc, quarter_chord_camber
 - `naca4_quarter_chord_moment` (aerodynamics): circular_arc_two_percent
+- `drag_delta_v_per_revolution` (aerodynamics): unit_case
 
 ## Structures
 
@@ -456,6 +513,10 @@ Exempt from the identity check.
 - `radius_of_gyration` (column): unit_gyration, square_sample
 - `column_slenderness` (column): unit_slenderness, steel_sample_slenderness
 - `euler_critical_stress` (column): unit_stress, steel_sample_stress
+- `polar_second_moment_solid` (shaft): unit_solid, twenty_mm_radius
+- `polar_second_moment_hollow` (shaft): unit_hollow_annulus, matches_solid_when_ri_zero
+- `circular_shaft_shear` (shaft): unit_shear, affdl_outer_fiber
+- `circular_shaft_twist` (shaft): unit_twist, affdl_hollow_sample
 - `cylinder_hoop_stress` (shell): forty_inch_cylinder
 - `margin_of_safety` (design): zero_margin, quarter_margin
 - `weld_radial_mismatch` (shell): five_percent_mismatch, unit_offset
@@ -487,6 +548,14 @@ Exempt from the identity check.
 - `allen_eggers_peak_deceleration_altitude` (aerotherm): sea_level_reference
 - `allen_eggers_surface_speed` (aerotherm): heavy_vertical
 - `allen_eggers_surface_deceleration` (aerotherm): unit_surface
+- `lumped_thermal_time_constant` (aerotherm): unit_mass, twenty_seconds
+- `lumped_capacitance_temperature` (aerotherm): at_one_time_constant, initial_instant
+- `lumped_capacitance_time_to_temperature` (aerotherm): one_time_constant, halfway_excess
+- `lumped_capacitance_heat_transferred` (aerotherm): cool_by_one_kelvin, at_one_time_constant
+- `biot_number` (aerotherm): small_biot, warn_threshold
+- `spacecraft_absorbed_power` (aerotherm): sun_only
+- `spacecraft_equilibrium_temperature` (aerotherm): three_hundred_kelvin
+- `radiator_area_for_temperature` (aerotherm): one_square_metre
 
 ## Spacecraft power
 
@@ -508,6 +577,8 @@ Exempt from the identity check.
 - `battery_charge_energy` (power): ninety_two_percent_charger
 - `battery_recharge_power` (power): leo_thirty_sixty
 - `battery_orbit_source_power` (power): leo_thousand_watt_load
+- `orbit_average_load` (power): half_on
+- `eclipse_load_energy` (power): twenty_watts_half_hour
 
 ## Space communications
 
@@ -525,6 +596,8 @@ Exempt from the identity check.
 - `carrier_to_noise_ratio` (comms): ten_to_one
 - `eb_n0_from_cn0` (comms): megabit_link
 - `link_margin_eb_n0` (comms): three_db_linear
+- `required_pass_bit_rate` (comms): two_gigabits
+- `pass_data_volume` (comms): round_trip
 
 ## Dynamics and control
 
@@ -534,3 +607,13 @@ Exempt from the identity check.
 - `second_order_percent_overshoot` (control): zero_damping, half_damping
 - `second_order_peak_time` (control): unit_undamped, half_damping
 - `second_order_settling_time` (control): two_percent_unit, two_percent_four_time_constants
+- `true_pn_commanded_acceleration` (control): three_times_thousand_times_hundredth, signed_four_times_half_thousand
+- `closing_speed` (control): approaching_two_fifty
+- `los_rate` (control): three_four_closing_x
+- `gravity_gradient_torque` (control): forty_five_degrees
+- `aerodynamic_disturbance_torque` (control): unit_dynamic_pressure
+- `solar_radiation_torque` (control): unit_factors
+- `magnetic_disturbance_torque` (control): perpendicular
+- `rest_to_rest_slew_torque` (control): two_radian_ten_seconds
+- `rest_to_rest_slew_impulse` (control): matches_half_time
+- `disturbance_momentum_storage` (control): one_orbit

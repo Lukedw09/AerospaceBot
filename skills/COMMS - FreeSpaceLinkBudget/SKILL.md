@@ -11,7 +11,7 @@ description: >-
 
 # COMMS - FreeSpaceLinkBudget
 
-Use this skill for a vacuum free-space radio link budget. Run the program once; quote its stdout and include the PNG when `graph:` is printed. Do not redraw the plot or recompute the numbers by hand.
+Use this skill for a vacuum free-space radio link budget. Run the program once; quote its stdout and include the PNG when `graph:` is printed. Do not redraw the plot or recompute the numbers by hand. The bit rate may be `R_bps` from `COMMS - PassDataVolume`.
 
 Free-space path loss is `free_space_path_loss`:
 

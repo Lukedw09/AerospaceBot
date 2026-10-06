@@ -17,7 +17,7 @@ Geometric altitude \(Z\) is the input. Geopotential altitude is \(H = r_0 Z/(r_0
 H_p = \frac{R^{*} T}{g M_0}, \quad g = g_0\left(\frac{r_0}{r_0+Z}\right)^2
 \]
 
-with \(g_0 = 9.80665\,\mathrm{m/s}^2\). This is not the NASA Glenn three-zone curve fit. The hydrostatic model ends at 86 km. There is no result above that altitude.
+with \(g_0 = 9.80665\,\mathrm{m/s}^2\). This is not the NASA Glenn three-zone curve fit. The hydrostatic model ends at 86 km. Mass density above 86 km belongs to `ATMOS - DensityAbove86km`.
 
 ## When to run
 

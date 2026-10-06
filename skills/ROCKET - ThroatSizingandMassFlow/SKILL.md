@@ -43,3 +43,4 @@ A bare number for `--pc` is pascals. Use `pc_Pa = pc_bar * 1e5`, `1 atm = 101325
 3. Report throat area \(A_t\) in m² and throat diameter \(D_t\) in m. State that the throat is circular.
 4. Report mass flow \(\dot{m}\) in kg/s.
 5. State that \(C_F\) and \(c^{*}\) were inputs. Do not describe them as values this program calculated.
+6. `mdot_kg_s` can be passed to `ROCKET - InjectorOrificeFlow`. `Dt_m` can be passed to `ROCKET - ThroatGasSideHeatFlux` as `--throat`. Do not invent discharge coefficient, density, contour curvature, or wall temperature.

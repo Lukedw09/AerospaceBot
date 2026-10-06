@@ -16,7 +16,7 @@ jobs:
           cache: pip
           cache-dependency-path: app/requirements.txt
       - run: pip install -r app/requirements.txt
-      - run: python -m unittest app.tests.test_plugin
+      - run: python -m unittest app.tests.test_plugin app.tests.test_interplanetary
 
   deploy:
     needs: test

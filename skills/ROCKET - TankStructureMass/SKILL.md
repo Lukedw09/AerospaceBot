@@ -68,3 +68,4 @@ If the user gives MEOP and a separate design or burst factor, pass `--meop` and 
 5. Report `payload_to_deltav_mp_kg`, `payload_to_deltav_inert_kg`, and `payload_to_deltav_stage`. Those are the usable propellant and inert (including residual) for `ROCKET - PayloadtoDeltaV`.
 6. State that design pressure was not given an invented burst factor inside the program, and that residual propellant is counted in inert, not in usable \(m_p\).
 7. If volume, density, residuals fraction, MEOP, allowable stress, or material density is missing, say so. Do not fill them in.
+8. For a pressure-fed tank, `meop_Pa` from `ROCKET - FeedSystemPressureBudget` can be passed as `--meop`. Do not use that supply pressure as the MEOP of a pump-fed tank.

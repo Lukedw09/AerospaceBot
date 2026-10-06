@@ -86,3 +86,4 @@ Canonical names, always printed: `combustion`, `cstar`, `nozzle`, `divergence`.
 4. Report `eta_product_cstar`, `eta_product_CF`, actual \(c^{*}\) in m/s, actual \(C_F\), effective exhaust velocity \(c\) in m/s, and specific impulse \(I_s\) in s.
 5. Report chamber pressure and throat area only when they are printed. Report `thrust_ideal_N` and `mdot_ideal_kg_s` as the theoretical thrust and mass flow with no losses, and `thrust_N` and `mdot_kg_s` as the delivered values. Omit all four when they are not printed.
 6. If ideal \(C_F\), ideal \(c^{*}\), or the side of an unnamed efficiency is missing, say so. Do not fill in a performance number or an efficiency.
+7. Delivered `mdot_kg_s` can be passed to `ROCKET - InjectorOrificeFlow` and `ROCKET - PumpHydraulicPower`. Do not invent a discharge coefficient or a pump efficiency.

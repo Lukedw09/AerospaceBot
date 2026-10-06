@@ -37,6 +37,7 @@ FUNCTIONS = {
     "atan": math.atan,
     "asin": math.asin,
     "acos": math.acos,
+    "abs": abs,
 }
 CONSTANTS = {"pi": math.pi, "e": math.e}
 IDENTITY_NAME = re.compile(r"- name:\s*([A-Za-z_][A-Za-z0-9_-]*)\s*")

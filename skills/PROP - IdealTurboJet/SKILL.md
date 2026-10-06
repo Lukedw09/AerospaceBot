@@ -5,8 +5,9 @@ description: >-
   PNG. Use when the user wants specific thrust, TSFC, thermal/propulsive/overall
   efficiency, or nozzle exit speed and temperature of a simple air-breathing
   turbojet from flight Mach, freestream state or altitude, turbine inlet
-  temperature, and compressor pressure ratio. Do not redraw the plot or
-  recompute the numbers by hand.
+  temperature, and compressor pressure ratio. For inlet recovery, component
+  efficiencies, an afterburner, a turbofan, or airflow sizing, use the other
+  PROP design skills. Do not redraw the plot or recompute the numbers by hand.
 ---
 
 # PROP - IdealTurboJet
@@ -36,7 +37,7 @@ The figure plots specific thrust versus Mach at the fixed TIT and compressor pre
 3. Pass `--mach`, `--tit`, and `--opr`. Pass `--alt` or both `--temperature` and `--pressure`, not both paths. `--alt` is geometric metres on the 1976 standard. Do not compute that atmosphere yourself.
 4. Optional `--heating-value`, `--cp`, and `--gamma` only when the user gave them. Otherwise the program defaults apply.
 5. One Mach, freestream, TIT, and OPR is one run. The plot is a Mach sweep at that TIT, OPR, and freestream \(T_0,p_0\).
-6. Do not use this skill for fans, afterburners, or real compressor/turbine maps.
+6. Do not use this skill for a non-ideal inlet, component efficiencies, an afterburner, a turbofan, or engine airflow sizing. Those are `PROP - InletRecovery`, `PROP - NonidealTurbojet`, `PROP - AfterburningTurbojet`, `PROP - SeparateStreamTurbofan`, and `PROP - EngineAirflowSizing`.
 
 ## Flags
 

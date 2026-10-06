@@ -84,3 +84,4 @@ On a pc sweep the program re-picks the nearest frozen table at each sample. c*, 
 7. Repeat `assumed_range` when it is present.
 8. If `mark_r` or `peak` is printed, include it. Do not mark a peak unless the user asked for one.
 9. If r or a table is missing, say so. Do not fill in a mixture ratio or a performance number.
+10. `Tc_K`, `Mw_kg_kmol`, `gamma`, and `cstar_m_s` can be quoted into `ROCKET - ThroatGasSideHeatFlux`. Do not call CEA to fill a missing heat-flux input.

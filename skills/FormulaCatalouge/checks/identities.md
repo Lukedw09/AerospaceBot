@@ -1613,6 +1613,40 @@ Then run `python check_formulas.py`.
     T: 1
   expected: 1
 
+### molecular_diffusion_coefficient
+
+<!-- family: atmosphere; symbols: a, N, T, b; expr: (a/N)*(T/273.15)**b; numeric: yes -->
+
+- name: reference_temperature
+  inputs:
+    a: 6.986e20
+    N: 1e20
+    T: 273.15
+    b: 0.75
+  expected: 6.986
+
+### species_mass_density
+
+<!-- family: atmosphere; symbols: n, M, NA; expr: n*M/NA; numeric: yes -->
+
+- name: one_kmol_per_cubic_metre
+  inputs:
+    n: 6.022169e26
+    M: 16
+    NA: 6.022169e26
+  expected: 16
+
+### thermosphere_pressure
+
+<!-- family: atmosphere; symbols: N, kB, T; expr: N*kB*T; numeric: yes -->
+
+- name: unit_density
+  inputs:
+    N: 1e20
+    kB: 1.380622e-23
+    T: 200
+  expected: 1e20*1.380622e-23*200
+
 ## Rocket propulsion
 
 #### rocket
@@ -2340,6 +2374,60 @@ Then run `python check_formulas.py`.
     a: 4
     mu: 1
   expected: 8*pi
+
+### hohmann_phase_angle
+
+<!-- family: flight; symbols: pi, n2, tof; expr: pi - n2*tof; numeric: yes -->
+
+- name: quarter_coast
+  inputs:
+    pi: pi
+    n2: 1
+    tof: pi/2
+  expected: pi/2
+
+- name: fast_target
+  inputs:
+    pi: pi
+    n2: 2
+    tof: pi
+  expected: -pi
+
+### synodic_period
+
+<!-- family: flight; symbols: pi, n1, n2; expr: 2*pi/abs(n1 - n2); numeric: yes -->
+
+- name: twice_and_one
+  inputs:
+    pi: pi
+    n1: 2
+    n2: 1
+  expected: 2*pi
+
+- name: either_order
+  inputs:
+    pi: pi
+    n1: 1
+    n2: 3
+  expected: pi
+
+### inclined_excess_speed
+
+<!-- family: flight; symbols: v1, v2, di; expr: (v1**2 + v2**2 - 2*v1*v2*cos(di))**0.5; numeric: yes -->
+
+- name: coplanar_reduction
+  inputs:
+    v1: 3
+    v2: 1
+    di: 0
+  expected: 2
+
+- name: equal_speed_half_turn
+  inputs:
+    v1: 1
+    v2: 1
+    di: pi
+  expected: 2
 
 ### periapsis_radius
 
@@ -3651,6 +3739,241 @@ Then run `python check_formulas.py`.
     At: 1/500
   expected: 3/2
 
+### injector_orifice_mass_flow
+
+<!-- family: rocket; symbols: Cd, A, rho, dp; expr: Cd*A*(2*rho*dp)**0.5; numeric: yes -->
+
+- name: round_trip
+  inputs:
+    Cd: 3/4
+    A: 1/10000
+    rho: 1000
+    dp: 3200000/9
+  expected: 2
+
+### injector_orifice_area
+
+<!-- family: rocket; symbols: mdot, Cd, rho, dp; expr: mdot/(Cd*(2*rho*dp)**0.5); numeric: yes -->
+
+- name: round_trip
+  inputs:
+    mdot: 2
+    Cd: 3/4
+    rho: 1000
+    dp: 3200000/9
+  expected: 1/10000
+
+### injector_jet_velocity
+
+<!-- family: rocket; symbols: mdot, rho, A; expr: mdot/(rho*A); numeric: yes -->
+
+- name: twenty
+  inputs:
+    mdot: 2
+    rho: 1000
+    A: 1/10000
+  expected: 20
+
+### injector_pressure_drop
+
+<!-- family: rocket; symbols: mdot, Cd, A, rho; expr: (mdot/(Cd*A))**2/(2*rho); numeric: yes -->
+
+- name: round_trip
+  inputs:
+    mdot: 2
+    Cd: 3/4
+    A: 1/10000
+    rho: 1000
+  expected: 3200000/9
+
+### circular_orifice_diameter
+
+<!-- family: rocket; symbols: A, N, pi; expr: (4*A/(N*pi))**0.5; numeric: yes -->
+
+- name: four_holes
+  inputs:
+    A: 1/10000
+    N: 4
+    pi: pi
+  expected: (1/10000/pi)**0.5
+
+### injector_manifold_pressure
+
+<!-- family: rocket; symbols: pc, dp_inj; expr: pc + dp_inj; numeric: yes -->
+
+- name: chamber_plus_drop
+  inputs:
+    pc: 2000000
+    dp_inj: 200000
+  expected: 2200000
+
+### feed_supply_pressure
+
+<!-- family: rocket; symbols: pc, dp_inj, dp_extra, rho, g, h; expr: pc + dp_inj + dp_extra + rho*g*h; numeric: yes -->
+
+- name: two_metre_lift
+  inputs:
+    pc: 2000000
+    dp_inj: 200000
+    dp_extra: 50000
+    rho: 1000
+    g: 9.80665
+    h: 2
+  expected: 2250000 + 19613.3
+
+### pump_volume_flow
+
+<!-- family: rocket; symbols: mdot, rho; expr: mdot/rho; numeric: yes -->
+
+- name: two_kg_s
+  inputs:
+    mdot: 2
+    rho: 1000
+  expected: 1/500
+
+### pump_hydraulic_power
+
+<!-- family: rocket; symbols: mdot, dp, rho; expr: mdot*dp/rho; numeric: yes -->
+
+- name: four_hundred_watts
+  inputs:
+    mdot: 2
+    dp: 200000
+    rho: 1000
+  expected: 400
+
+### pump_shaft_power
+
+<!-- family: rocket; symbols: mdot, dp, rho, eta; expr: mdot*dp/(rho*eta); numeric: yes -->
+
+- name: seventy_percent
+  inputs:
+    mdot: 2
+    dp: 200000
+    rho: 1000
+    eta: 7/10
+  expected: 4000/7
+
+### pump_drive_power
+
+<!-- family: rocket; symbols: mdot, dp, rho, eta, eta_drive; expr: mdot*dp/(rho*eta*eta_drive); numeric: yes -->
+
+- name: pump_and_drive
+  inputs:
+    mdot: 2
+    dp: 200000
+    rho: 1000
+    eta: 7/10
+    eta_drive: 4/5
+  expected: 5000/7
+
+### bartz_gas_side_coefficient
+
+<!-- family: rocket; symbols: Dt, mu, cp, Pr, pc, cstar, R, area_ratio, sigma; expr: 0.026016775834104906*Dt**(-0.2)*mu**0.2*cp*Pr**(-0.6)*(pc/cstar)**0.8*(Dt/R)**0.1*area_ratio**0.9*sigma; numeric: yes -->
+
+- name: sp125_a1_throat
+  inputs:
+    Dt: 0.63246
+    mu: 7.464630340944881e-05
+    cp: 1128.11
+    Pr: 0.816
+    pc: 6894757.29316836
+    cstar: 1725.168
+    R: 0.297434
+    area_ratio: 1
+    sigma: 1
+  expected: 4457.590750448887
+  rel: 1e-9
+
+### gas_side_heat_flux
+
+<!-- family: rocket; symbols: hg, recovery, Tc, Tw; expr: hg*(recovery*Tc - Tw); numeric: yes -->
+
+- name: stated_wall
+  inputs:
+    hg: 1000
+    recovery: 9/10
+    Tc: 3000
+    Tw: 500
+  expected: 2200000
+
+### sp125_prandtl
+
+<!-- family: rocket; symbols: gamma; expr: 4*gamma/(9*gamma - 5); numeric: yes -->
+
+- name: gamma_1_222
+  inputs:
+    gamma: 1.222
+  expected: 4*1.222/(9*1.222 - 5)
+
+### sp125_specific_heat
+
+<!-- family: rocket; symbols: gamma, M; expr: (gamma/(gamma - 1))*4616.123393316195/M; numeric: yes -->
+
+- name: lox_rp1_sample
+  inputs:
+    gamma: 1.222
+    M: 22.5
+  expected: (1.222/(1.222 - 1))*4616.123393316195/22.5
+
+### sp125_viscosity
+
+<!-- family: rocket; symbols: M, T; expr: 1.1840810853327972e-07*M**0.5*T**0.6; numeric: yes -->
+
+- name: sample_6140_R
+  inputs:
+    M: 22.5
+    T: 6140*5/9
+  expected: 1.1840810853327972e-07*(22.5)**0.5*(6140*5/9)**0.6
+
+### coolant_heat_rate
+
+<!-- family: rocket; symbols: mdot, cp, Tout, Tin; expr: mdot*cp*(Tout - Tin); numeric: yes -->
+
+- name: hundred_kelvin
+  inputs:
+    mdot: 2
+    cp: 2000
+    Tout: 400
+    Tin: 300
+  expected: 400000
+
+### coolant_outlet_temperature
+
+<!-- family: rocket; symbols: Tin, Q, mdot, cp; expr: Tin + Q/(mdot*cp); numeric: yes -->
+
+- name: hundred_kelvin
+  inputs:
+    Tin: 300
+    Q: 400000
+    mdot: 2
+    cp: 2000
+  expected: 400
+
+### coolant_capacity
+
+<!-- family: rocket; symbols: mdot, cp, Tmax, Tin; expr: mdot*cp*(Tmax - Tin); numeric: yes -->
+
+- name: one_hundred_fifty
+  inputs:
+    mdot: 2
+    cp: 2000
+    Tmax: 450
+    Tin: 300
+  expected: 600000
+
+### coolant_min_flow
+
+<!-- family: rocket; symbols: Q, cp, Tmax, Tin; expr: Q/(cp*(Tmax - Tin)); numeric: yes -->
+
+- name: hold_450
+  inputs:
+    Q: 400000
+    cp: 2000
+    Tmax: 450
+    Tin: 300
+  expected: 4/3
+
 ### solid_mass_flow
 
 <!-- family: rocket; symbols: Ab, r, rho_b; expr: Ab*r*rho_b; numeric: yes -->
@@ -3833,6 +4156,28 @@ Then run `python check_formulas.py`.
     w0: 1/20
     rburn: 1/50
   expected: 2
+
+### vacuum_propellant_mass
+
+<!-- family: rocket; symbols: mf, dv, c; expr: mf*(exp(dv/c) - 1); numeric: yes -->
+
+- name: mass_ratio_e
+  inputs:
+    mf: 10
+    dv: 100
+    c: 100
+  expected: 10*(e - 1)
+
+### vacuum_wet_mass
+
+<!-- family: rocket; symbols: mf, dv, c; expr: mf*exp(dv/c); numeric: yes -->
+
+- name: mass_ratio_e
+  inputs:
+    mf: 10
+    dv: 100
+    c: 100
+  expected: 10*e
 
 ## Aerodynamics
 
@@ -5221,6 +5566,523 @@ Then run `python check_formulas.py`.
     tau_c: 2
   expected: 1/2
 
+### ideal_ramjet_nozzle_pressure_ratio
+
+<!-- family: aerodynamics; symbols: pt2, p0; expr: pt2/p0; numeric: yes -->
+
+- name: ram_four
+  inputs:
+    pt2: 4
+    p0: 1
+  expected: 4
+
+### ideal_ramjet_brayton_thermal_efficiency
+
+<!-- family: aerodynamics; symbols: tau_r; expr: 1 - 1/tau_r; numeric: yes -->
+
+- name: double_ram
+  inputs:
+    tau_r: 2
+  expected: 1/2
+
+### adiabatic_diffuser_temperature
+
+<!-- family: aerodynamics; symbols: Tt0; expr: Tt0; numeric: yes -->
+
+- name: three_hundred
+  inputs:
+    Tt0: 300
+  expected: 300
+
+- name: static_sea
+  inputs:
+    Tt0: 28815/100
+  expected: 28815/100
+
+### inlet_exit_total_pressure
+
+<!-- family: aerodynamics; symbols: pi_d, pt0; expr: pi_d*pt0; numeric: yes -->
+
+- name: half
+  inputs:
+    pi_d: 1/2
+    pt0: 200000
+  expected: 100000
+
+- name: perfect
+  inputs:
+    pi_d: 1
+    pt0: 101325
+  expected: 101325
+
+### pitot_inlet_recovery
+
+<!-- family: aerodynamics; symbols: pi_ns, pi_ds; expr: pi_ns*pi_ds; numeric: yes -->
+
+- name: shock_only
+  inputs:
+    pi_ns: 4/5
+    pi_ds: 1
+  expected: 4/5
+
+- name: with_duct
+  inputs:
+    pi_ns: 4/5
+    pi_ds: 19/20
+  expected: 19/25
+
+### compressor_temperature_ratio_efficiency
+
+<!-- family: aerodynamics; symbols: pi_c, g, eta_c; expr: 1 + (pi_c**((g - 1)/g) - 1)/eta_c; numeric: yes -->
+
+- name: ideal_air_two
+  inputs:
+    pi_c: 2**(7/2)
+    g: 7/5
+    eta_c: 1
+  expected: 2
+
+- name: half_efficient
+  inputs:
+    pi_c: 2**(7/2)
+    g: 7/5
+    eta_c: 1/2
+  expected: 3
+
+### compressor_work_efficiency
+
+<!-- family: aerodynamics; symbols: cp, Tt2, pi_c, g, eta_c; expr: cp*Tt2*(pi_c**((g - 1)/g) - 1)/eta_c; numeric: yes -->
+
+- name: unit_rise
+  inputs:
+    cp: 1000
+    Tt2: 300
+    pi_c: 2**(7/2)
+    g: 7/5
+    eta_c: 1
+  expected: 300000
+
+- name: half_efficient
+  inputs:
+    cp: 1000
+    Tt2: 300
+    pi_c: 2**(7/2)
+    g: 7/5
+    eta_c: 1/2
+  expected: 600000
+
+### compressor_stage_count
+
+<!-- family: aerodynamics; symbols: pi_c, pi_stage; expr: log(pi_c)/log(pi_stage); numeric: yes -->
+
+- name: eight_from_two
+  inputs:
+    pi_c: 256
+    pi_stage: 2
+  expected: 8
+
+- name: two_stages
+  inputs:
+    pi_c: 9
+    pi_stage: 3
+  expected: 2
+
+### burner_fuel_air_ratio_efficiency
+
+<!-- family: aerodynamics; symbols: cp, Tt4, Tt3, eta_b, Q; expr: cp*(Tt4 - Tt3)/(eta_b*Q - cp*Tt4); numeric: yes -->
+
+- name: unit_delta
+  inputs:
+    cp: 1000
+    Tt4: 1200
+    Tt3: 600
+    eta_b: 1
+    Q: 42000000
+  expected: 600000/(42000000 - 1200000)
+
+- name: half_burner
+  inputs:
+    cp: 1000
+    Tt4: 1200
+    Tt3: 600
+    eta_b: 1/2
+    Q: 42000000
+  expected: 600000/(21000000 - 1200000)
+
+### burner_exit_total_pressure
+
+<!-- family: aerodynamics; symbols: pi_b, pt3; expr: pi_b*pt3; numeric: yes -->
+
+- name: lossless
+  inputs:
+    pi_b: 1
+    pt3: 8
+  expected: 8
+
+- name: two_percent
+  inputs:
+    pi_b: 98/100
+    pt3: 100
+  expected: 98
+
+### turbine_temperature_ratio_from_work
+
+<!-- family: aerodynamics; symbols: wc, f, eta_m, cp, Tt4; expr: 1 - wc/((1 + f)*eta_m*cp*Tt4); numeric: yes -->
+
+- name: ideal_half
+  inputs:
+    wc: 600000
+    f: 0
+    eta_m: 1
+    cp: 1000
+    Tt4: 1200
+  expected: 1/2
+
+- name: with_fuel
+  inputs:
+    wc: 600000
+    f: 1/5
+    eta_m: 1
+    cp: 1000
+    Tt4: 1200
+  expected: 7/12
+
+### turbine_pressure_ratio_from_efficiency
+
+<!-- family: aerodynamics; symbols: tau_t, eta_t, g; expr: (1 - (1 - tau_t)/eta_t)**(g/(g - 1)); numeric: yes -->
+
+- name: air_half
+  inputs:
+    tau_t: 1/2
+    eta_t: 1
+    g: 7/5
+  expected: (1/2)**(7/2)
+
+- name: four_fifths
+  inputs:
+    tau_t: 3/5
+    eta_t: 4/5
+    g: 7/5
+  expected: (1/2)**(7/2)
+
+### afterburner_fuel_air_ratio
+
+<!-- family: aerodynamics; symbols: f, cp, Tt7, Tt6, eta_ab, Q; expr: (1 + f)*cp*(Tt7 - Tt6)/(eta_ab*Q - cp*Tt7); numeric: yes -->
+
+- name: no_core_fuel
+  inputs:
+    f: 0
+    cp: 1000
+    Tt7: 2000
+    Tt6: 1000
+    eta_ab: 1
+    Q: 42000000
+  expected: 1/40
+
+- name: with_core_fuel
+  inputs:
+    f: 1/50
+    cp: 1000
+    Tt7: 2000
+    Tt6: 1000
+    eta_ab: 1
+    Q: 42000000
+  expected: 51/2000
+
+### afterburner_exit_total_pressure
+
+<!-- family: aerodynamics; symbols: pi_ab, pt6; expr: pi_ab*pt6; numeric: yes -->
+
+- name: lossless
+  inputs:
+    pi_ab: 1
+    pt6: 50
+  expected: 50
+
+- name: five_percent
+  inputs:
+    pi_ab: 19/20
+    pt6: 20
+  expected: 19
+
+### nozzle_exit_velocity_efficiency
+
+<!-- family: aerodynamics; symbols: eta_n, cp, Tt, NPR, g; expr: (2*eta_n*cp*Tt*(1 - NPR**(-(g - 1)/g)))**0.5; numeric: yes -->
+
+- name: ideal_half_drop
+  inputs:
+    eta_n: 1
+    cp: 2
+    Tt: 1
+    NPR: 2**(7/2)
+    g: 7/5
+  expected: 2**0.5
+
+- name: quarter_efficiency
+  inputs:
+    eta_n: 1/4
+    cp: 2
+    Tt: 1
+    NPR: 2**(7/2)
+    g: 7/5
+  expected: (1/2)**0.5
+
+### specific_thrust_with_pressure
+
+<!-- family: aerodynamics; symbols: f, Ve, V0, pe, p0, As; expr: (1 + f)*Ve - V0 + (pe - p0)*As; numeric: yes -->
+
+- name: balanced
+  inputs:
+    f: 0
+    Ve: 800
+    V0: 200
+    pe: 1
+    p0: 1
+    As: 5
+  expected: 600
+
+- name: unbalanced
+  inputs:
+    f: 0
+    Ve: 800
+    V0: 200
+    pe: 3
+    p0: 1
+    As: 10
+  expected: 620
+
+### turbofan_core_pressure_ratio
+
+<!-- family: aerodynamics; symbols: opr, pi_f; expr: opr/pi_f; numeric: yes -->
+
+- name: ten
+  inputs:
+    opr: 20
+    pi_f: 2
+  expected: 10
+
+- name: four
+  inputs:
+    opr: 12
+    pi_f: 3
+  expected: 4
+
+### turbofan_shaft_work
+
+<!-- family: aerodynamics; symbols: wc, bpr, wf; expr: wc + bpr*wf; numeric: yes -->
+
+- name: core_only
+  inputs:
+    wc: 10
+    bpr: 0
+    wf: 3
+  expected: 10
+
+- name: with_bypass
+  inputs:
+    wc: 10
+    bpr: 2
+    wf: 3
+  expected: 16
+
+### turbofan_specific_thrust
+
+<!-- family: aerodynamics; symbols: f, Ve, bpr, Vf, V0; expr: ((1 + f)*Ve + bpr*Vf)/(1 + bpr) - V0; numeric: yes -->
+
+- name: no_bypass
+  inputs:
+    f: 0
+    Ve: 800
+    bpr: 0
+    Vf: 0
+    V0: 200
+  expected: 600
+
+- name: equal_streams
+  inputs:
+    f: 0
+    Ve: 300
+    bpr: 1
+    Vf: 200
+    V0: 100
+  expected: 150
+
+### turbofan_tsfc
+
+<!-- family: aerodynamics; symbols: f, Fs, bpr; expr: f/(Fs*(1 + bpr)); numeric: yes -->
+
+- name: no_bypass
+  inputs:
+    f: 1/50
+    Fs: 500
+    bpr: 0
+  expected: 1/25000
+
+- name: bypass
+  inputs:
+    f: 1/50
+    Fs: 200
+    bpr: 1
+  expected: 1/20000
+
+### turbofan_thermal_efficiency
+
+<!-- family: aerodynamics; symbols: f, Ve, bpr, Vf, V0, Q; expr: ((1 + f)*Ve**2 + bpr*Vf**2 - (1 + bpr)*V0**2)/(2*f*Q); numeric: yes -->
+
+- name: static_core
+  inputs:
+    f: 1/50
+    Ve: 100
+    bpr: 0
+    Vf: 0
+    V0: 0
+    Q: 50000
+  expected: 51/10
+
+- name: bypass_only_jet
+  inputs:
+    f: 1/50
+    Ve: 0
+    bpr: 1
+    Vf: 100
+    V0: 0
+    Q: 50000
+  expected: 5
+
+### turbofan_propulsive_efficiency
+
+<!-- family: aerodynamics; symbols: V0, Fs, f, Ve, bpr, Vf; expr: 2*V0*Fs/(((1 + f)*Ve**2 + bpr*Vf**2)/(1 + bpr) - V0**2); numeric: yes -->
+
+- name: classic_half
+  inputs:
+    V0: 250
+    Fs: 500
+    f: 0
+    Ve: 750
+    bpr: 0
+    Vf: 0
+  expected: 1/2
+
+- name: static
+  inputs:
+    V0: 0
+    Fs: 100
+    f: 0
+    Ve: 200
+    bpr: 1
+    Vf: 100
+  expected: 0
+
+### turbofan_overall_efficiency
+
+<!-- family: aerodynamics; symbols: Fs, V0, bpr, f, Q; expr: Fs*V0*(1 + bpr)/(f*Q); numeric: yes -->
+
+- name: no_bypass
+  inputs:
+    Fs: 500
+    V0: 200
+    bpr: 0
+    f: 1/50
+    Q: 1000000
+  expected: 5
+
+- name: with_bypass
+  inputs:
+    Fs: 100
+    V0: 50
+    bpr: 1
+    f: 1/25
+    Q: 100000
+  expected: 5/2
+
+### airflow_from_thrust
+
+<!-- family: aerodynamics; symbols: F, Fs; expr: F/Fs; numeric: yes -->
+
+- name: ten
+  inputs:
+    F: 5000
+    Fs: 500
+  expected: 10
+
+- name: two
+  inputs:
+    F: 100
+    Fs: 25
+  expected: 4
+
+### capture_area
+
+<!-- family: aerodynamics; symbols: mdot, rho, V; expr: mdot/(rho*V); numeric: yes -->
+
+- name: unit
+  inputs:
+    mdot: 2
+    rho: 1
+    V: 4
+  expected: 1/2
+
+- name: sea_level
+  inputs:
+    mdot: 49/4
+    rho: 49/40
+    V: 10
+  expected: 1
+
+### circular_capture_diameter
+
+<!-- family: aerodynamics; symbols: A, pi; expr: (4*A/pi)**0.5; numeric: yes -->
+
+- name: unit_area
+  inputs:
+    A: pi
+    pi: pi
+  expected: 2
+
+- name: four
+  inputs:
+    A: 4*pi
+    pi: pi
+  expected: 4
+
+### compressible_mass_flow_parameter
+
+<!-- family: aerodynamics; symbols: g, R, M; expr: (g/R)**0.5*M*(1 + ((g - 1)/2)*M**2)**(-(g + 1)/(2*(g - 1))); numeric: yes -->
+
+- name: sonic_unit_gas
+  inputs:
+    g: 7/5
+    R: 1
+    M: 1
+  expected: (7/5)**0.5*(6/5)**(-3)
+
+- name: rest
+  inputs:
+    g: 7/5
+    R: 1
+    M: 0
+  expected: 0
+
+### annulus_area_from_mass_flow
+
+<!-- family: aerodynamics; symbols: mdot, Tt, pt, mfp; expr: mdot*(Tt**0.5)/(pt*mfp); numeric: yes -->
+
+- name: unit
+  inputs:
+    mdot: 2
+    Tt: 4
+    pt: 1
+    mfp: 1
+  expected: 4
+
+- name: half
+  inputs:
+    mdot: 1
+    Tt: 1
+    pt: 2
+    mfp: 1
+  expected: 1/2
+
 ### sustained_turn_load_factor
 
 <!-- family: aerodynamics; symbols: q, S, T, CD0, pi, AR, e, W; expr: ((q*S*(T - q*S*CD0)*pi*AR*e)/(W**2))**0.5; numeric: yes -->
@@ -5671,6 +6533,20 @@ Then run `python check_formulas.py`.
     A1: 4/50
   expected: -pi/50
 
+### drag_delta_v_per_revolution
+
+<!-- family: aerodynamics; symbols: Cd, rho, V, A, m, period; expr: Cd*0.5*rho*V**2*A/m*period; numeric: yes -->
+
+- name: unit_case
+  inputs:
+    Cd: 2
+    rho: 1
+    V: 2
+    A: 1
+    m: 4
+    period: 10
+  expected: 10
+
 ## Structures
 
 #### beam
@@ -5869,6 +6745,80 @@ Then run `python check_formulas.py`.
     A: 1e-3
     pi: pi
   expected: pi**2*5e4/1e-3
+
+#### shaft
+
+### polar_second_moment_solid
+
+<!-- family: shaft; symbols: Ro, pi; expr: pi/2*Ro**4; numeric: yes -->
+
+- name: unit_solid
+  inputs:
+    Ro: 1
+    pi: pi
+  expected: pi/2
+
+- name: twenty_mm_radius
+  inputs:
+    Ro: 2/100
+    pi: pi
+  expected: pi/2*(2/100)**4
+
+### polar_second_moment_hollow
+
+<!-- family: shaft; symbols: Ro, Ri, pi; expr: pi/2*(Ro**4 - Ri**4); numeric: yes -->
+
+- name: unit_hollow_annulus
+  inputs:
+    Ro: 2
+    Ri: 1
+    pi: pi
+  expected: pi/2*(16 - 1)
+
+- name: matches_solid_when_ri_zero
+  inputs:
+    Ro: 1
+    Ri: 0
+    pi: pi
+  expected: pi/2
+
+### circular_shaft_shear
+
+<!-- family: shaft; symbols: T, r, J; expr: T*r/J; numeric: yes -->
+
+- name: unit_shear
+  inputs:
+    T: 1
+    r: 1
+    J: 1
+  expected: 1
+
+- name: affdl_outer_fiber
+  inputs:
+    T: 1000
+    r: 2
+    J: pi/2*(16 - 1)
+  expected: 2*1000*2/(pi*(16 - 1))
+
+### circular_shaft_twist
+
+<!-- family: shaft; symbols: T, L, G, J; expr: T*L/(G*J); numeric: yes -->
+
+- name: unit_twist
+  inputs:
+    T: 1
+    L: 1
+    G: 1
+    J: 1
+  expected: 1
+
+- name: affdl_hollow_sample
+  inputs:
+    T: 1000
+    L: 1/2
+    G: 8e10
+    J: pi/2*(16 - 1)
+  expected: 2*1000*(1/2)/(pi*(16 - 1)*8e10)
 
 #### shell
 
@@ -6274,6 +7224,148 @@ Then run `python check_formulas.py`.
     Vs: 1000
   expected: (1.225/(2*100))*1000**2
 
+### lumped_thermal_time_constant
+
+<!-- family: aerotherm; symbols: m, c, h, A; expr: m*c/(h*A); numeric: yes -->
+
+- name: unit_mass
+  inputs:
+    m: 1
+    c: 1
+    h: 1
+    A: 1
+  expected: 1
+
+- name: twenty_seconds
+  inputs:
+    m: 2
+    c: 500
+    h: 10
+    A: 5
+  expected: 20
+
+### lumped_capacitance_temperature
+
+<!-- family: aerotherm; symbols: Tinf, Ti, t, tau; expr: Tinf + (Ti - Tinf)*exp(-t/tau); numeric: yes -->
+
+- name: at_one_time_constant
+  inputs:
+    Tinf: 300
+    Ti: 400
+    t: 20
+    tau: 20
+  expected: 300 + 100/exp(1)
+
+- name: initial_instant
+  inputs:
+    Tinf: 300
+    Ti: 400
+    t: 0
+    tau: 20
+  expected: 400
+
+### lumped_capacitance_time_to_temperature
+
+<!-- family: aerotherm; symbols: tau, T, Tinf, Ti; expr: -tau*log((T - Tinf)/(Ti - Tinf)); numeric: yes -->
+
+- name: one_time_constant
+  inputs:
+    tau: 20
+    T: 300 + 100/exp(1)
+    Tinf: 300
+    Ti: 400
+  expected: 20
+
+- name: halfway_excess
+  inputs:
+    tau: 10
+    T: 350
+    Tinf: 300
+    Ti: 400
+  expected: -10*log(1/2)
+
+### lumped_capacitance_heat_transferred
+
+<!-- family: aerotherm; symbols: m, c, Ti, T; expr: m*c*(Ti - T); numeric: yes -->
+
+- name: cool_by_one_kelvin
+  inputs:
+    m: 2
+    c: 500
+    Ti: 400
+    T: 399
+  expected: 1000
+
+- name: at_one_time_constant
+  inputs:
+    m: 2
+    c: 500
+    Ti: 400
+    T: 300 + 100/exp(1)
+  expected: 2*500*(100 - 100/exp(1))
+
+### biot_number
+
+<!-- family: aerotherm; symbols: h, Lc, k; expr: h*Lc/k; numeric: yes -->
+
+- name: small_biot
+  inputs:
+    h: 10
+    Lc: 0.01
+    k: 200
+  expected: 5/10000
+
+- name: warn_threshold
+  inputs:
+    h: 10
+    Lc: 0.05
+    k: 5
+  expected: 1/10
+
+### spacecraft_absorbed_power
+
+<!-- family: aerotherm; symbols: S, Asun, alpha, fe, albedo, Falb, Aalb, qir, eps, Air, Fir, Qint; expr: S*Asun*alpha*(1 - fe) + S*albedo*Falb*Aalb*alpha + qir*eps*Air*Fir + Qint; numeric: yes -->
+
+- name: sun_only
+  inputs:
+    S: 1000
+    Asun: 1
+    alpha: 1
+    fe: 0.4
+    albedo: 0
+    Falb: 1
+    Aalb: 0
+    qir: 0
+    eps: 1
+    Air: 0
+    Fir: 1
+    Qint: 0
+  expected: 600
+
+### spacecraft_equilibrium_temperature
+
+<!-- family: aerotherm; symbols: Q, eps, sigma, Arad; expr: (Q/(eps*sigma*Arad))**0.25; numeric: yes -->
+
+- name: three_hundred_kelvin
+  inputs:
+    Q: 0.8*5.670374419e-8*300**4
+    eps: 0.8
+    sigma: 5.670374419e-8
+    Arad: 1
+  expected: 300
+
+### radiator_area_for_temperature
+
+<!-- family: aerotherm; symbols: Q, eps, sigma, T; expr: Q/(eps*sigma*T**4); numeric: yes -->
+
+- name: one_square_metre
+  inputs:
+    Q: 0.8*5.670374419e-8*300**4
+    eps: 0.8
+    sigma: 5.670374419e-8
+    T: 300
+  expected: 1
+
 ## Spacecraft power
 
 #### power
@@ -6520,6 +7612,26 @@ Then run `python check_formulas.py`.
     td: 3600
   expected: 1000*(1 + 1800/(0.92*0.88*3600))
 
+### orbit_average_load
+
+<!-- family: power; symbols: P, f; expr: P*f; numeric: yes -->
+
+- name: half_on
+  inputs:
+    P: 20
+    f: 0.5
+  expected: 10
+
+### eclipse_load_energy
+
+<!-- family: power; symbols: P, t; expr: P*t; numeric: yes -->
+
+- name: twenty_watts_half_hour
+  inputs:
+    P: 20
+    t: 1800
+  expected: 36000
+
 ## Space communications
 
 #### comms
@@ -6708,6 +7820,28 @@ Then run `python check_formulas.py`.
     EbN0req: 10
   expected: 2
 
+### required_pass_bit_rate
+
+<!-- family: comms; symbols: bits, overhead, t; expr: bits*overhead/t; numeric: yes -->
+
+- name: two_gigabits
+  inputs:
+    bits: 2e9
+    overhead: 1.2
+    t: 480
+  expected: 5e6
+
+### pass_data_volume
+
+<!-- family: comms; symbols: rate, t, overhead; expr: rate*t/overhead; numeric: yes -->
+
+- name: round_trip
+  inputs:
+    rate: 5e6
+    t: 480
+    overhead: 1.2
+  expected: 2e9
+
 ## Dynamics and control
 
 #### control
@@ -6813,3 +7947,124 @@ Then run `python check_formulas.py`.
     zeta: 1/2
     wn: 2
   expected: 4
+
+### true_pn_commanded_acceleration
+
+<!-- family: control; symbols: N_prime, Vc, lambda_dot; expr: N_prime*Vc*lambda_dot; numeric: yes -->
+
+- name: three_times_thousand_times_hundredth
+  inputs:
+    N_prime: 3
+    Vc: 1000
+    lambda_dot: 1/100
+  expected: 30
+
+- name: signed_four_times_half_thousand
+  inputs:
+    N_prime: 4
+    Vc: 500
+    lambda_dot: -2/100
+  expected: -40
+
+### closing_speed
+
+<!-- family: control; symbols: R_dot; expr: -R_dot; numeric: yes -->
+
+- name: approaching_two_fifty
+  inputs:
+    R_dot: -250
+  expected: 250
+
+### los_rate
+
+<!-- family: control; symbols: Rx, Ry, Vx, Vy, R; expr: (Rx*Vy - Ry*Vx)/R**2; numeric: yes -->
+
+- name: three_four_closing_x
+  inputs:
+    Rx: 3
+    Ry: 4
+    Vx: -1
+    Vy: 0
+    R: 5
+  expected: 4/25
+
+### gravity_gradient_torque
+
+<!-- family: control; symbols: n2, Iz, Iy, theta; expr: 1.5*n2*(Iz - Iy)*sin(2*theta); numeric: yes -->
+
+- name: forty_five_degrees
+  inputs:
+    n2: 1e-6
+    Iz: 12
+    Iy: 10
+    theta: pi/4
+  expected: 3e-6
+
+### aerodynamic_disturbance_torque
+
+<!-- family: control; symbols: rho, V, Cd, A, d; expr: 0.5*rho*V**2*Cd*A*d; numeric: yes -->
+
+- name: unit_dynamic_pressure
+  inputs:
+    rho: 2
+    V: 1
+    Cd: 1
+    A: 1
+    d: 1
+  expected: 1
+
+### solar_radiation_torque
+
+<!-- family: control; symbols: S, A, Cr, d, c; expr: S*A*Cr*d/c; numeric: yes -->
+
+- name: unit_factors
+  inputs:
+    S: 299792458
+    A: 1
+    Cr: 1
+    d: 1
+    c: 299792458
+  expected: 1
+
+### magnetic_disturbance_torque
+
+<!-- family: control; symbols: M, B, psi; expr: M*B*sin(psi); numeric: yes -->
+
+- name: perpendicular
+  inputs:
+    M: 0.2
+    B: 3e-5
+    psi: pi/2
+  expected: 6e-6
+
+### rest_to_rest_slew_torque
+
+<!-- family: control; symbols: I, theta, t; expr: 4*I*theta/t**2; numeric: yes -->
+
+- name: two_radian_ten_seconds
+  inputs:
+    I: 2
+    theta: 1
+    t: 10
+  expected: 0.08
+
+### rest_to_rest_slew_impulse
+
+<!-- family: control; symbols: I, theta, t; expr: 2*I*theta/t; numeric: yes -->
+
+- name: matches_half_time
+  inputs:
+    I: 2
+    theta: 1
+    t: 10
+  expected: 0.4
+
+### disturbance_momentum_storage
+
+<!-- family: control; symbols: T, tau; expr: T*tau; numeric: yes -->
+
+- name: one_orbit
+  inputs:
+    T: 1e-4
+    tau: 5400
+  expected: 0.54

@@ -6,14 +6,14 @@ The file is grouped so a search can start in one category:
 
 - Compressible flow: perfect-gas thermodynamics, isentropic flow, area-Mach, shocks, Prandtl-Meyer expansion, Taylor–Maccoll flow on a circular cone, calorically imperfect air, Newtonian viscosity, and Reynolds number.
 - Atmosphere: the 1976 U.S. Standard Atmosphere from the surface to 1000 km, including geopotential and gravity, the seven hydrostatic layers below 86 km, kinetic temperature above 86 km, and the transport properties of that model. Moist-air point properties (saturation vapor pressure, humidity, and the density of one dry-air-plus-water parcel) are recorded separately from those dry hydrostatic layers and from the Glenn fit. A three-zone NASA Glenn curve fit is recorded separately.
-- Rocket propulsion: thrust, impulse, mass ratio, nozzles, solid- and liquid-propellant relations, powered-ascent gravity, drag, and steering losses from a spherical body, two-body orbital speed, period, half-period coast, energy, plane-change impulse, Laplace sphere of influence, anomalies, mean motion, the conversion between classical elements and an inertial state, Greenwich angle, Earth-fixed axes, and geodetic latitude on an oblate spheroid.
-- Aerodynamics: incompressible Bernoulli, force and moment coefficients, the two-dimensional Prandtl–Glauert compressibility correction, the isentropic critical pressure coefficient and critical Mach number, trapezoidal wing planform, aspect ratio, induced drag, finite-wing lift-curve slope and induced angle, NACA four-digit mean-line and thickness ordinates, thin-section lift and quarter-chord moment, stall speed, equivalent airspeed, load factor, coordinated level-turn bank, radius, and rate, the sustained-turn load factor from a parabolic polar with thrust equal to drag, symmetric pull-up load factor, radius, and pitch rate, takeoff and landing ground-roll force, acceleration, and the constant-thrust distance and time integrals, ideal actuator-disk propeller thrust, induced velocity, and propulsive efficiency, ideal air-breathing Brayton turbojet specific thrust, TSFC, and thermal/propulsive/overall efficiency, steady unpowered glide angle, sink rate, and range from height, Breguet range and endurance for jet and propeller cruise, and the stick-fixed neutral point and static margin.
-- Structures: pure beam / spar bending stress and elastic section modulus, elastic Euler column buckling with end-fix factor, thin-wall motor-case hoop stress, margin of safety, and longitudinal-weld radial mismatch.
+- Rocket propulsion: thrust, impulse, mass ratio, nozzles, solid- and liquid-propellant relations, powered-ascent gravity, drag, and steering losses from a spherical body, two-body orbital speed, period, half-period coast, energy, plane-change impulse, inclined excess speed, Hohmann target lead angle, synodic period, Laplace sphere of influence, anomalies, mean motion, the conversion between classical elements and an inertial state, Greenwich angle, Earth-fixed axes, and geodetic latitude on an oblate spheroid.
+- Aerodynamics: incompressible Bernoulli, force and moment coefficients, the two-dimensional Prandtl–Glauert compressibility correction, the isentropic critical pressure coefficient and critical Mach number, trapezoidal wing planform, aspect ratio, induced drag, finite-wing lift-curve slope and induced angle, NACA four-digit mean-line and thickness ordinates, thin-section lift and quarter-chord moment, stall speed, equivalent airspeed, load factor, coordinated level-turn bank, radius, and rate, the sustained-turn load factor from a parabolic polar with thrust equal to drag, symmetric pull-up load factor, radius, and pitch rate, takeoff and landing ground-roll force, acceleration, and the constant-thrust distance and time integrals, ideal actuator-disk propeller thrust, induced velocity, and propulsive efficiency, ideal air-breathing Brayton turbojet specific thrust, TSFC, and thermal/propulsive/overall efficiency, ideal air-breathing Brayton ramjet (ram compression only) specific thrust, TSFC, and thermal/propulsive/overall efficiency, design-point inlet recovery, non-ideal turbojet and afterburner, separate-stream turbofan, and airflow sizing, steady unpowered glide angle, sink rate, and range from height, Breguet range and endurance for jet and propeller cruise, and the stick-fixed neutral point and static margin.
+- Structures: pure beam / spar bending stress and elastic section modulus, elastic Euler column buckling with end-fix factor, elastic circular-shaft torsion (polar second moment, shear, and twist), thin-wall motor-case hoop stress, margin of safety, and longitudinal-weld radial mismatch.
 - Mass properties: total mass, center-of-mass coordinate, point-mass moments and products of inertia, parallel-axis transfer of a part inertia to a parallel axis, and the shift of a reference-origin inertia to the system CG.
-- Aerothermodynamics: stagnation-point convective heating on a blunt nose (Sutton–Graves heat-transfer coefficient and cold-wall freestream-density form), radiative-equilibrium wall temperature, and Allen–Eggers nonlifting ballistic-entry peak deceleration in an exponential atmosphere.
+- Aerothermodynamics: stagnation-point convective heating on a blunt nose (Sutton–Graves heat-transfer coefficient and cold-wall freestream-density form), radiative-equilibrium wall temperature, Allen–Eggers nonlifting ballistic-entry peak deceleration in an exponential atmosphere, and lumped thermal-capacitance transient response under convection (time constant, \(T(t)\), time to a target temperature, heat transferred, and Biot number).
 - Spacecraft power: flat-plate solar-array beginning- and end-of-life power with packing and inherent degradation, compound life degradation, circular-orbit eclipse fraction for orbit-average power, and battery energy budget with depth of discharge, charge and discharge efficiencies, and orbit energy balance.
 - Space communications: vacuum free-space path loss, Friis received power, circular-aperture antenna gain with aperture efficiency, thermal noise \(kTB\), carrier-to-noise density, \(E_b/N_0\), and link margin against a required \(E_b/N_0\).
-- Dynamics and control: linear constant-coefficient second-order unit-step metrics from natural frequency and damping ratio, or from mass, stiffness, and viscous damping (damped frequency, percent overshoot, peak time, envelope settling time).
+- Dynamics and control: linear constant-coefficient second-order unit-step metrics from natural frequency and damping ratio, or from mass, stiffness, and viscous damping (damped frequency, percent overshoot, peak time, envelope settling time); planar true proportional navigation commanded acceleration, closing speed, and LOS rate.
 
 The rocket symbol \(k\) is the same ratio of specific heats as \(\gamma\). In the dynamics-and-control records \(k\) is stiffness (N/m), not that ratio. Standard sea-level gravitational acceleration is \(g_0 = 9.80665\,\mathrm{m/s}^2\).
 
@@ -1920,9 +1920,48 @@ Glenn's published metric constants, after conversion to Pa and K: troposphere \(
 
 Assumptions: altitude-only curve fit for FoilSim-type estimates. Temperature and pressure change only with height. The fit is not hydrostatic 1976 and is not valid as a thermosphere model.
 
+## Molecular diffusion coefficient
+
+Species molecular diffusion in the 1976 thermosphere, \(D_i=(a_i/N)(T/273.15)^{b_i}\). The number-density integration that uses this coefficient is numerical and is checked in `ATMOS - DensityAbove86km`.
+
+```formula
+## molecular_diffusion_coefficient
+family: atmosphere
+expr: (a/N)*(T/273.15)**b
+symbols: a, N, T, b
+```
+
+## Species mass density
+
+\[
+\rho_i = n_i M_i / N_A
+\]
+
+```formula
+## species_mass_density
+family: atmosphere
+expr: n*M/NA
+symbols: n, M, NA
+```
+
+## Thermosphere pressure
+
+\[
+p = N k T
+\]
+
+```formula
+## thermosphere_pressure
+family: atmosphere
+expr: N*kB*T
+symbols: N, kB, T
+```
+
+Assumptions: 1976 Boltzmann constant in `kB`, and the 1976 Avogadro constant in `NA`. Total mass density is the sum of the species densities. Mean solar activity only.
+
 # Rocket propulsion
 
-Vehicle and motor performance. In this category \(k\) is the ratio of specific heats. Nozzle area ratio and isentropic exit state use the Area-Mach and stagnation relations in Compressible flow. In the mass-flow section, \(V\) is specific volume. Circular-port grain area, web, and sliver fraction follow NASA SP-8076.
+Vehicle and motor performance. In this category \(k\) is the ratio of specific heats. Nozzle area ratio and isentropic exit state use the Area-Mach and stagnation relations in Compressible flow. In the mass-flow section, \(V\) is specific volume. Circular-port grain area, web, and sliver fraction follow NASA SP-8076. Injector orifice flow, the feed-pressure stack, pump hydraulic power, Bartz throat heat flux, and regenerative coolant heat pickup follow NASA SP-125.
 
 ## Average exhaust velocity
 
@@ -3008,6 +3047,78 @@ symbols: pi, a, mu
 | \(\pi\) | Circle constant | dimensionless |
 
 Assumptions: unperturbed elliptic two-body motion, \(a > 0\). A Hohmann coast is one half-period. A coplanar bi-elliptic coast is the sum of two half-periods. A circle has \(a = r\), so this interval is half a revolution.
+
+## Hohmann phase angle
+
+Lead angle of the target body at departure for a Hohmann rendezvous. The spacecraft coasts half a revolution, so the target must reach the opposite apsis in that same time. NASA TN D-6141 places the Hohmann point at a heliocentric travel angle of \(180^\circ\) and writes the configuration from planetary angular motion over the travel time. With the target mean motion `mean_motion`,
+
+\[
+\phi = \pi - n_2 t_{1/2}
+\]
+
+```formula
+## hohmann_phase_angle
+family: flight
+expr: pi - n2*tof
+symbols: pi, n2, tof
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(\phi\) | Target lead angle at departure | rad |
+| \(\pi\) | Circle constant | dimensionless |
+| \(n_2\) | Mean motion of the target orbit | rad/s |
+| \(t_{\mathrm{of}}\) | Hohmann coast, one half-period | s |
+
+Assumptions: both orbits are circular, and the coast is \(180^\circ\) of true anomaly. A positive \(\phi\) means the target leads the departure body. A negative \(\phi\) means the target trails, which is the usual inward transfer. The program wraps the printed angle into \((-\pi, \pi]\). This record is the unwrapped expression.
+
+## Synodic period
+
+Time for the relative mean longitude of two circular orbits to advance one revolution, which is the recurrence of a given phase angle. NASA TN D-6141 identifies one synodic period as the interval from opposition to the next opposition. With `mean_motion`,
+
+\[
+T_{\mathrm{syn}} = \frac{2\pi}{|n_1 - n_2|}
+\]
+
+```formula
+## synodic_period
+family: flight
+expr: 2*pi/abs(n1 - n2)
+symbols: pi, n1, n2
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(T_{\mathrm{syn}}\) | Synodic period | s |
+| \(n_1\) | Mean motion of the first orbit | rad/s |
+| \(n_2\) | Mean motion of the second orbit | rad/s |
+| \(\pi\) | Circle constant | dimensionless |
+
+Assumptions: circular orbits about the same primary, \(n_1 \neq n_2\). Equal mean motions have no finite synodic period.
+
+## Inclined excess speed
+
+Magnitude of the vector difference between two speeds whose directions differ by an angle \(\Delta i\). Burrows, NASA TM X-64662, writes each noncollinear impulse as \(\sqrt{v_a^2 + v_b^2 - 2 v_a v_b \cos\phi}\). On a Hohmann apsis the flight-path angle is \(90^\circ\), so when the line of nodes lies on the apsidal line the angle between the transfer velocity and the planet velocity is the inclination difference.
+
+\[
+v_\infty = \sqrt{v_t^2 + v_p^2 - 2 v_t v_p \cos\Delta i}
+\]
+
+```formula
+## inclined_excess_speed
+family: flight
+expr: (v1**2 + v2**2 - 2*v1*v2*cos(di))**0.5
+symbols: v1, v2, di
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(v_\infty\) | Excess speed | m/s |
+| \(v_1\) | First speed | m/s |
+| \(v_2\) | Second speed | m/s |
+| \(\Delta i\) | Angle between the two velocity vectors | rad |
+
+Assumptions: the burn is impulsive. \(\Delta i = 0\) returns \(|v_1 - v_2|\). This is the whole plane change at one apsis. It is not an extra burn added to `plane_change_impulse`, and it is not the three-way split in NASA TM X-64662.
 
 ## Periapsis, apoapsis, and eccentricity
 
@@ -4390,6 +4501,319 @@ symbols: Vc, At
 
 Assumptions: \(V_c\) is the chamber volume used to define \(L^{*}\), conventionally through the throat plane.
 
+## Injector orifice flow
+
+Incompressible orifice discharge from NASA SP-125 equations (4-39) and (4-40). Mass flow uses the geometric orifice area and a discharge coefficient. Jet speed is volume flow through that geometric area, not the vena-contracta speed.
+
+\[
+\dot{m} = C_d A \sqrt{2\rho\,\Delta p}
+\]
+
+```formula
+## injector_orifice_mass_flow
+family: rocket
+expr: Cd*A*(2*rho*dp)**0.5
+symbols: Cd, A, rho, dp
+```
+
+\[
+A = \frac{\dot{m}}{C_d\sqrt{2\rho\,\Delta p}}
+\]
+
+```formula
+## injector_orifice_area
+family: rocket
+expr: mdot/(Cd*(2*rho*dp)**0.5)
+symbols: mdot, Cd, rho, dp
+```
+
+\[
+v = \frac{\dot{m}}{\rho A}
+\]
+
+```formula
+## injector_jet_velocity
+family: rocket
+expr: mdot/(rho*A)
+symbols: mdot, rho, A
+```
+
+\[
+\Delta p = \frac{1}{2\rho}\left(\frac{\dot{m}}{C_d A}\right)^{2}
+\]
+
+```formula
+## injector_pressure_drop
+family: rocket
+expr: (mdot/(Cd*A))**2/(2*rho)
+symbols: mdot, Cd, A, rho
+```
+
+Sample calculation 4-8 divides the total orifice area by the element count and takes a circular diameter:
+
+\[
+d = \sqrt{\frac{4A}{N\pi}}
+\]
+
+```formula
+## circular_orifice_diameter
+family: rocket
+expr: (4*A/(N*pi))**0.5
+symbols: A, N, pi
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(\dot{m}\) | Propellant mass flow through the orifices | kg/s |
+| \(C_d\) | Discharge coefficient | dimensionless |
+| \(A\) | Total geometric orifice area | m² |
+| \(\rho\) | Propellant density | kg/m³ |
+| \(\Delta p\) | Injection pressure drop | Pa |
+| \(v\) | Mean speed through the geometric area | m/s |
+| \(d\) | Circular orifice diameter | m |
+| \(N\) | Number of orifices | dimensionless |
+
+Assumptions: steady incompressible liquid (or a stated density for a gas orifice). \(C_d\) is an input; SP-125 quotes about 0.5 to 0.92 from water-flow tests and does not compute it. Dynamic pressure of the jet is `dynamic_pressure`, \(\frac12\rho v^{2}\).
+
+## Feed-system pressure budget
+
+Steady injector-manifold pressure is chamber pressure plus the injector drop, SP-125 equation (4-44). The cooling discussion adds the further drop required to push coolant through the passages and to cover line losses. Elevation uses the \(\rho g h\) head conversion of the NPSH term, equation (6-8). A positive height is a lift from the tank free surface to the injector, so it raises the required supply pressure.
+
+\[
+p_m = p_c + \Delta p_j
+\]
+
+```formula
+## injector_manifold_pressure
+family: rocket
+expr: pc + dp_inj
+symbols: pc, dp_inj
+```
+
+\[
+p_\mathrm{supply} = p_c + \Delta p_j + \Delta p_\mathrm{extra} + \rho g h
+\]
+
+```formula
+## feed_supply_pressure
+family: rocket
+expr: pc + dp_inj + dp_extra + rho*g*h
+symbols: pc, dp_inj, dp_extra, rho, g, h
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(p_m\) | Injector-manifold pressure | Pa |
+| \(p_\mathrm{supply}\) | Required supply pressure at the tank outlet for this branch | Pa |
+| \(p_c\) | Injector-end chamber pressure | Pa |
+| \(\Delta p_j\) | Injector pressure drop | Pa |
+| \(\Delta p_\mathrm{extra}\) | Sum of named line, cooling-jacket, and valve drops | Pa |
+| \(\rho\) | Propellant density | kg/m³ |
+| \(g\) | Gravitational acceleration | m/s² |
+| \(h\) | Height the propellant is lifted | m |
+
+Assumptions: one propellant branch. Oxidizer and fuel are separate budgets. Named drops are inputs; this relation does not estimate friction. Use \(g = 9.80665\,\mathrm{m/s}^{2}\) unless the user gives another value. For a pressure-fed branch, \(p_\mathrm{supply}\) is the suggested tank MEOP. A pump-fed tank is not at this pressure; the pump sees the rise from its inlet to \(p_\mathrm{supply}\).
+
+## Pump hydraulic power
+
+SP-125 equations (6-13) and (6-12): fluid power is weight flow times head, and shaft power is fluid power divided by overall pump efficiency. With \(\Delta p = \rho g \Delta H\),
+
+\[
+\dot{V} = \frac{\dot{m}}{\rho}, \qquad P_\mathrm{hyd} = \dot{V}\,\Delta p, \qquad P_\mathrm{shaft} = \frac{P_\mathrm{hyd}}{\eta_p}
+\]
+
+```formula
+## pump_volume_flow
+family: rocket
+expr: mdot/rho
+symbols: mdot, rho
+```
+
+```formula
+## pump_hydraulic_power
+family: rocket
+expr: mdot*dp/rho
+symbols: mdot, dp, rho
+```
+
+```formula
+## pump_shaft_power
+family: rocket
+expr: mdot*dp/(rho*eta)
+symbols: mdot, dp, rho, eta
+```
+
+The same efficiency ratio applied to a prime mover with efficiency \(\eta_d\) gives drive power \(P_\mathrm{drive} = P_\mathrm{shaft}/\eta_d\).
+
+```formula
+## pump_drive_power
+family: rocket
+expr: mdot*dp/(rho*eta*eta_drive)
+symbols: mdot, dp, rho, eta, eta_drive
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(\dot{V}\) | Volume flow rate | m³/s |
+| \(\dot{m}\) | Mass flow rate | kg/s |
+| \(\rho\) | Propellant density | kg/m³ |
+| \(\Delta p\) | Pump pressure rise | Pa |
+| \(P_\mathrm{hyd}\) | Hydraulic (fluid) power | W |
+| \(P_\mathrm{shaft}\) | Pump shaft power | W |
+| \(\eta_p\) | Overall pump efficiency | dimensionless |
+| \(P_\mathrm{drive}\) | Prime-mover power | W |
+| \(\eta_d\) | Prime-mover efficiency | dimensionless |
+
+Assumptions: incompressible delivered flow. \(\eta_p\) is an input; SP-125 quotes about 0.60 to 0.85 for rocket propellant pumps and does not predict it. Turbine gas-generator balance is not included.
+
+## Bartz gas-side heat flux
+
+NASA SP-125 equation (4-10) and the Bartz coefficient (4-13), checked against sample calculation 4-3. The printed coefficient uses inches, pounds, Btu, psi, and feet per second, with \(g = 32.2\,\mathrm{ft/s}^{2}\). The script expression is that formula after converting each input to those units and the result to W/(m²·K). The constant is
+
+\[
+0.026 \times \frac{1055.05585262}{(0.0254)^{2}} \times (0.0254)^{0.2} \times \left(\frac{0.0254}{0.45359237}\right)^{0.2} \times \frac{0.45359237}{1055.05585262} \times \left(\frac{32.2 \times 0.3048}{6894.757293168361}\right)^{0.8}.
+\]
+
+\[
+h_g = C\, D_t^{-0.2} \frac{\mu^{0.2} c_p}{\mathrm{Pr}^{0.6}} \left(\frac{p_c}{c^{*}}\right)^{0.8} \left(\frac{D_t}{R}\right)^{0.1} \left(\frac{A_t}{A}\right)^{0.9} \sigma
+\]
+
+```formula
+## bartz_gas_side_coefficient
+family: rocket
+expr: 0.026016775834104906*Dt**(-0.2)*mu**0.2*cp*Pr**(-0.6)*(pc/cstar)**0.8*(Dt/R)**0.1*area_ratio**0.9*sigma
+symbols: Dt, mu, cp, Pr, pc, cstar, R, area_ratio, sigma
+```
+
+\[
+q = h_g (r_\mathrm{rec} T_c - T_w)
+\]
+
+```formula
+## gas_side_heat_flux
+family: rocket
+expr: hg*(recovery*Tc - Tw)
+symbols: hg, recovery, Tc, Tw
+```
+
+When viscosity, specific heat, and Prandtl number are not supplied, SP-125 equations (4-15) and (4-16) and the sample specific-heat line give them from \(\gamma\), molecular weight, and temperature. \(T\) in the viscosity fit is the gas temperature in kelvin; the \(0.6\) power was fitted on degrees Rankine, so the constant includes \((9/5)^{0.6}\) and the lb/(in·s) to Pa·s factor \(0.45359237/0.0254\). Specific heat uses \(1544\) and \(778\) from the sample, converted with \(1055.05585262/0.45359237\).
+
+\[
+\mathrm{Pr} = \frac{4\gamma}{9\gamma - 5}
+\]
+
+```formula
+## sp125_prandtl
+family: rocket
+expr: 4*gamma/(9*gamma - 5)
+symbols: gamma
+```
+
+\[
+c_p = \frac{\gamma}{\gamma - 1}\frac{4616.123393316195}{M}
+\]
+
+```formula
+## sp125_specific_heat
+family: rocket
+expr: (gamma/(gamma - 1))*4616.123393316195/M
+symbols: gamma, M
+```
+
+\[
+\mu = (1.1840810853327972\times 10^{-7})\, M^{0.5} T^{0.6}
+\]
+
+```formula
+## sp125_viscosity
+family: rocket
+expr: 1.1840810853327972e-07*M**0.5*T**0.6
+symbols: M, T
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(h_g\) | Gas-side heat-transfer coefficient | W/(m²·K) |
+| \(q\) | Gas-side heat flux | W/m² |
+| \(D_t\) | Throat diameter | m |
+| \(R\) | Radius of curvature of the nozzle contour at the throat | m |
+| \(\mu\) | Gas viscosity | Pa·s |
+| \(c_p\) | Gas specific heat at constant pressure | J/(kg·K) |
+| \(\mathrm{Pr}\) | Prandtl number | dimensionless |
+| \(p_c\) | Nozzle stagnation pressure | Pa |
+| \(c^{*}\) | Characteristic velocity | m/s |
+| \(A_t/A\) | Throat area over the local cross-section area | dimensionless |
+| \(\sigma\) | Boundary-layer property correction | dimensionless |
+| \(r_\mathrm{rec}\) | Turbulent recovery factor | dimensionless |
+| \(T_c\) | Nozzle stagnation temperature | K |
+| \(T_w\) | Gas-side wall temperature | K |
+| \(\gamma\) | Ratio of specific heats | dimensionless |
+| \(M\) | Molecular weight | kg/kmol |
+| \(T\) | Temperature used in the viscosity fit | K |
+
+Assumptions: steady forced convection from SP-125 equation (4-13). At the throat, \(A_t/A = 1\). \(\sigma\) is an input; figure 4-24 is not digitized, and \(\sigma = 1\) omits the property correction. Recovery is an input; SP-125 states a turbulent range of 0.90 to 0.98 and does not pick one value. Carbon-deposit resistance, radiation, and coolant-side channel coefficients are omitted. This is not Sutton–Graves stagnation heating.
+
+## Regenerative coolant heat pickup
+
+SP-125 equation (4-26) is the coolant energy balance up to a limiting bulk temperature. The note uses the critical temperature as that limit. The same balance gives outlet temperature when the heat rate is known, and the minimum flow that keeps the bulk temperature at the limit.
+
+\[
+\dot{Q} = \dot{m} c_p (T_\mathrm{out} - T_\mathrm{in})
+\]
+
+```formula
+## coolant_heat_rate
+family: rocket
+expr: mdot*cp*(Tout - Tin)
+symbols: mdot, cp, Tout, Tin
+```
+
+\[
+T_\mathrm{out} = T_\mathrm{in} + \frac{\dot{Q}}{\dot{m} c_p}
+\]
+
+```formula
+## coolant_outlet_temperature
+family: rocket
+expr: Tin + Q/(mdot*cp)
+symbols: Tin, Q, mdot, cp
+```
+
+\[
+\dot{Q}_c = \dot{m} c_p (T_\mathrm{max} - T_\mathrm{in})
+\]
+
+```formula
+## coolant_capacity
+family: rocket
+expr: mdot*cp*(Tmax - Tin)
+symbols: mdot, cp, Tmax, Tin
+```
+
+\[
+\dot{m}_\mathrm{min} = \frac{\dot{Q}}{c_p (T_\mathrm{max} - T_\mathrm{in})}
+\]
+
+```formula
+## coolant_min_flow
+family: rocket
+expr: Q/(cp*(Tmax - Tin))
+symbols: Q, cp, Tmax, Tin
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(\dot{Q}\) | Heat rate absorbed by the coolant | W |
+| \(\dot{Q}_c\) | Coolant capacity up to \(T_\mathrm{max}\) | W |
+| \(\dot{m}\) | Coolant mass flow | kg/s |
+| \(c_p\) | Coolant specific heat | J/(kg·K) |
+| \(T_\mathrm{in}\) | Coolant inlet temperature | K |
+| \(T_\mathrm{out}\) | Coolant outlet temperature | K |
+| \(T_\mathrm{max}\) | Limiting bulk temperature | K |
+| \(\dot{m}_\mathrm{min}\) | Minimum flow that holds \(T_\mathrm{out}\) at \(T_\mathrm{max}\) | kg/s |
+
+Assumptions: constant \(c_p\), steady flow, and all of \(\dot{Q}\) absorbed by the coolant. SP-125 keeps \(\dot{Q}\) below \(\dot{Q}_c\). Channel Nusselt number, nucleate-boiling limit, and wall conduction are not in this balance. \(T_\mathrm{max}\) is an input; the note’s default limit is the coolant critical temperature.
+
 ## Solid-propellant mass flow rate
 
 Mass leaving the burning surface.
@@ -4716,9 +5140,39 @@ symbols: p1, p, Tb
 
 Assumptions: the derivative is at constant \(K\).
 
+## Vacuum propellant mass
+
+Inverse of `delta_v_vacuum` at one exhaust speed. \(m_f\) already includes any growth applied to the dry mass.
+
+\[
+m_p = m_f\left(e^{\Delta v/c}-1\right)
+\]
+
+```formula
+## vacuum_propellant_mass
+family: rocket
+expr: mf*(exp(dv/c) - 1)
+symbols: mf, dv, c
+```
+
+## Vacuum wet mass
+
+\[
+m_0 = m_f e^{\Delta v/c}
+\]
+
+```formula
+## vacuum_wet_mass
+family: rocket
+expr: mf*exp(dv/c)
+symbols: mf, dv, c
+```
+
+Assumptions: vacuum, constant \(c\), \(\Delta v\) the sum of the named contributions. Not a stage stack.
+
 # Aerodynamics
 
-Incompressible flow and the dimensionless force and moment coefficients. Freestream dynamic pressure \(q_{\infty}\) is the dynamic-pressure relation in Compressible flow evaluated far ahead of the body. In this category \(V\) is flow speed. The two-dimensional Prandtl–Glauert factor follows NACA TN 1127. The isentropic critical pressure coefficient is `pressure_coefficient_from_mach` at local Mach 1 on the same stagnation streamline as NACA Report 1135. Critical Mach number follows NACA TN 1813: the freestream Mach at which that critical coefficient equals the Prandtl–Glauert correction of the incompressible minimum pressure coefficient. Wing geometry and induced drag follow NASA Glenn's Beginner's Guide (public-domain educational pages). The finite-wing lift curve follows NASA TP-2414 and NACA TN 1862. NACA four-digit thickness and mean-line ordinates follow NACA Report 460 and NASA TM X-3284. Thin-section lift, zero-lift angle, and quarter-chord moment follow Munk, NACA Report 142, applied to that mean line. Stall speed and load factor follow the usual force definitions used in FAA-H-8083 and NASA SP-367. Unaccelerated rate of climb is the specific excess power \((T-D)V/W\) of the X-57 power-off-glide note, with climb angle from that vertical component as in FAA-H-8083-25C Chapter 11. Coordinated level-turn bank, radius, and rate follow FAA-H-8083-25C Chapter 5. The sustained-turn load factor is that level-turn \(n\) with `drag_polar` when thrust equals drag. Symmetric pull-up load factor, flight-path radius, and pitch rate follow Johnson, NASA/TP-2009-215402 (NDARC), for an instantaneous wings-level pull-up from level flight. Takeoff ground roll on a level dry runway follows Diehl, NACA Report 450, with Hartman TN 557 resistance \(\mu(W-L)+D\) and Wetmore Report 583 rolling friction. Landing ground roll from contact to rest follows Gustafson, NACA WR L-245, with the same resistance, the same \(a=gF/W\), and Diehl’s integrals run from touchdown speed to zero. The default touchdown factor \(1.3\) is the FAA-H-8083-3C final-approach multiple of landing stall. Ideal propeller thrust, disk speed, induced velocity, and propulsive efficiency follow NASA Glenn's actuator-disk pages, with the incompressible ideal-efficiency definition of NACA RM L53A07. Steady unpowered glide angle, horizontal range from a height, and the force balance \(L=W\cos a\), \(D=W\sin a\) follow those same Glenn glide pages. Sink rate is the vertical component of true airspeed on that path. Breguet propeller range and endurance follow NACA Report 234. Breguet jet range follows Guynn (NASA Langley) and the cruise derivation in NASA TN D-6707. The stick-fixed neutral point and static margin follow NACA TN 1670.
+Incompressible flow and the dimensionless force and moment coefficients. Freestream dynamic pressure \(q_{\infty}\) is the dynamic-pressure relation in Compressible flow evaluated far ahead of the body. In this category \(V\) is flow speed. The two-dimensional Prandtl–Glauert factor follows NACA TN 1127. The isentropic critical pressure coefficient is `pressure_coefficient_from_mach` at local Mach 1 on the same stagnation streamline as NACA Report 1135. Critical Mach number follows NACA TN 1813: the freestream Mach at which that critical coefficient equals the Prandtl–Glauert correction of the incompressible minimum pressure coefficient. Wing geometry and induced drag follow NASA Glenn's Beginner's Guide (public-domain educational pages). The finite-wing lift curve follows NASA TP-2414 and NACA TN 1862. NACA four-digit thickness and mean-line ordinates follow NACA Report 460 and NASA TM X-3284. Thin-section lift, zero-lift angle, and quarter-chord moment follow Munk, NACA Report 142, applied to that mean line. Stall speed and load factor follow the usual force definitions used in FAA-H-8083 and NASA SP-367. Unaccelerated rate of climb is the specific excess power \((T-D)V/W\) of the X-57 power-off-glide note, with climb angle from that vertical component as in FAA-H-8083-25C Chapter 11. Coordinated level-turn bank, radius, and rate follow FAA-H-8083-25C Chapter 5. The sustained-turn load factor is that level-turn \(n\) with `drag_polar` when thrust equals drag. Symmetric pull-up load factor, flight-path radius, and pitch rate follow Johnson, NASA/TP-2009-215402 (NDARC), for an instantaneous wings-level pull-up from level flight. Takeoff ground roll on a level dry runway follows Diehl, NACA Report 450, with Hartman TN 557 resistance \(\mu(W-L)+D\) and Wetmore Report 583 rolling friction. Landing ground roll from contact to rest follows Gustafson, NACA WR L-245, with the same resistance, the same \(a=gF/W\), and Diehl’s integrals run from touchdown speed to zero. The default touchdown factor \(1.3\) is the FAA-H-8083-3C final-approach multiple of landing stall. Ideal propeller thrust, disk speed, induced velocity, and propulsive efficiency follow NASA Glenn's actuator-disk pages, with the incompressible ideal-efficiency definition of NACA RM L53A07. Steady unpowered glide angle, horizontal range from a height, and the force balance \(L=W\cos a\), \(D=W\sin a\) follow those same Glenn glide pages. Sink rate is the vertical component of true airspeed on that path. Breguet propeller range and endurance follow NACA Report 234. Breguet jet range follows Guynn (NASA Langley) and the cruise derivation in NASA TN D-6707. Design-point inlet recovery, compressor and turbine efficiency, burner and afterburner fuel-air ratio, separate-stream turbofan thrust, and airflow sizing follow the NASA Glenn Beginner's Guide component pages, with the isentropic-efficiency definitions in NASA/TM-20220008026. The stick-fixed neutral point and static margin follow NACA TN 1670.
 
 ## Bernoulli's relation
 
@@ -6575,6 +7029,325 @@ symbols: tau_r, tau_c
 
 Assumptions: calorically perfect gas; ideal components; fully expanded nozzle; no afterburner; no fan; no real maps. \(T_{t4}>T_{t3}\), \(Q>c_p T_{t4}\), \(\pi_c>1\), \(\mathrm{NPR}>1\), and \(F_s>0\). Static \(V_0=0\) makes \(\eta_p=\eta_o=0\). The Brayton closed form is the heat-engine thermal efficiency of the same overall pressure ratio; the kinetic `turbojet_thermal_efficiency` is the flight definition used with TSFC.
 
+## Ideal ramjet (Brayton)
+
+Parametric ideal air-breathing ramjet from the NASA Glenn ramjet / Brayton-ram pages (V85), with the same burner, nozzle-exit, specific-thrust, TSFC, and flight-efficiency definitions as the ideal turbojet (V77, V78). Calorically perfect gas with constant \(c_p\) and \(\gamma\). Perfect inlet recovery (isentropic diffuser to freestream totals), no compressor, no turbine, constant-pressure burner with burner efficiency 1, and an adiabatic fully expanded nozzle (\(p_e=p_0\)). Not a scramjet and not a real inlet map. Freestream totals use `stagnation_temperature` and `stagnation_pressure`. After the ideal inlet, \(T_{t2}=T_{t0}\) and \(p_{t2}=p_{t0}\). Combustor entrance total temperature is \(T_{t3}=T_{t2}\). Combustor exit / max total temperature is \(T_{t4}\). Fuel–air ratio is `burner_fuel_air_ratio` with that \(T_{t3}\). Nozzle station total temperature is \(T_{t4}\) (no turbine drop). Exit speed and temperature are `ideal_nozzle_exit_velocity` and `ideal_nozzle_exit_temperature`. Specific thrust, mass-based TSFC, and thermal / propulsive / overall efficiency reuse `turbojet_specific_thrust`, `turbojet_tsfc`, `turbojet_thermal_efficiency`, `turbojet_propulsive_efficiency`, and `turbojet_overall_efficiency`.
+
+Nozzle pressure ratio for the ideal ramjet (perfect recovery, constant-pressure burner, perfectly expanded nozzle):
+
+\[
+\mathrm{NPR} = \frac{p_{t2}}{p_0} = \frac{p_{t0}}{p_0}
+\]
+
+```formula
+## ideal_ramjet_nozzle_pressure_ratio
+family: aerodynamics
+expr: pt2/p0
+symbols: pt2, p0
+```
+
+Ideal Brayton thermal efficiency with ram compression only (\(\tau_c=1\)):
+
+\[
+\eta_{\mathrm{Brayton}} = 1 - \frac{1}{\tau_r}
+\]
+
+with \(\tau_r=T_{t0}/T_0\). This is `ideal_brayton_thermal_efficiency` at \(\tau_c=1\).
+
+```formula
+## ideal_ramjet_brayton_thermal_efficiency
+family: aerodynamics
+expr: 1 - 1/tau_r
+symbols: tau_r
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(\tau_r\) | Ram total-temperature ratio \(T_{t0}/T_0\) (script `tau_r`) | dimensionless |
+| \(T_{t2}, T_{t4}\) | Inlet-exit and combustor-exit total temperatures (scripts `Tt2`, `Tt4`) | K |
+| \(p_{t2}, p_0\) | Inlet-exit total pressure and freestream static pressure (scripts `pt2`, `p0`) | Pa |
+| \(\mathrm{NPR}\) | Nozzle pressure ratio \(p_{t4}/p_0=p_{t2}/p_0\) (script `NPR`) | dimensionless |
+| \(c_p\) | Specific heat at constant pressure (script `cp`) | J/(kg·K) |
+| \(Q\) | Fuel lower heating value | J/kg |
+| \(f\) | Fuel–air mass ratio | dimensionless |
+| \(V_0, V_e\) | Flight speed and fully expanded exit speed (scripts `V0`, `Ve`) | m/s |
+| \(F_s\) | Specific thrust (script `Fs`) | m/s |
+| \(\gamma\) | Ratio of specific heats (script `g`) | dimensionless |
+| \(\eta_{\mathrm{th}}, \eta_p, \eta_o\) | Thermal, propulsive, and overall efficiency | dimensionless |
+
+Assumptions: calorically perfect gas; ideal isentropic diffuser; no compressor or turbine; constant-pressure burner; fully expanded nozzle; no inlet starting model; pressure recovery 1; no dissociation; not a scramjet. Require \(M>1\) (Glenn: a ramjet cannot produce static thrust and needs forward speed). Warn for \(1<M<2\) (below a practical cruise band) and for \(M>5\) (Glenn: conventional ramjet becomes inefficient; scramjet territory). \(T_{t4}>T_{t2}\), \(Q>c_p T_{t4}\), \(\mathrm{NPR}>1\), and \(F_s>0\).
+
+## Design-point air-breathing engine
+
+Preliminary design from a flight condition and a thrust requirement. Calorically perfect gas, constant \(c_p\) and \(\gamma\). The ideal Brayton records above are the unit-efficiency, perfect-inlet limit of these records. Component maps, off-design, a mixed-flow turbofan, a scramjet, and a turboprop are omitted. Polytropic efficiency is not recorded: the Glenn compressor page puts an isentropic efficiency \(n_c\) in the work equation, and NASA/TM-20220008026 states the same isentropic definition and does not give a polytropic formula. A military-spec inlet Mach schedule is not recorded; recovery is a supplied \(\pi_d\), or a pitot inlet from `normal_shock_stagnation_pressure`.
+
+Freestream totals still use `stagnation_temperature` and `stagnation_pressure`. An adiabatic diffuser keeps that total temperature and multiplies total pressure by the recovery:
+
+\[
+T_{t2}=T_{t0},\qquad p_{t2}=\pi_d\,p_{t0}
+\]
+
+```formula
+## adiabatic_diffuser_temperature
+family: aerodynamics
+expr: Tt0
+symbols: Tt0
+```
+
+```formula
+## inlet_exit_total_pressure
+family: aerodynamics
+expr: pi_d*pt0
+symbols: pi_d, pt0
+```
+
+A pitot inlet at \(M>1\) takes the normal-shock total-pressure ratio and a subsonic-diffuser factor. At \(M\le 1\) there is no shock, so that shock ratio is 1.
+
+```formula
+## pitot_inlet_recovery
+family: aerodynamics
+expr: pi_ns*pi_ds
+symbols: pi_ns, pi_ds
+```
+
+Glenn's compressor work with isentropic efficiency \(n_c\) is the ideal temperature rise divided by \(n_c\). The actual temperature ratio is the same factor. At \(n_c=1\) these are `isentropic_compressor_temperature_ratio` and `ideal_compressor_work`.
+
+\[
+\tau_c=1+\frac{\pi_c^{(\gamma-1)/\gamma}-1}{\eta_c},\qquad
+w_c=\frac{c_p T_{t2}}{\eta_c}\left(\pi_c^{(\gamma-1)/\gamma}-1\right)
+\]
+
+```formula
+## compressor_temperature_ratio_efficiency
+family: aerodynamics
+expr: 1 + (pi_c**((g - 1)/g) - 1)/eta_c
+symbols: pi_c, g, eta_c
+```
+
+```formula
+## compressor_work_efficiency
+family: aerodynamics
+expr: cp*Tt2*(pi_c**((g - 1)/g) - 1)/eta_c
+symbols: cp, Tt2, pi_c, g, eta_c
+```
+
+Equal stage pressure ratios multiply to the compressor pressure ratio. Glenn describes several stages, each producing a small pressure rise; the count of equal stages is
+
+\[
+N=\frac{\ln\pi_c}{\ln\pi_{\mathrm{stage}}}
+\]
+
+```formula
+## compressor_stage_count
+family: aerodynamics
+expr: log(pi_c)/log(pi_stage)
+symbols: pi_c, pi_stage
+```
+
+The burner energy equation on the Glenn burner page, solved for the fuel-air ratio, with burner efficiency \(\eta_b\) and burner pressure ratio \(\pi_b=p_{t4}/p_{t3}\). At \(\eta_b=1\) the fuel-air ratio is `burner_fuel_air_ratio`.
+
+\[
+f=\frac{c_p(T_{t4}-T_{t3})}{\eta_b Q-c_p T_{t4}},\qquad p_{t4}=\pi_b\,p_{t3}
+\]
+
+```formula
+## burner_fuel_air_ratio_efficiency
+family: aerodynamics
+expr: cp*(Tt4 - Tt3)/(eta_b*Q - cp*Tt4)
+symbols: cp, Tt4, Tt3, eta_b, Q
+```
+
+```formula
+## burner_exit_total_pressure
+family: aerodynamics
+expr: pi_b*pt3
+symbols: pi_b, pt3
+```
+
+Glenn's matching page equates compressor work and turbine work per unit airflow and neglects the fuel mass. The turbine stream is the burner exit stream, so its mass flow is \((1+f)\) times the inlet airflow. A mechanical efficiency \(\eta_m\) is the fraction of that gas power that reaches the compressor shaft (\(\eta_m=1\) leaves the gas power unchanged). The actual turbine temperature ratio follows. NASA/TM-20220008026 then converts that temperature ratio and the turbine isentropic efficiency into the turbine pressure ratio. At \(f=0\), \(\eta_m=1\), and \(\eta_t=1\) this is `ideal_turbine_temperature_ratio` and `ideal_turbine_pressure_ratio` when \(w_c\) is the ideal compressor work.
+
+\[
+\tau_t=1-\frac{w_c}{(1+f)\,\eta_m\,c_p T_{t4}},\qquad
+\pi_t=\left(1-\frac{1-\tau_t}{\eta_t}\right)^{\gamma/(\gamma-1)}
+\]
+
+```formula
+## turbine_temperature_ratio_from_work
+family: aerodynamics
+expr: 1 - wc/((1 + f)*eta_m*cp*Tt4)
+symbols: wc, f, eta_m, cp, Tt4
+```
+
+```formula
+## turbine_pressure_ratio_from_efficiency
+family: aerodynamics
+expr: (1 - (1 - tau_t)/eta_t)**(g/(g - 1))
+symbols: tau_t, eta_t, g
+```
+
+The afterburner is the same burner energy equation applied to the turbine-exit stream, whose mass relative to inlet air is already \(1+f\). Dry operation is \(f_{ab}=0\). Station 7 is the afterburner exit.
+
+\[
+f_{ab}=\frac{(1+f)\,c_p(T_{t7}-T_{t6})}{\eta_{ab} Q-c_p T_{t7}},\qquad
+p_{t7}=\pi_{ab}\,p_{t6}
+\]
+
+```formula
+## afterburner_fuel_air_ratio
+family: aerodynamics
+expr: (1 + f)*cp*(Tt7 - Tt6)/(eta_ab*Q - cp*Tt7)
+symbols: f, cp, Tt7, Tt6, eta_ab, Q
+```
+
+```formula
+## afterburner_exit_total_pressure
+family: aerodynamics
+expr: pi_ab*pt6
+symbols: pi_ab, pt6
+```
+
+Glenn's nozzle page keeps total temperature and total pressure constant through the nozzle and writes the fully expanded exit speed with a nozzle efficiency \(n_n\). At \(n_n=1\) this is `ideal_nozzle_exit_velocity`. A convergent nozzle does not expand to a supersonic exit. When the nozzle pressure ratio exceeds the sonic value from `sonic_pressure`, the exit is sonic, \(p_e\) is the sonic static pressure, and the general thrust equation keeps the pressure term. Exit area per unit inlet airflow is \(A_s\).
+
+\[
+V_e=\sqrt{2\,\eta_n\,c_p T_t\left(1-\mathrm{NPR}^{-(\gamma-1)/\gamma}\right)}
+\]
+
+\[
+F_s=(1+f)V_e-V_0+(p_e-p_0)A_s
+\]
+
+```formula
+## nozzle_exit_velocity_efficiency
+family: aerodynamics
+expr: (2*eta_n*cp*Tt*(1 - NPR**(-(g - 1)/g)))**0.5
+symbols: eta_n, cp, Tt, NPR, g
+```
+
+```formula
+## specific_thrust_with_pressure
+family: aerodynamics
+expr: (1 + f)*Ve - V0 + (pe - p0)*As
+symbols: f, Ve, V0, pe, p0, As
+```
+
+A separate-stream turbofan uses Glenn's bypass definition \(\mathrm{BPR}=\dot{m}_f/\dot{m}_c\). The fan is a compressor on the whole inlet stream; the core compressor pressure ratio is the overall pressure ratio divided by the fan pressure ratio. Shaft work per unit core air is the core-stream enthalpy rise from station 2 to station 3 plus bypass-ratio times the fan work on the bypass stream. That work is `turbine_temperature_ratio_from_work`. Thrust is the Glenn sum of core and fan momentum, written per unit inlet airflow. Fuel is the core burner only. Mass-based TSFC is core fuel flow over net thrust. Thermal, propulsive, and overall efficiency are the Morris definitions with the jet kinetic energy of both streams. At \(\mathrm{BPR}=0\) they reduce to `turbojet_specific_thrust`, `turbojet_tsfc`, `turbojet_thermal_efficiency`, `turbojet_propulsive_efficiency`, and `turbojet_overall_efficiency`.
+
+\[
+\pi_{c,\mathrm{core}}=\frac{\pi_{\mathrm{overall}}}{\pi_f},\qquad
+w_{\mathrm{shaft}}=w_c+\mathrm{BPR}\,w_f
+\]
+
+\[
+F_s=\frac{(1+f)V_e+\mathrm{BPR}\,V_f}{1+\mathrm{BPR}}-V_0,\qquad
+c_t=\frac{f}{F_s(1+\mathrm{BPR})}
+\]
+
+```formula
+## turbofan_core_pressure_ratio
+family: aerodynamics
+expr: opr/pi_f
+symbols: opr, pi_f
+```
+
+```formula
+## turbofan_shaft_work
+family: aerodynamics
+expr: wc + bpr*wf
+symbols: wc, bpr, wf
+```
+
+```formula
+## turbofan_specific_thrust
+family: aerodynamics
+expr: ((1 + f)*Ve + bpr*Vf)/(1 + bpr) - V0
+symbols: f, Ve, bpr, Vf, V0
+```
+
+```formula
+## turbofan_tsfc
+family: aerodynamics
+expr: f/(Fs*(1 + bpr))
+symbols: f, Fs, bpr
+```
+
+```formula
+## turbofan_thermal_efficiency
+family: aerodynamics
+expr: ((1 + f)*Ve**2 + bpr*Vf**2 - (1 + bpr)*V0**2)/(2*f*Q)
+symbols: f, Ve, bpr, Vf, V0, Q
+```
+
+```formula
+## turbofan_propulsive_efficiency
+family: aerodynamics
+expr: 2*V0*Fs/(((1 + f)*Ve**2 + bpr*Vf**2)/(1 + bpr) - V0**2)
+symbols: V0, Fs, f, Ve, bpr, Vf
+```
+
+```formula
+## turbofan_overall_efficiency
+family: aerodynamics
+expr: Fs*V0*(1 + bpr)/(f*Q)
+symbols: Fs, V0, bpr, f, Q
+```
+
+Glenn's specific-thrust page sizes the engine by dividing the required net thrust by the specific thrust. Capture area is `stream_tube_continuity` solved for area. A circular inlet diameter follows. The compressor-face area uses the isentropic mass-flow parameter from NACA Report 1135 (perfect gas, stagnation ratios, and continuity):
+
+\[
+\frac{\dot{m}\sqrt{T_t}}{A\,p_t}=\sqrt{\frac{\gamma}{R}}\,M\left(1+\frac{\gamma-1}{2}M^{2}\right)^{-(\gamma+1)/(2(\gamma-1))}
+\]
+
+```formula
+## airflow_from_thrust
+family: aerodynamics
+expr: F/Fs
+symbols: F, Fs
+```
+
+```formula
+## capture_area
+family: aerodynamics
+expr: mdot/(rho*V)
+symbols: mdot, rho, V
+```
+
+```formula
+## circular_capture_diameter
+family: aerodynamics
+expr: (4*A/pi)**0.5
+symbols: A, pi
+```
+
+```formula
+## compressible_mass_flow_parameter
+family: aerodynamics
+expr: (g/R)**0.5*M*(1 + ((g - 1)/2)*M**2)**(-(g + 1)/(2*(g - 1)))
+symbols: g, R, M
+```
+
+```formula
+## annulus_area_from_mass_flow
+family: aerodynamics
+expr: mdot*(Tt**0.5)/(pt*mfp)
+symbols: mdot, Tt, pt, mfp
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(\pi_d\) | Inlet total-pressure recovery \(p_{t2}/p_{t0}\) (script `pi_d`) | dimensionless |
+| \(\pi_{ns}, \pi_{ds}\) | Normal-shock total-pressure ratio and subsonic-diffuser factor (scripts `pi_ns`, `pi_ds`) | dimensionless |
+| \(\eta_c, \eta_t, \eta_b, \eta_n, \eta_m, \eta_{ab}\) | Compressor, turbine, burner, nozzle, mechanical, and afterburner efficiencies (scripts `eta_c`, `eta_t`, `eta_b`, `eta_n`, `eta_m`, `eta_ab`) | dimensionless |
+| \(\pi_b, \pi_{ab}, \pi_f\) | Burner, afterburner, and fan total-pressure ratios (scripts `pi_b`, `pi_ab`, `pi_f`) | dimensionless |
+| \(w_c, w_f\) | Core-stream compressor work from station 2 to 3, and fan work per unit fan air (scripts `wc`, `wf`) | J/kg |
+| \(\mathrm{BPR}\) | Bypass ratio \(\dot{m}_f/\dot{m}_c\) (script `bpr`) | dimensionless |
+| \(A_s\) | Nozzle exit area per unit inlet airflow (script `As`) | m·s/kg |
+| \(\dot{m}\) | Inlet airflow (script `mdot`) | kg/s |
+| \(F, F_s\) | Net thrust and specific thrust (scripts `F`, `Fs`) | N and m/s |
+| \(N\) | Number of equal-pressure-ratio compressor stages | dimensionless |
+| \(mfp\) | Compressible mass-flow parameter \(\dot{m}\sqrt{T_t}/(A p_t)\) | — |
+
+Assumptions: calorically perfect gas; design point only; adiabatic inlet; isentropic component efficiencies rather than polytropic efficiencies; no component maps. \(0<\pi_d\le 1\), \(0<\eta\le 1\), \(0<\pi_b\le 1\), \(0<\pi_{ab}\le 1\), \(\pi_c>1\), \(\pi_f>1\), and \(\pi_{\mathrm{overall}}>\pi_f\). Fully expanded nozzle unless a convergent nozzle is choked, in which case the pressure term is kept. A real afterburning nozzle is variable-area; the convergent option is the choked exit at one throat area implied by the mass flow. Static flight has no capture area from \(V_0\). Require \(F_s>0\) and \(Q>c_p T_t\) at every burner.
+
 ## Breguet range and endurance
 
 Cruise distance and time while fuel burn lowers the airplane weight. Lift equals weight and thrust equals drag. \(L/D\), speed, and specific fuel consumption are taken constant over the segment. The weight ratio uses the same weight unit at the start and end of cruise. \(\log\) in the script records is the natural logarithm.
@@ -6969,9 +7742,26 @@ symbols: pi, A2, A1
 
 Assumptions: two-dimensional, inviscid, incompressible thin-section flow. Camber and angle of attack are small. Thickness does not enter \(\alpha_{L0}\), \(c_l\), or \(c_{m,c/4}\). Two-dimensional inviscid pressure drag is zero. Munk notes that a useful profile drag still requires an empirical friction estimate; that estimate is not this record. \(0 < p < 1\) and \(m \ge 0\). A symmetric mean line is \(m = 0\), so \(\alpha_{L0} = 0\) and \(c_{m,c/4} = 0\). Positive moment is pitch-up. Script `theta_p` is `naca4_glauert_station`. Script `s**1.5` in \(A_2\) is \(s^{3}\) with \(s=\sqrt{p(1-p)}\).
 
+## Drag delta-v per revolution
+
+Speed loss over one circular revolution at constant density. Force is `drag_force`. Period is `orbital_period`.
+
+\[
+\Delta v = C_D \tfrac12 \rho V^{2} A \, T / m
+\]
+
+```formula
+## drag_delta_v_per_revolution
+family: aerodynamics
+expr: Cd*0.5*rho*V**2*A/m*period
+symbols: Cd, rho, V, A, m, period
+```
+
+Assumptions: density and speed constant over the revolution.
+
 # Structures
 
-Pure bending of a beam, spar, longeron, or boom follows NACA Report 82 and NACA TN 2754. Elastic Euler column buckling of a concentrically loaded prismatic strut follows the AFFDL Stress Analysis Manual with the effective-length form restated in NASA TM X-73305; NACA Report 82 states the pin-ended Euler load for high slenderness. Thin-shell motor-case relations are written out in NASA SP-8025, *Solid Rocket Motor Metal Cases* (April 1970). Shell buckling, fracture mechanics, and weight scaling in that monograph are cited to other documents and are not recorded here. In the shell records \(R\) is cylinder radius. The load ratio in the margin-of-safety definition is not called \(R\). In the beam and column records \(I\) is the second moment of area about the buckling or bending axis, not polar moment and not impulse.
+Pure bending of a beam, spar, longeron, or boom follows NACA Report 82 and NACA TN 2754. Elastic Euler column buckling of a concentrically loaded prismatic strut follows the AFFDL Stress Analysis Manual with the effective-length form restated in NASA TM X-73305; NACA Report 82 states the pin-ended Euler load for high slenderness. Elastic torsion of a solid or concentrically hollow circular shaft follows the same AFFDL manual (beam torsion): \(f_s = T r / I_p\) and \(\theta = T L /(G I_p)\) with polar second moment \(I_p = \pi/2\,(r_o^4 - r_i^4)\). Thin-shell motor-case relations are written out in NASA SP-8025, *Solid Rocket Motor Metal Cases* (April 1970). Shell buckling, fracture mechanics, and weight scaling in that monograph are cited to other documents and are not recorded here. In the shell records \(R\) is cylinder radius. The load ratio in the margin-of-safety definition is not called \(R\). In the beam and column records \(I\) is the second moment of area about the buckling or bending axis, not polar moment and not impulse. In the shaft records \(J\) (script \(J\)) is the polar second moment.
 
 ## Pure bending stress
 
@@ -7122,6 +7912,66 @@ symbols: E, K, L, I, A, pi
 | \(\sigma_{\mathrm{cr}}\) | Average critical stress, \(P_{\mathrm{cr}}/A\) | Pa |
 
 Assumptions: concentric axial compression, initially straight prismatic member, stable cross section (no local crippling), homogeneous isotropic linear-elastic material, and critical stress below the proportional limit (and below compressive yield when that stress is supplied). The Euler load alone does not replace a short-column or tangent-modulus curve. Eccentricity, initial crookedness, and inelastic Engesser–von Kármán / Johnson formulas are omitted. \(E,I,L,K,A>0\).
+
+## Circular shaft torsion
+
+Elastic torsion of a solid or concentrically hollow circular shaft (torque tube, actuator shaft, round boom in twist). The AFFDL Stress Analysis Manual writes the shear at radius \(r\) and the angle of twist of length \(L\) as
+
+\[
+\tau = \frac{T r}{J},\qquad
+\theta = \frac{T L}{G J}
+\]
+
+with polar second moment
+
+\[
+J = \frac{\pi}{2}\bigl(R_o^{4}-R_i^{4}\bigr) = \frac{\pi}{32}\bigl(D_o^{4}-D_i^{4}\bigr)
+\]
+
+(\(R_i = 0\) for a solid shaft). Maximum shear is at the outer fiber, \(r = R_o\).
+
+```formula
+## polar_second_moment_solid
+family: shaft
+expr: pi/2*Ro**4
+symbols: Ro, pi
+```
+
+```formula
+## polar_second_moment_hollow
+family: shaft
+expr: pi/2*(Ro**4 - Ri**4)
+symbols: Ro, Ri, pi
+```
+
+```formula
+## circular_shaft_shear
+family: shaft
+expr: T*r/J
+symbols: T, r, J
+```
+
+```formula
+## circular_shaft_twist
+family: shaft
+expr: T*L/(G*J)
+symbols: T, L, G, J
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(J\) | Polar second moment of area | m⁴ |
+| \(R_o\) | Outer radius | m |
+| \(R_i\) | Inner radius (zero for a solid shaft) | m |
+| \(D_o, D_i\) | Outer and inner diameters | m |
+| \(\tau\) | Shear stress at radius \(r\) | Pa |
+| \(T\) | Torque | N·m |
+| \(r\) | Radial station from the center | m |
+| \(\theta\) | Angle of twist | rad |
+| \(L\) | Shaft length | m |
+| \(G\) | Shear modulus | Pa |
+
+Assumptions: elastic range; plane sections remain plane; radii remain straight; homogeneous isotropic linear-elastic material; circular solid or concentrically hollow prismatic section. Non-circular Saint-Venant torsion, open thin-wall warping, plastic torsion, and combined bending-plus-torsion are omitted. \(T,J,L,G>0\), \(R_o>R_i\ge 0\), and \(0\le r\le R_o\).
 
 ## Cylinder hoop stress
 
@@ -7397,6 +8247,8 @@ Assumptions: the origin and CG axes are parallel. The same shift applies to each
 Stagnation-point convective heating on an axisymmetric blunt nose follows Sutton and Graves, NASA TR R-376. The Stefan–Boltzmann constant is the NIST CODATA 2022 value. Radiative-equilibrium wall temperature for an insulated gray surface against a cold sink follows the NASA Goddard thermal-design short course. Freestream dynamic pressure is `freestream_dynamic_pressure` in Aerodynamics. Perfect-gas freestream enthalpy uses the 1976 dry-air gas constant when temperature is known. These records do not add a separate dissociation or ionization model beyond what is already folded into the Sutton–Graves air coefficient.
 
 Nonlifting ballistic entry in an exponential atmosphere follows Allen and Eggers, NACA TN 4047 (Report 1381). Constant \(C_D\), gravity neglected relative to drag, and a straight path at the entry flight-path angle give closed forms for peak deceleration and its altitude. That motion analysis is a companion to stagnation heat flux, not a full trajectory or a heating integral.
+
+Lumped thermal capacitance under surface convection (spatially uniform solid temperature when \(\mathrm{Bi}\ll 1\)) follows the NASA Glenn T-MATS 0-D transient conduction block and the Bi ≪ 1 usage stated in NASA electric-aircraft thermal notes. When \(\mathrm{Bi}\) is not small, distributed transient conduction (Heisler charts / slab solutions with Biot and Fourier number, e.g. NASA TM X-1442) applies instead; those charts are not transcribed here.
 
 ## Stagnation-point convective heat flux (heat-transfer coefficient)
 
@@ -7744,6 +8596,169 @@ symbols: rhoref, B, Vs
 | \(V_s\) | Speed at the surface (script `Vs`) | m/s |
 
 Assumptions: drag deceleration \(a=(C_D\rho A/(2m))V^{2}=\rho V^{2}/(2B)\). Use with `allen_eggers_surface_speed` when the formal \(Z_1\) is below the surface.
+
+## Lumped thermal time constant
+
+Time constant of a spatially uniform solid exchanging heat by convection with a fixed ambient. With mass \(m=\rho V\),
+
+\[
+\tau = \frac{m c}{h A} = \frac{\rho V c}{h A}
+\]
+
+```formula
+## lumped_thermal_time_constant
+family: aerotherm
+expr: m*c/(h*A)
+symbols: m, c, h, A
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(\tau\) | Thermal time constant | s |
+| \(m\) | Mass | kg |
+| \(c\) | Specific heat | J/(kg·K) |
+| \(h\) | Convection coefficient | W/(m²·K) |
+| \(A\) | Convecting surface area | m² |
+
+Assumptions: constant \(m\), \(c\), \(h\), and \(A\); lumped (uniform) solid temperature. Equivalent form \(\tau=\rho L_c c/h\) when \(L_c=V/A\). \(m>0\), \(c>0\), \(h>0\), \(A>0\).
+
+## Lumped-capacitance temperature
+
+Temperature of that lumped solid after time \(t\) under convection to fixed \(T_{\infty}\):
+
+\[
+T(t)-T_{\infty}=(T_i-T_{\infty})\exp(-t/\tau)
+\]
+
+```formula
+## lumped_capacitance_temperature
+family: aerotherm
+expr: Tinf + (Ti - Tinf)*exp(-t/tau)
+symbols: Tinf, Ti, t, tau
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(T(t)\) | Solid temperature at time \(t\) | K |
+| \(T_{\infty}\) | Ambient fluid temperature (script `Tinf`) | K |
+| \(T_i\) | Initial solid temperature (script `Ti`) | K |
+| \(t\) | Elapsed time | s |
+| \(\tau\) | Thermal time constant (script `tau`) | s |
+
+Assumptions: same as `lumped_thermal_time_constant`; fixed \(T_{\infty}\); no internal generation; radiation omitted unless folded into an effective \(h\). \(\tau>0\), \(t\ge 0\).
+
+## Lumped-capacitance time to a target temperature
+
+Elapsed time to reach temperature \(T\) (between \(T_i\) and \(T_{\infty}\)):
+
+\[
+t = -\tau\ln\left(\frac{T-T_{\infty}}{T_i-T_{\infty}}\right)
+\]
+
+```formula
+## lumped_capacitance_time_to_temperature
+family: aerotherm
+expr: -tau*log((T - Tinf)/(Ti - Tinf))
+symbols: tau, T, Tinf, Ti
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(t\) | Time to reach \(T\) | s |
+| \(\tau\) | Thermal time constant (script `tau`) | s |
+| \(T\) | Target solid temperature | K |
+| \(T_{\infty}\) | Ambient temperature (script `Tinf`) | K |
+| \(T_i\) | Initial temperature (script `Ti`) | K |
+
+Assumptions: same exponential model. Requires \(T_i\neq T_{\infty}\) and \(0<(T-T_{\infty})/(T_i-T_{\infty})\le 1\). \(T=T_{\infty}\) is only reached as \(t\to\infty\).
+
+## Lumped-capacitance heat transferred
+
+Heat transferred from the solid between the initial state and temperature \(T\) (positive when the solid cools):
+
+\[
+Q = m c\bigl(T_i - T\bigr)
+\]
+
+```formula
+## lumped_capacitance_heat_transferred
+family: aerotherm
+expr: m*c*(Ti - T)
+symbols: m, c, Ti, T
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(Q\) | Heat transferred from the solid | J |
+| \(m\) | Mass | kg |
+| \(c\) | Specific heat | J/(kg·K) |
+| \(T_i\) | Initial temperature (script `Ti`) | K |
+| \(T\) | Temperature at the end of the interval | K |
+
+Assumptions: constant \(c\); change of internal energy only (no phase change). With \(T=T(t)\) from `lumped_capacitance_temperature`, this is the convective heat leave-taking over that interval.
+
+## Biot number
+
+Ratio of internal conduction resistance to surface convection resistance:
+
+\[
+\mathrm{Bi} = \frac{h L_c}{k}
+\]
+
+```formula
+## biot_number
+family: aerotherm
+expr: h*Lc/k
+symbols: h, Lc, k
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(\mathrm{Bi}\) | Biot number | dimensionless |
+| \(h\) | Convection coefficient | W/(m²·K) |
+| \(L_c\) | Characteristic length (script `Lc`), often \(V/A\) | m |
+| \(k\) | Solid thermal conductivity | W/(m·K) |
+
+Assumptions: \(h>0\), \(L_c>0\), \(k>0\). Lumped capacitance is appropriate when \(\mathrm{Bi}\ll 1\) (commonly \(\mathrm{Bi}\le 0.1\)). When \(\mathrm{Bi}\) is not small, use distributed transient conduction (Heisler / Biot–Fourier charts); those charts are not recorded here. Do not invent \(k\) or \(L_c\).
+
+## Spacecraft absorbed power
+
+Single-node orbit heating. Solar is off in eclipse. Albedo and planet infrared are user inputs.
+
+```formula
+## spacecraft_absorbed_power
+family: aerotherm
+expr: S*Asun*alpha*(1 - fe) + S*albedo*Falb*Aalb*alpha + qir*eps*Air*Fir + Qint
+symbols: S, Asun, alpha, fe, albedo, Falb, Aalb, qir, eps, Air, Fir, Qint
+```
+
+## Spacecraft equilibrium temperature
+
+\[
+T = \left(Q/(\varepsilon\sigma A_{\mathrm{rad}})\right)^{1/4}
+\]
+
+```formula
+## spacecraft_equilibrium_temperature
+family: aerotherm
+expr: (Q/(eps*sigma*Arad))**0.25
+symbols: Q, eps, sigma, Arad
+```
+
+## Radiator area for a temperature
+
+\[
+A_{\mathrm{rad}} = Q/(\varepsilon\sigma T^{4})
+\]
+
+```formula
+## radiator_area_for_temperature
+family: aerotherm
+expr: Q/(eps*sigma*T**4)
+symbols: Q, eps, sigma, T
+```
+
+Assumptions: one isothermal node. \(\sigma\) is the CODATA 2022 Stefan–Boltzmann constant. Not entry heating.
 
 # Spacecraft power
 
@@ -8154,6 +9169,36 @@ symbols: P, te, eta_c, eta_d, td
 
 Assumptions: constant load in sun and eclipse, zero array power in eclipse, and surplus sunlit power goes to charging. If the sunlit array is below the load, the battery supplies that difference at \(\eta_d\). Distribution and converter efficiencies outside \(\eta_c\) and \(\eta_d\) are omitted. Orbit-average array power from `solar_array_orbit_average_power` is \(P_{\mathrm{sa}}(1-f_{\mathrm{e}})\) with \(f_{\mathrm{e}}=t_e/(t_e+t_d)\).
 
+## Orbit-average load
+
+One duty-cycled load. The spacecraft orbit average is the sum of these terms.
+
+\[
+P_{\mathrm{avg}} = P f
+\]
+
+```formula
+## orbit_average_load
+family: power
+expr: P*f
+symbols: P, f
+```
+
+## Eclipse load energy
+
+\[
+E = P t
+\]
+
+```formula
+## eclipse_load_energy
+family: power
+expr: P*t
+symbols: P, t
+```
+
+Assumptions: power constant while the load is on. \(0\le f\le 1\).
+
 # Space communications
 
 Vacuum free-space radio link budget. Wavelength and frequency use the NIST CODATA 2022 speed of light \(c = 299792458\,\mathrm{m/s}\). Boltzmann’s constant is the CODATA 2022 value \(k = 1.380649\times 10^{-23}\,\mathrm{J/K}\). Free-space path loss and Friis received power follow Jamnejad. Circular-aperture gain with aperture efficiency follows Dabul, NASA TN D-3405. Thermal noise \(P_n=kTB\) is the same note; carrier-to-noise is Kalil’s \(\mathrm{CNR}=P_r/(kTB)\). \(E_b/N_0=(C/N_0)/R_b\) and margin against a required \(E_b/N_0\) follow Kerczewski, NASA TM 89898. Atmosphere, rain, polarization mismatch, pointing loss, and modulation details beyond a supplied \(E_b/N_0\) requirement are omitted.
@@ -8467,6 +9512,34 @@ symbols: EbN0, EbN0req
 
 Assumptions: \((E_b/N_0)_{\mathrm{req}}>0\). Margin in decibels is \(10\log_{10} M\). The requirement is supplied by the user; modulation BER curves are not computed here.
 
+## Required pass bit rate
+
+\[
+R = N_{\mathrm{bits}} k / t
+\]
+
+```formula
+## required_pass_bit_rate
+family: comms
+expr: bits*overhead/t
+symbols: bits, overhead, t
+```
+
+## Pass data volume
+
+\[
+N_{\mathrm{bits}} = R t / k
+\]
+
+```formula
+## pass_data_volume
+family: comms
+expr: rate*t/overhead
+symbols: rate, t, overhead
+```
+
+Assumptions: constant rate over the pass. Overhead \(k\ge 1\). The rate is the \(R_b\) already used for \(E_b/N_0\).
+
 # Dynamics and control
 
 Linear, constant-coefficient, single-input second-order response follows NASA/TM-2016-218227 (Casiano), NASA TM X-53036 (Garner), NASA/TM-2010-216897 (Connolly and Kopasakis), and the NASA Glenn loop-shaping note NTRS 20070034948. The plant is the unity-gain form
@@ -8617,3 +9690,168 @@ symbols: delta, zeta, wn
 | \(\omega_n\) | Undamped natural frequency (script `wn`) | rad/s |
 
 Assumptions: underdamped or lightly damped envelope \(e^{-\zeta\omega_n t}\). Default band is 2% so \(\delta=0.02\). A 5% band uses \(\delta=0.05\). Requires \(\zeta>0\), \(\omega_n>0\), and \(0<\delta<1\). This is an envelope estimate; the program may also report the first time the analytical step response stays inside the band.
+
+## True PN commanded acceleration
+
+Scalar true proportional-navigation acceleration command (Zebenay, Lyzhoft, and Barbee; NASA Goddard intercept guidance). Acceleration is applied perpendicular to the instantaneous LOS:
+
+\[
+a_c = N'\, V_c\, \dot{\lambda}
+\]
+
+```formula
+## true_pn_commanded_acceleration
+family: control
+expr: N_prime*Vc*lambda_dot
+symbols: N_prime, Vc, lambda_dot
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(a_c\) | Commanded acceleration (true PN) | m/s² |
+| \(N'\) | Effective navigation ratio (script `N_prime`) | dimensionless |
+| \(V_c\) | Closing speed (script `Vc`) | m/s |
+| \(\dot{\lambda}\) | LOS rate (script `lambda_dot`) | rad/s |
+
+Assumptions: planar true PN. \(N'>0\). \(V_c\) and \(\dot{\lambda}\) keep their algebraic signs. See `CTRL - ProportionalNavigation`.
+
+## Closing speed
+
+Closing speed is the negative of the range rate along the interceptor-to-target LOS:
+
+\[
+V_c = -\dot{R}
+\]
+
+```formula
+## closing_speed
+family: control
+expr: -R_dot
+symbols: R_dot
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(V_c\) | Closing speed | m/s |
+| \(\dot{R}\) | Range rate (script `R_dot`) | m/s |
+
+Assumptions: \(V_c>0\) when the vehicles are approaching.
+
+## LOS rate
+
+Planar LOS angular rate from relative position \(\mathbf{R}=\mathbf{r}_t-\mathbf{r}_m\) and relative velocity \(\mathbf{V}=\mathbf{v}_t-\mathbf{v}_m\):
+
+\[
+\dot{\lambda} = \frac{R_x V_y - R_y V_x}{R^{2}}
+\]
+
+```formula
+## los_rate
+family: control
+expr: (Rx*Vy - Ry*Vx)/R**2
+symbols: Rx, Ry, Vx, Vy, R
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(\dot{\lambda}\) | LOS rate | rad/s |
+| \(R_x,R_y\) | Relative position components | m |
+| \(V_x,V_y\) | Relative velocity components | m/s |
+| \(R\) | Range \(\sqrt{R_x^{2}+R_y^{2}}\) | m |
+
+Assumptions: planar engagement; \(R>0\).
+
+## Gravity-gradient torque
+
+Planar principal-axis form from NASA SP-8024.
+
+\[
+T = \tfrac{3}{2} n^{2}(I_z-I_y)\sin 2\theta
+\]
+
+```formula
+## gravity_gradient_torque
+family: control
+expr: 1.5*n2*(Iz - Iy)*sin(2*theta)
+symbols: n2, Iz, Iy, theta
+```
+
+## Aerodynamic disturbance torque
+
+\[
+T = \tfrac12\rho V^{2} C_D A d
+\]
+
+```formula
+## aerodynamic_disturbance_torque
+family: control
+expr: 0.5*rho*V**2*Cd*A*d
+symbols: rho, V, Cd, A, d
+```
+
+## Solar radiation torque
+
+\[
+T = (S/c) A C_r d
+\]
+
+```formula
+## solar_radiation_torque
+family: control
+expr: S*A*Cr*d/c
+symbols: S, A, Cr, d, c
+```
+
+## Magnetic disturbance torque
+
+\[
+T = M B \sin\psi
+\]
+
+```formula
+## magnetic_disturbance_torque
+family: control
+expr: M*B*sin(psi)
+symbols: M, B, psi
+```
+
+## Rest-to-rest slew torque
+
+\[
+\tau = 4 I \theta / t^{2}
+\]
+
+```formula
+## rest_to_rest_slew_torque
+family: control
+expr: 4*I*theta/t**2
+symbols: I, theta, t
+```
+
+## Rest-to-rest slew impulse
+
+\[
+H = 2 I \theta / t
+\]
+
+```formula
+## rest_to_rest_slew_impulse
+family: control
+expr: 2*I*theta/t
+symbols: I, theta, t
+```
+
+## Disturbance momentum storage
+
+\[
+H = T\tau
+\]
+
+```formula
+## disturbance_momentum_storage
+family: control
+expr: T*tau
+symbols: T, tau
+```
+
+Assumptions: one principal axis. Slew and disturbance storage are separate calculations. The disturbance torque is an input, not computed here.

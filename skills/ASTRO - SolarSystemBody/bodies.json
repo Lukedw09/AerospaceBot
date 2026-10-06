@@ -1,0 +1,97 @@
+{
+  "source": "V93 NSSDCA planetary fact sheets. Earth radius and mu follow the catalogue Earth, mu = g0*R0^2.",
+  "g0_m_s2": 9.80665,
+  "earth_radius_m": 6374200.0,
+  "bodies": [
+    {
+      "name": "sun",
+      "class": "star",
+      "mu_m3_s2": 1.32712e20,
+      "radius_m": 695700000.0,
+      "a_helio_m": null,
+      "e": null,
+      "i_deg": null
+    },
+    {
+      "name": "mercury",
+      "class": "planet",
+      "mu_m3_s2": 2.2032e13,
+      "radius_m": 2440500.0,
+      "a_helio_m": 5.7909e10,
+      "e": 0.2056,
+      "i_deg": 7.004
+    },
+    {
+      "name": "venus",
+      "class": "planet",
+      "mu_m3_s2": 3.2486e14,
+      "radius_m": 6051800.0,
+      "a_helio_m": 1.0821e11,
+      "e": 0.0068,
+      "i_deg": 3.395
+    },
+    {
+      "name": "earth",
+      "class": "planet",
+      "mu_m3_s2": null,
+      "radius_m": 6374200.0,
+      "a_helio_m": 1.49598e11,
+      "e": 0.0167,
+      "i_deg": 0.0
+    },
+    {
+      "name": "mars",
+      "class": "planet",
+      "mu_m3_s2": 4.2828e13,
+      "radius_m": 3396200.0,
+      "a_helio_m": 2.27956e11,
+      "e": 0.0935,
+      "i_deg": 1.848
+    },
+    {
+      "name": "jupiter",
+      "class": "planet",
+      "mu_m3_s2": 1.26687e17,
+      "radius_m": 71492000.0,
+      "a_helio_m": 7.78479e11,
+      "e": 0.0487,
+      "i_deg": 1.304
+    },
+    {
+      "name": "saturn",
+      "class": "planet",
+      "mu_m3_s2": 3.7931e16,
+      "radius_m": 60268000.0,
+      "a_helio_m": 1.432041e12,
+      "e": 0.052,
+      "i_deg": 2.486
+    },
+    {
+      "name": "uranus",
+      "class": "planet",
+      "mu_m3_s2": 5.794e15,
+      "radius_m": 25559000.0,
+      "a_helio_m": 2.867043e12,
+      "e": 0.0469,
+      "i_deg": 0.77
+    },
+    {
+      "name": "neptune",
+      "class": "planet",
+      "mu_m3_s2": 6.8351e15,
+      "radius_m": 24764000.0,
+      "a_helio_m": 4.514953e12,
+      "e": 0.0097,
+      "i_deg": 1.77
+    },
+    {
+      "name": "pluto",
+      "class": "dwarf",
+      "mu_m3_s2": 8.7e11,
+      "radius_m": 1188000.0,
+      "a_helio_m": 5.869656e12,
+      "e": 0.2444,
+      "i_deg": 17.16
+    }
+  ]
+}

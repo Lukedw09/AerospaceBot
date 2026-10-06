@@ -12,9 +12,16 @@ description: >-
   capacity with depth of discharge and charge/discharge efficiency, vacuum
   free-space path loss, Friis received power, antenna gain from aperture
   efficiency, carrier-to-noise, Eb/N0, link margin, linear second-order step
-  overshoot or settling time, ideal Brayton turbojet specific thrust or TSFC,
-  or what a formula's symbols and units mean. Use only formulas listed in
-  checks/check.md. Definitions listed there are exempt from the identity check.
+  overshoot or settling time, true proportional navigation commanded
+  acceleration or closing speed, Hohmann phase angle, synodic period, inclined
+  excess speed,   ideal Brayton turbojet specific thrust or TSFC,
+  ideal Brayton ramjet specific thrust or TSFC, design-point inlet
+  recovery, non-ideal turbojet or afterburner fuel flow, separate-stream
+  turbofan thrust, or engine airflow sizing, 1976 density above 86 km,
+  spacecraft radiative balance, disturbance torques, drag delta-v, in-space
+  propellant, pass data volume, duty-cycled load, or what a formula's symbols and
+  units mean. Use only formulas listed in checks/check.md. Definitions listed
+  there are exempt from the identity check.
 ---
 
 # Aero Formulas
@@ -23,7 +30,7 @@ Read [formulas.md](formulas.md) before answering. Use only a formula whose id is
 
 ## Select the formula
 
-1. Start in the category that matches the question: Compressible flow, Atmosphere, Rocket propulsion (including two-body orbits and anomalies), Aerodynamics (including ideal propeller and ideal Brayton turbojet), Structures, Mass properties, Aerothermodynamics, Spacecraft power, Space communications, or Dynamics and control. Read another category only if that one does not contain a fit.
+1. Start in the category that matches the question: Compressible flow, Atmosphere (including 1976 density above 86 km), Rocket propulsion (including two-body orbits and anomalies, injector orifice flow, feed-system pressure, pump power, Bartz throat heat flux, regenerative coolant heat pickup, and in-space propellant), Aerodynamics (including ideal propeller, ideal Brayton turbojet, ideal Brayton ramjet, design-point inlet recovery, non-ideal turbojet, afterburner, separate-stream turbofan, airflow sizing, and drag delta-v), Structures, Mass properties, Aerothermodynamics (including spacecraft radiative balance), Spacecraft power (including duty-cycled load), Space communications (including pass data volume), or Dynamics and control (including second-order response, true proportional navigation, and disturbance torques). Read another category only if that one does not contain a fit.
 2. Use the user's wording, known quantities, and requested result to choose the formula that fits.
 3. Reject any formula that is not listed in [checks/check.md](checks/check.md). A listed definition is allowed.
 4. If more than one listed formula fits, choose the one that uses the quantities the user already has. If the choice is still ambiguous, ask which result they want before calculating.

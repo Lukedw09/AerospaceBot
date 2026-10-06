@@ -58,3 +58,4 @@ User densities override the pair table. `--rho-ox` and `--rho-fuel` must be give
 4. Report propellant mass \(m_p\), \(m_o\), and \(m_f\) in kg.
 5. Report propellant volume \(V_p\), \(V_o\), and \(V_f\) in m³.
 6. If r, mass flow, burn time, densities, or a listed pair is missing, say so. Do not fill in a density or a mass.
+7. `mdot_o_kg_s` and `mdot_f_kg_s` can be passed to `ROCKET - InjectorOrificeFlow` and, for the coolant branch, to `ROCKET - RegenerativeCoolantHeatPickUp`. Volumes can be passed to `ROCKET - TankStructureMass`. Pressures for `ROCKET - FeedSystemPressureBudget` are not in this printout.

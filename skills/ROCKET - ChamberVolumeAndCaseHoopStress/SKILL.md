@@ -51,3 +51,4 @@ If the user gives a maximum expected operating pressure and a separate design fa
 4. Report hoop stress in Pa and margin of safety as a fraction. A margin of 0 means the hoop stress equals the allowable. A negative margin means the hoop stress is above the allowable.
 5. Report `t_over_R` and `thin_wall`. `thin_wall` is `yes` when \(t/R < 0.1\). State that the hoop formula is a thin-membrane result.
 6. State that \(L^{*}\) and the allowable stress were inputs, and that `--pc` was not multiplied by a design factor inside the program.
+7. After the throat and chamber geometry are known, gas-side heat flux is `ROCKET - ThroatGasSideHeatFlux`. This program does not compute heat flux.
