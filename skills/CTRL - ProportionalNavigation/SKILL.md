@@ -39,7 +39,7 @@ with relative velocity \(\mathbf{V}=\mathbf{v}_t-\mathbf{v}_m\). The true-PN acc
 3. Pass exactly one mode: Mode 1 (`--vc` with `--los-rate`) or Mode 2 (`--range` with `--los-angle` and a velocity path). Do not mix the modes.
 4. For Mode 2, pass exactly one velocity API: `--vm --hm --vt --ht`, or `--vmx --vmy --vtx --vty`. Do not mix them.
 5. Pass `--at-lat`, `--dt`, `--t-max`, or `--hit-radius` only when the user gave them or when documenting the program defaults. Safe defaults are target lateral accel 0, `dt=0.01` s, `t_max=300` s, hit radius 1 m.
-6. Pass `--out` only for Mode 2 when the user wants the engagement-plane PNG. Do not invent a plot path when they did not ask for a figure.
+6. Pass `--out` only for Mode 2 when the user wants the engagement-plane PNG. Do not invent a plot path when they did not ask for a figure. Mode 1 ignores `--out` if it is present.
 7. Do not use this skill for 3D PN, seeker noise, filters, gravity, atmosphere, autopilot lag, pursuit, or APN. Do not use it for second-order step-response metrics (`CTRL - SecondOrderResponse`).
 
 ## Flags
@@ -67,7 +67,7 @@ python "skills/CTRL - ProportionalNavigation/proportional_navigation.py" --n-pri
 | `--dt` | Integrator step | s, \(> 0\) | Optional; default 0.01 |
 | `--t-max` | Maximum engagement time | s, \(> 0\) | Optional; default 300 |
 | `--hit-radius` | Intercept range threshold | m, \(> 0\) | Optional; default 1 |
-| `--out` | PNG path | — | Optional; Mode 2 only |
+| `--out` | PNG path | — | Optional; Mode 2 only (ignored in Mode 1) |
 
 Angles in degrees use \(\mathrm{rad}=\mathrm{deg}\cdot\pi/180\). Speeds in km/s use `1 km/s = 1000 m/s`. Range in km uses `1 km = 1000 m`.
 

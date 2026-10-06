@@ -23,6 +23,7 @@ os.environ["AUTH_DISABLED"] = "1"
 
 from app.catalog import load_catalog, tool_by_name
 from app.runner import run_tool
+from app.server import build_server
 
 ROOT = Path(__file__).resolve().parents[2]
 BODY_SCRIPT = ROOT / "skills" / "ASTRO - SolarSystemBody" / "solar_system_body.py"
@@ -906,6 +907,35 @@ class CatalogWiringTests(unittest.TestCase):
         finally:
             if missing.job_dir is not None:
                 shutil.rmtree(missing.job_dir, ignore_errors=True)
+
+    def test_heliocentric_named_bodies_accept_from_and_to(self) -> None:
+        tools = load_catalog(ROOT)
+        helio = tool_by_name(tools, "heliocentric_hohmann")
+        assert helio is not None
+        dests = {flag.option: flag.dest for flag in helio.flags}
+        self.assertEqual(dests["--from"], "depart")
+        self.assertEqual(dests["--to"], "arrive")
+        server = build_server()
+        props = server._tool_manager._tools["heliocentric_hohmann"].parameters["properties"]
+        self.assertIn("from", props)
+        self.assertIn("to", props)
+        self.assertNotIn("depart", props)
+        named = run_tool(helio, {"from": "earth", "to": "mars"}, repo_root=ROOT)
+        try:
+            self.assertEqual(named.exit_code, 0, named.text)
+            self.assertIn("from: earth", named.text)
+            self.assertIn("to: mars", named.text)
+        finally:
+            if named.job_dir is not None:
+                shutil.rmtree(named.job_dir, ignore_errors=True)
+        aliased = run_tool(helio, {"depart": "earth", "arrive": "venus"}, repo_root=ROOT)
+        try:
+            self.assertEqual(aliased.exit_code, 0, aliased.text)
+            self.assertIn("from: earth", aliased.text)
+            self.assertIn("to: venus", aliased.text)
+        finally:
+            if aliased.job_dir is not None:
+                shutil.rmtree(aliased.job_dir, ignore_errors=True)
 
     def test_skills_point_at_the_neighbouring_programs(self) -> None:
         helio = (ROOT / "skills" / "ASTRO - HeliocentricHohmann" / "SKILL.md").read_text(encoding="utf-8")

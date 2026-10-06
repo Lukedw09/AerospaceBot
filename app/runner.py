@@ -22,6 +22,13 @@ class RunResult:
     job_dir: Path | None = None
 
 
+def _argument_value(arguments: dict[str, object], flag: Flag) -> object:
+    for key in (flag.dest, flag.cli_name):
+        if key in arguments:
+            return arguments[key]
+    return None
+
+
 def _coerce(flag: Flag, raw: object) -> list[str]:
     if raw is None or raw is False:
         return []
@@ -88,6 +95,15 @@ def _point_run_rejects_plot(help_text: str, arguments: dict[str, object]) -> boo
     if _given(arguments, "alt") and not _given(arguments, "alt_min") and not _given(arguments, "alt_max"):
         return True
     return _given(arguments, "dv") or _given(arguments, "payload")
+
+
+def _instantaneous_run_rejects_plot(help_text: str, arguments: dict[str, object]) -> bool:
+    """Mode 1 proportional navigation has no engagement figure."""
+    if "engagement" not in help_text.lower():
+        return False
+    mode2 = _given(arguments, "range") or _given(arguments, "los_angle")
+    mode1 = _given(arguments, "vc") or _given(arguments, "los_rate")
+    return mode1 and not mode2
 
 
 def _output_flags(script: Path) -> list[tuple[str, str]]:
@@ -185,9 +201,11 @@ def run_tool(
     job_dir.mkdir(parents=True, exist_ok=True)
     argv = [os.environ.get("PYTHON", "python"), str(tool.script)]
     for flag in tool.flags:
-        argv.extend(_coerce(flag, arguments.get(flag.dest)))
+        argv.extend(_coerce(flag, _argument_value(arguments, flag)))
     for option, help_text in _output_flags(tool.script):
-        if _point_run_rejects_plot(help_text, arguments):
+        if _point_run_rejects_plot(help_text, arguments) or _instantaneous_run_rejects_plot(
+            help_text, arguments
+        ):
             continue
         argv.extend([option, str(_output_path(job_dir, option, help_text))])
     env = os.environ.copy()

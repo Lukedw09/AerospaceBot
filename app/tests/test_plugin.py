@@ -57,6 +57,29 @@ class CatalogTests(unittest.TestCase):
         assert solid is not None
         self.assertIn("--n", solid.required_options())
 
+    def test_append_flags_keep_numeric_item_types(self) -> None:
+        tools = load_catalog(ROOT)
+        duty = tool_by_name(tools, "duty_cycle_load")
+        assert duty is not None
+        power = next(flag for flag in duty.flags if flag.option == "--power")
+        self.assertTrue(power.repeat)
+        self.assertEqual(power.type_name, "float")
+        vacuum = tool_by_name(tools, "vacuum_propellant_mass")
+        assert vacuum is not None
+        dv = next(flag for flag in vacuum.flags if flag.option == "--dv")
+        self.assertEqual(dv.type_name, "float")
+        feed = tool_by_name(tools, "feed_system_pressure_budget")
+        assert feed is not None
+        drop = next(flag for flag in feed.flags if flag.option == "--dp")
+        self.assertTrue(drop.repeat)
+        self.assertEqual(drop.type_name, "string")
+        server = build_server()
+        power_schema = server._tool_manager._tools["duty_cycle_load"].parameters["properties"]["power"]
+        self.assertEqual(power_schema["type"], "array")
+        self.assertEqual(power_schema["items"]["type"], "number")
+        coast_schema = server._tool_manager._tools["kick_stage_feasibility"].parameters["properties"]["coast"]
+        self.assertEqual(coast_schema["items"]["type"], "number")
+
 
 class RunnerTests(unittest.TestCase):
     def test_throat_sizing_known_values(self) -> None:
@@ -325,6 +348,25 @@ class PluginCases(unittest.TestCase):
         self.assertIn("pair: LOX/RP1", single.text)
         shutil.rmtree(joined.job_dir, ignore_errors=True)
         shutil.rmtree(single.job_dir, ignore_errors=True)
+
+    def test_proportional_navigation_mode1_does_not_require_a_plot(self) -> None:
+        tool = tool_by_name(load_catalog(ROOT), "proportional_navigation")
+        assert tool is not None
+        result = run_tool(
+            tool,
+            {"n_prime": 3, "vc": 1000, "los_rate": 0.01},
+            repo_root=ROOT,
+        )
+        try:
+            self.assertEqual(result.exit_code, 0, result.text)
+            self.assertIn("mode: instantaneous", result.text)
+            self.assertIn("a_c_m_s2: 30", result.text)
+            self.assertNotIn("graph:", result.text)
+            self.assertFalse(result.files)
+        finally:
+            if result.job_dir is not None:
+                shutil.rmtree(result.job_dir, ignore_errors=True)
+
 
     def test_missing_bearer_is_rejected(self) -> None:
         settings = Settings(

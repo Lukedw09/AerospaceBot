@@ -10,7 +10,7 @@ import time
 from contextvars import ContextVar
 from typing import Annotated, Any
 
-from pydantic import Field
+from pydantic import AliasChoices, Field
 from starlette.requests import Request
 from starlette.responses import JSONResponse, Response
 
@@ -23,7 +23,7 @@ from app.auth import (
     verify_access_token,
     verify_id_token,
 )
-from app.catalog import Tool, load_catalog, repo_root_from, tool_by_name
+from app.catalog import Flag, Tool, load_catalog, repo_root_from, tool_by_name
 from app.config import Settings, load_settings
 from app.formulas import lookup_formula
 from app.pictures import publish, rewrite
@@ -181,14 +181,22 @@ def dispatch_list() -> str:
     return "\n".join(lines)
 
 
-def _annotation(flag_type: str, repeat: bool, description: str = "") -> Any:
-    if repeat:
-        base: Any = list[str]
-    else:
-        base = {"float": float, "int": int, "bool": bool, "string": str}[flag_type]
-    if not description:
+def _python_type(flag_type: str) -> type:
+    return {"float": float, "int": int, "bool": bool, "string": str}[flag_type]
+
+
+def _annotation(flag: Flag) -> Any:
+    inner = _python_type(flag.type_name)
+    base: Any = list[inner] if flag.repeat else inner
+    extras: dict[str, Any] = {}
+    if flag.help:
+        extras["description"] = flag.help
+    if flag.cli_name != flag.dest:
+        extras["alias"] = flag.cli_name
+        extras["validation_alias"] = AliasChoices(flag.cli_name, flag.dest)
+    if not extras:
         return base
-    return Annotated[base, Field(description=description)]
+    return Annotated[base, Field(**extras)]
 
 
 def _handler_for(tool: Tool):
@@ -199,7 +207,7 @@ def _handler_for(tool: Tool):
     annotations: dict[str, Any] = {}
     for flag in tool.flags:
         default = inspect.Parameter.empty if flag.required else None
-        ann = _annotation(flag.type_name, flag.repeat, flag.help)
+        ann = _annotation(flag)
         params.append(
             inspect.Parameter(
                 flag.dest,

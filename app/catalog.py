@@ -46,6 +46,11 @@ class Flag:
             return "number"
         return "string"
 
+    @property
+    def cli_name(self) -> str:
+        """JSON / CLI key from the flag, even when dest is a Python-safe alias."""
+        return self.option[2:].replace("-", "_")
+
 
 @dataclass
 class Tool:
@@ -114,12 +119,13 @@ def _type_name(keywords: dict[str, ast.AST]) -> tuple[str, bool]:
     action = keywords.get("action")
     if isinstance(action, ast.Constant) and action.value == "store_true":
         return "bool", False
-    if isinstance(action, ast.Constant) and action.value == "append":
-        return "string", True
     kind = keywords.get("type")
+    type_name = "string"
     if isinstance(kind, ast.Name) and kind.id in {"float", "int", "str"}:
-        return {"float": "float", "int": "int", "str": "string"}[kind.id], False
-    return "string", False
+        type_name = {"float": "float", "int": "int", "str": "string"}[kind.id]
+    if isinstance(action, ast.Constant) and action.value == "append":
+        return type_name, True
+    return type_name, False
 
 
 def _help_text(keywords: dict[str, ast.AST]) -> str:

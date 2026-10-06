@@ -599,6 +599,26 @@ def run_check() -> int:
             if key not in text:
                 return fail(f"Mode 1 stdout missing {key}")
 
+        unused = str(Path(tmp) / "mode1-unused.png")
+        code, text, err = capture(
+            [
+                "--n-prime",
+                "3",
+                "--vc",
+                "1000",
+                "--los-rate",
+                "0.01",
+                "--out",
+                unused,
+            ]
+        )
+        if code != 0:
+            return fail(f"Mode 1 with unused --out returned {code}: {err}")
+        if Path(unused).exists():
+            return fail("Mode 1 wrote a PNG")
+        if "graph:" in text:
+            return fail("Mode 1 printed graph:")
+
         code, text, err = capture(
             [
                 "--n-prime",
@@ -772,9 +792,6 @@ def main(argv: list[str] | None = None) -> int:
     if mode1:
         if args.vc is None or args.los_rate is None:
             print("error: Mode 1 requires --vc and --los-rate", file=sys.stderr)
-            return 2
-        if args.out is not None:
-            print("error: --out is only valid for Mode 2 engagement", file=sys.stderr)
             return 2
         try:
             result = evaluate_instant(args.n_prime, args.vc, args.los_rate)
