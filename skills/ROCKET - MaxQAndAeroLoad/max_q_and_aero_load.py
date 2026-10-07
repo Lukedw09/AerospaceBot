@@ -9,6 +9,9 @@ from __future__ import annotations
 import argparse
 import csv
 import sys
+import tempfile
+import urllib.error
+import urllib.request
 import webbrowser
 from pathlib import Path
 
@@ -32,6 +35,20 @@ ASSUMPTIONS = (
 def print_kv(key: str, value: object) -> None:
     text = f"{value:.8g}" if isinstance(value, float) else str(value)
     print(f"{key}: {text}")
+
+
+def resolve_table(source: str) -> Path:
+    """Local CSV path, or an http(s) URL published by a prior MCP tool call."""
+    text = source.strip()
+    if text.startswith("http://") or text.startswith("https://"):
+        destination = Path(tempfile.mkdtemp(prefix="aerospace-table-")) / "ascent.csv"
+        try:
+            with urllib.request.urlopen(text, timeout=60) as response:
+                destination.write_bytes(response.read())
+        except (urllib.error.URLError, TimeoutError, OSError) as exc:
+            raise ValueError(f"could not download table: {exc}") from exc
+        return destination
+    return Path(text)
 
 
 def load_rows(path: Path) -> list[dict[str, float]]:
@@ -66,7 +83,7 @@ def density_from_1976(altitude: float) -> float:
 
 
 def run(args: argparse.Namespace) -> int:
-    rows = load_rows(Path(args.table))
+    rows = load_rows(resolve_table(args.table))
     times = []
     qs = []
     alts = []

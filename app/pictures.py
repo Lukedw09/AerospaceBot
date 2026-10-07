@@ -68,6 +68,8 @@ def _content_type(path: Path) -> str:
         return "text/html"
     if suffix == ".pdf":
         return "application/pdf"
+    if suffix == ".csv":
+        return "text/csv; charset=utf-8"
     if suffix == ".txt":
         return "text/plain; charset=utf-8"
     return "application/octet-stream"

@@ -221,6 +221,16 @@ def run_check() -> int:
             return fail(f"radial path failed: {err}")
         if "fd_Hz:" not in text or float(text.split("fd_Hz: ")[1].split()[0]) >= 0.0:
             return fail("signed shift")
+        unused = Path(folder) / "radial-unused.png"
+        code, text, err = capture(
+            ["--freq", "1e9", "--v-radial", "-100", "--out", str(unused)]
+        )
+        if code != 0:
+            return fail(f"radial path with unused --out failed: {err}")
+        if unused.exists():
+            return fail("radial path wrote a PNG")
+        if "graph:" in text:
+            return fail("radial path printed graph:")
         code, _text, _err = capture(["--freq", "1e9", "--v-radial", "10", "--alt", "600000", "--elev-min", "0.2"])
         if code == 0:
             return fail("both speed paths were accepted")
@@ -237,7 +247,12 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--alt", type=float, default=None, help="circular altitude [m]")
     parser.add_argument("--a", type=float, default=None, help="circular radius [m]")
     parser.add_argument("--elev-min", type=float, default=None, help="minimum elevation [rad]")
-    parser.add_argument("--out", type=Path, default=None, help="optional PNG path")
+    parser.add_argument(
+        "--out",
+        type=Path,
+        default=None,
+        help="optional PNG path for the orbit path",
+    )
     parser.add_argument("--check", action="store_true", help="run built-in consistency checks")
     return parser.parse_args(argv)
 
@@ -260,9 +275,6 @@ def main(argv: list[str] | None = None) -> int:
     try:
         if radial_path:
             result = evaluate_radial(args.freq, args.v_radial)
-            if args.out is not None:
-                print("error: the Doppler plot is only drawn for the orbit path", file=sys.stderr)
-                return 2
         else:
             if args.elev_min is None:
                 print("error: the orbit path requires --elev-min", file=sys.stderr)
@@ -271,6 +283,10 @@ def main(argv: list[str] | None = None) -> int:
     except ValueError as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2
+    # Radial path has no figure. Hosts that inject --out are ignored (same as PN Mode 1).
+    if radial_path:
+        emit(result, None)
+        return 0
     graph = None
     if args.out is not None:
         try:

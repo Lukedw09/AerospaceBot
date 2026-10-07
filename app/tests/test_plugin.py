@@ -367,6 +367,67 @@ class PluginCases(unittest.TestCase):
             if result.job_dir is not None:
                 shutil.rmtree(result.job_dir, ignore_errors=True)
 
+    def test_doppler_radial_path_does_not_require_a_plot(self) -> None:
+        tool = tool_by_name(load_catalog(ROOT), "doppler_shift_budget")
+        assert tool is not None
+        result = run_tool(
+            tool,
+            {"freq": 2.2e9, "v_radial": 7000},
+            repo_root=ROOT,
+        )
+        try:
+            self.assertEqual(result.exit_code, 0, result.text)
+            self.assertIn("path: radial", result.text)
+            self.assertIn("fd_Hz:", result.text)
+            self.assertIn("span_Hz:", result.text)
+            self.assertNotIn("graph:", result.text)
+            self.assertFalse(result.files)
+        finally:
+            if result.job_dir is not None:
+                shutil.rmtree(result.job_dir, ignore_errors=True)
+
+    def test_multi_stage_ascent_publishes_table_for_max_q(self) -> None:
+        ascent_tool = tool_by_name(load_catalog(ROOT), "multi_stage_ascent")
+        max_q_tool = tool_by_name(load_catalog(ROOT), "max_q_and_aero_load")
+        assert ascent_tool is not None
+        assert max_q_tool is not None
+        ascent = run_tool(
+            ascent_tool,
+            {
+                "stages": 2,
+                "stage": [
+                    "mp=100,inert=20,isp=250,tb=10",
+                    "mp=40,inert=10,isp=300,tb=8",
+                ],
+                "payload": 10,
+                "gamma": 1.2,
+            },
+            repo_root=ROOT,
+        )
+        try:
+            self.assertEqual(ascent.exit_code, 0, ascent.text)
+            table_line = next(
+                row for row in ascent.text.splitlines() if row.startswith("table:")
+            )
+            table_path = Path(table_line.split(":", 1)[1].strip())
+            self.assertTrue(table_path.is_file(), table_line)
+            self.assertIn(table_path, ascent.files)
+            self.assertEqual(table_path.suffix.lower(), ".csv")
+            max_q = run_tool(
+                max_q_tool,
+                {"table": str(table_path), "alpha": 0.05},
+                repo_root=ROOT,
+            )
+            try:
+                self.assertEqual(max_q.exit_code, 0, max_q.text)
+                self.assertIn("q_max_Pa:", max_q.text)
+                self.assertIn("t_maxq_s:", max_q.text)
+            finally:
+                if max_q.job_dir is not None:
+                    shutil.rmtree(max_q.job_dir, ignore_errors=True)
+        finally:
+            if ascent.job_dir is not None:
+                shutil.rmtree(ascent.job_dir, ignore_errors=True)
 
     def test_missing_bearer_is_rejected(self) -> None:
         settings = Settings(

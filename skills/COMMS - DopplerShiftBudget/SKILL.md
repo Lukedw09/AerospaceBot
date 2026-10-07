@@ -18,7 +18,7 @@ The shift is `doppler_shift`, \(f_d = f v_r / c\), with \(c = 299792458\,\mathrm
 1. Use this skill when the user wants a Doppler shift or the two-sided span a receiver must track.
 2. Convert frequency to hertz, radial speed to m/s, altitude or radius to metres, and elevation to radians. State the converted units in the reply. Do not invent the carrier or a speed.
 3. Pass `--freq` and exactly one speed path: `--v-radial`, or `--alt` or `--a` together with `--elev-min`.
-4. Pass `--out` only for the orbit path, and only when the user wants the PNG. Do not invent a plot path when they did not ask for a figure.
+4. Pass `--out` only for the orbit path, and only when the user wants the PNG. Do not invent a plot path when they did not ask for a figure. On the radial path the program ignores `--out` (hosts may inject it).
 5. Do not use this skill for path loss, rain, or \(E_b/N_0\).
 
 ## Flags
@@ -36,7 +36,7 @@ python "skills/COMMS - DopplerShiftBudget/doppler_shift_budget.py" --freq <Hz> (
 | `--alt` | Circular altitude | m, \(> 0\) | One of `--alt` or `--a` on the orbit path |
 | `--a` | Circular radius | m, \(> R_0\) | One of `--alt` or `--a` on the orbit path |
 | `--elev-min` | Minimum elevation of the mask | rad, \([0, \pi/2)\) | Required on the orbit path |
-| `--out` | PNG path | — | Optional. Orbit path only. Omit unless the user wants the figure. |
+| `--out` | PNG path for the orbit path | — | Optional. Orbit path only. Ignored on the radial path. Omit unless the user wants the figure. |
 
 When `--out` is passed on the orbit path, the program writes one PNG. The plot title is `Doppler shift`. The curve is \(|f_d|\) versus elevation from the mask up to zenith. The square is the mask. `graph:` is the PNG.
 

@@ -50,6 +50,7 @@ ARTIFACT_PREFIXES = (
     "coefficients_graph:",
     "polar_graph:",
     "ordinates:",
+    "table:",
 )
 
 
@@ -104,6 +105,27 @@ def _instantaneous_run_rejects_plot(help_text: str, arguments: dict[str, object]
     mode2 = _given(arguments, "range") or _given(arguments, "los_angle")
     mode1 = _given(arguments, "vc") or _given(arguments, "los_rate")
     return mode1 and not mode2
+
+
+def _radial_doppler_rejects_plot(help_text: str, arguments: dict[str, object]) -> bool:
+    """Radial Doppler close has no elevation-mask figure."""
+    if "orbit path" not in help_text.lower():
+        return False
+    radial = _given(arguments, "v_radial")
+    orbit = (
+        _given(arguments, "alt")
+        or _given(arguments, "a")
+        or _given(arguments, "elev_min")
+    )
+    return radial and not orbit
+
+
+def _skips_injected_plot(help_text: str, arguments: dict[str, object]) -> bool:
+    return (
+        _point_run_rejects_plot(help_text, arguments)
+        or _instantaneous_run_rejects_plot(help_text, arguments)
+        or _radial_doppler_rejects_plot(help_text, arguments)
+    )
 
 
 def _output_flags(script: Path) -> list[tuple[str, str]]:
@@ -203,9 +225,7 @@ def run_tool(
     for flag in tool.flags:
         argv.extend(_coerce(flag, _argument_value(arguments, flag)))
     for option, help_text in _output_flags(tool.script):
-        if _point_run_rejects_plot(help_text, arguments) or _instantaneous_run_rejects_plot(
-            help_text, arguments
-        ):
+        if _skips_injected_plot(help_text, arguments):
             continue
         argv.extend([option, str(_output_path(job_dir, option, help_text))])
     env = os.environ.copy()
