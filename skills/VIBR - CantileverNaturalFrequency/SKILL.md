@@ -20,7 +20,7 @@ The first fixed–free root is `cantilever_lambda1_L`, \(\lambda_1 L \approx 1.8
 f_{\mathrm{Hz}} = \frac{\omega_n}{2\pi}
 \]
 
-Primary mass path is mass per length \(\mu\). Alternate path is total beam mass with \(\mu = m_{\mathrm{beam}}/L\). Do not invent mass. Mode tag is `cantilever_uniform_bending_1`. Tip mass, higher modes, damping, and forced response are out of scope; for a forced second-order plant use `CTRL - SecondOrderResponse`.
+Primary mass path is mass per length \(\mu\). Alternate path is total beam mass with \(\mu = m_{\mathrm{beam}}/L\). Do not invent mass. Mode tag is `cantilever_uniform_bending_1`. Tip mass, higher modes, damping, and forced response are out of scope; for a forced second-order plant use `GNC - SecondOrderResponse`.
 
 ## When to run
 

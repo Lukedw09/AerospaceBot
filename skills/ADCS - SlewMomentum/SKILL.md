@@ -16,7 +16,7 @@ Slew mode is a rest-to-rest turn about one principal axis, with equal accelerati
 
 Disturbance mode stores `disturbance_momentum_storage`, \(H = T \tau\), from one torque magnitude and a duration. The torque may be one value printed by `ADCS - EnvironmentalTorques`. The duration is the interval the user states, or one orbit period from `ASTRO - OrbitalParameters`.
 
-Closed-loop settling stays in `CTRL - SecondOrderResponse`. No wheel, thruster, or magnetorquer catalog. The actuator must cover both demands, computed in two runs.
+Closed-loop settling stays in `GNC - SecondOrderResponse`. No wheel, thruster, or magnetorquer catalog. The actuator must cover both demands, computed in two runs.
 
 ## When to run
 

@@ -3,8 +3,10 @@
 
 Energy, period, radii, anomalies, angular momentum, inclination, node,
 argument of latitude, and the inertial position and velocity come from the
-flight records in formulas.md. Flattening is drawn only. Optional first-order
-J2 secular rates match ASTRO - J2SecularRates.
+flight records in formulas.md. Optional circular-orbit eclipse duration under
+a cylindrical umbra uses circular_orbit_eclipse_fraction and
+circular_orbit_eclipse_duration when --beta is passed. Flattening is drawn
+only. Optional first-order J2 secular rates match ASTRO - J2SecularRates.
 """
 
 from __future__ import annotations
@@ -33,6 +35,8 @@ AXIS_UNIT_CAPTION = "X, Y, Z (km)"
 CHECK_TOL = 1e-9
 ANGLE_TOL = 1e-8
 CIRCULAR_E = 1e-7
+# Rickman cylindrical-umbra eclipse uses a circular radius; allow mild e with r = a.
+NEAR_CIRCULAR_ECLIPSE = 1e-2
 EQUATORIAL_FRAC = 1e-10
 PARABOLA_REL = 1e-10
 ELEV_DEG = 20.0
@@ -103,17 +107,26 @@ ASSUMPTIONS = (
     "radial_velocity and transverse_velocity; inertial velocity is inertial_velocity_x, "
     "inertial_velocity_y, and inertial_velocity_z; a parabola has no finite semi-major "
     "axis, no period, and no apoapsis; element angles are radians; optional first-order "
-    "J2 secular rates are off unless --j2 is passed; then Omega and omega in the HTML "
-    "viewer use j2_nodal_rate and j2_apsidal_rate from ASTRO - J2SecularRates; a, e, and "
-    "i have no secular J2 rate; drag, third body, higher zonals, and the J2 mean-motion "
-    "correction are omitted; J2 is ellipse-only; a bare --j2 uses Earth J2 = 1.08228e-3 "
-    "(GSFC, March 1986, NASA RP-1204) and RE = WGS 84 ae = 6378137 m; any other planet "
-    "needs --j2 and --R0, and --ae if RE is not that R0; flattening remains visual only "
-    "and does not enter mu or the J2 rates; a NORAD two-line element set may be "
+    "J2 is off unless --j2 or --oblate is passed; --oblate is the Earth switch, "
+    "J2 = 1.08228e-3 (GSFC, March 1986, NASA RP-1204) and RE = WGS 84 ae = 6378137 m; "
+    "a bare --j2 uses the same Earth constants; any other planet needs --j2 and --R0, "
+    "and --ae if RE is not that R0; when J2 is on, mean motion is j2_mean_motion and "
+    "that corrected mean motion sets the printed period and time of flight; a second "
+    "anomaly also prints Omega and omega advanced by j2_nodal_rate and j2_apsidal_rate "
+    "times that time of flight, and those rates keep the unperturbed mean motion; the "
+    "HTML viewer uses the same rates; a, e, and i stay constant; drag, third body, and "
+    "higher zonals are omitted; J2 is ellipse-only; flattening remains visual only and "
+    "does not enter mu or the J2 rates; a NORAD two-line element set may be "
     "passed with --tle and is used as a Keplerian conic: line-2 angles are degrees, "
     "semi-major axis is the inverse of mean_motion from the published mean motion "
     "in revolutions per 86400 s and this mu, and BSTAR, mean-motion derivatives, "
-    "SGP4, and the epoch do not change the state"
+    "SGP4, and the epoch do not change the state; optional circular-orbit eclipse "
+    "duration under a cylindrical umbra is off unless --beta is passed; then "
+    "circular_orbit_eclipse_fraction and circular_orbit_eclipse_duration use "
+    "planet radius R0 and circular radius a with beta the Sun-to-orbit-plane "
+    "angle (Rickman / NASA JSC); no eclipse when |beta| >= asin(R0/a); "
+    "te = fe*period and td = period - te; penumbra and a conical umbra are "
+    "omitted; --beta needs an ellipse with e < 1e-2 and a > R0"
 )
 
 
@@ -196,6 +209,18 @@ class TimeOfFlight:
     span: str
     nu2: float | None
     M2: float | None
+
+
+@dataclass(frozen=True)
+class Eclipse:
+    """Circular-orbit cylindrical-umbra eclipse for one period, or off."""
+
+    beta: float | None
+    beta_star: float | None
+    fraction: float | None
+    duration: float | None
+    sunlit: float | None
+    source: str
 
 
 def print_kv(key: str, value: object) -> None:
@@ -299,9 +324,67 @@ def orbital_period(mu: float, semi_major: float) -> float:
     return 2.0 * math.pi * math.sqrt(semi_major**3 / mu)
 
 
+def circular_orbit_eclipse_fraction(
+    planet_radius: float, orbit_radius: float, beta: float
+) -> float:
+    """circular_orbit_eclipse_fraction when an eclipse exists; else 0."""
+    require_finite(planet_radius, "planet radius")
+    require_finite(orbit_radius, "orbit radius")
+    require_finite(beta, "beta angle")
+    if planet_radius <= 0.0:
+        raise ValueError("planet radius must be > 0")
+    if orbit_radius <= planet_radius:
+        raise ValueError("orbit radius must exceed the planet radius")
+    ratio = planet_radius / orbit_radius
+    beta_star = math.asin(ratio)
+    if abs(beta) >= beta_star:
+        return 0.0
+    argument = math.sqrt(1.0 - ratio * ratio) / math.cos(beta)
+    if argument > 1.0:
+        argument = 1.0
+    if argument < -1.0:
+        argument = -1.0
+    return math.acos(argument) / math.pi
+
+
+def circular_orbit_eclipse_duration(
+    period: float, planet_radius: float, orbit_radius: float, beta: float
+) -> float:
+    """circular_orbit_eclipse_duration: te = fe * T."""
+    require_finite(period, "orbital period")
+    if period <= 0.0:
+        raise ValueError("orbital period must be > 0")
+    return period * circular_orbit_eclipse_fraction(planet_radius, orbit_radius, beta)
+
+
+def eclipse_critical_beta(planet_radius: float, orbit_radius: float) -> float:
+    """Beta above which a circular orbit clears the cylindrical umbra."""
+    require_finite(planet_radius, "planet radius")
+    require_finite(orbit_radius, "orbit radius")
+    if planet_radius <= 0.0:
+        raise ValueError("planet radius must be > 0")
+    if orbit_radius <= planet_radius:
+        raise ValueError("orbit radius must exceed the planet radius")
+    return math.asin(planet_radius / orbit_radius)
+
+
 def mean_motion(mu: float, semi_major: float) -> float:
     """mean_motion."""
     return math.sqrt(mu / semi_major**3)
+
+
+def j2_mean_motion(n0: float, j2: float, re: float, semi_major: float, eccentricity: float, inclination: float) -> float:
+    """j2_mean_motion. First-order Kozai companion of j2_nodal_rate.
+
+    n = n0 * [1 + (3/2) J2 (RE/a)^2 (1-e^2)^(-3/2) (1 - (3/2) sin^2 i)].
+    The nodal and apsidal rates stay on the unperturbed n0.
+    """
+    eta = 1.0 - eccentricity * eccentricity
+    if eta <= 0.0 or semi_major <= 0.0 or n0 <= 0.0:
+        raise ValueError("J2 mean motion needs an ellipse")
+    factor = (re / semi_major) ** 2
+    correction = 1.5 * j2 * factor * (eta ** -1.5) * (1.0 - 1.5 * math.sin(inclination) ** 2)
+    return n0 * (1.0 + correction)
 
 
 def mean_anomaly(n: float, t: float, tp: float) -> float:
@@ -309,20 +392,28 @@ def mean_anomaly(n: float, t: float, tp: float) -> float:
     return n * (t - tp)
 
 
-def time_of_flight_ellipse(mu: float, semi_major: float, mean1: float, mean2: float) -> float:
+def time_of_flight_ellipse(
+    mu: float,
+    semi_major: float,
+    mean1: float,
+    mean2: float,
+    n: float | None = None,
+) -> float:
     """Forward coast on an ellipse from mean1 to mean2.
 
     Uses mean_anomaly inverted: Delta t = Delta M / n. A zero mean-anomaly
-    span is one full orbit (orbital_period).
+    span is one full orbit (orbital_period). An explicit n is the J2-corrected
+    mean motion; omitted n is the Keplerian mean_motion.
     """
     if semi_major <= 0.0:
         raise ValueError("time of flight needs a positive semi-major axis")
-    n = mean_motion(mu, semi_major)
+    if n is None:
+        n = mean_motion(mu, semi_major)
     if n <= 0.0 or not math.isfinite(n):
         raise ValueError("mean motion is not positive")
     delta_m = wrap_two_pi(mean2 - mean1)
     if delta_m == 0.0:
-        return orbital_period(mu, semi_major)
+        return 2.0 * math.pi / n
     return delta_m / n
 
 
@@ -1993,6 +2084,7 @@ def print_report(
     body: Body,
     orbit: Orbit,
     flight: TimeOfFlight,
+    eclipse: Eclipse,
     elev: float,
     azim: float,
     path: Path,
@@ -2024,6 +2116,17 @@ def print_report(
     print_kv("i_rad", orbit.i)
     print_kv("Omega_rad", orbit.Omega)
     print_kv("omega_rad", orbit.omega)
+    if body.j2 > 0.0 and orbit.conic == "ellipse" and orbit.a is not None:
+        n_kepler = mean_motion(body.mu, orbit.a)
+        print_kv("n_kepler_rad_s", n_kepler)
+        print_kv("n_rad_s", j2_mean_motion(n_kepler, body.j2, body.ae, orbit.a, orbit.e, orbit.i))
+    if (
+        body.j2 > 0.0
+        and flight.span == "anomaly_pair"
+        and flight.tof is not None
+    ):
+        print_kv("Omega2_rad", wrap_two_pi(orbit.Omega + node_rate * flight.tof))
+        print_kv("omega2_rad", wrap_two_pi(orbit.omega + apsis_rate * flight.tof))
     print_kv("nu_rad", orbit.nu)
     if orbit.M is None:
         print_kv("M", "none")
@@ -2057,6 +2160,19 @@ def print_report(
         print_kv("period", "none")
     else:
         print_kv("period_s", orbit.period)
+    print_kv("eclipse_source", eclipse.source)
+    if eclipse.beta is None:
+        print_kv("beta", "none")
+        print_kv("beta_star", "none")
+        print_kv("fe", "none")
+        print_kv("te", "none")
+        print_kv("td", "none")
+    else:
+        print_kv("beta_rad", eclipse.beta)
+        print_kv("beta_star_rad", eclipse.beta_star)
+        print_kv("fe", eclipse.fraction)
+        print_kv("te_s", eclipse.duration)
+        print_kv("td_s", eclipse.sunlit)
     print_kv("rx_m", orbit.rx)
     print_kv("ry_m", orbit.ry)
     print_kv("rz_m", orbit.rz)
@@ -2087,6 +2203,7 @@ def resolve_body(
     flattening_arg: float | None,
     j2_arg: float | None = None,
     ae_arg: float | None = None,
+    oblate: bool = False,
 ) -> Body:
     if radius_arg is None:
         radius = R0_EARTH
@@ -2103,13 +2220,30 @@ def resolve_body(
         require_finite(flattening_arg, "--flattening")
     if flattening < 0.0 or flattening >= 1.0:
         raise ValueError("--flattening must satisfy 0 <= f < 1")
+    if oblate and j2_arg is None:
+        j2_arg = J2_GSFC
     if j2_arg is None:
         if ae_arg is not None:
-            raise ValueError("--ae needs --j2")
+            raise ValueError("--ae needs --j2 or --oblate")
         j2 = 0.0
         j2_source = "off"
         ae = radius
         ae_source = "unused"
+    elif oblate:
+        require_finite(j2_arg, "--j2")
+        if j2_arg <= 0.0:
+            raise ValueError("--j2 must be > 0")
+        j2 = j2_arg
+        j2_source = "oblate" if abs(j2_arg - J2_GSFC) <= CHECK_TOL * J2_GSFC else "input"
+        if ae_arg is None:
+            ae = AE_WGS84
+            ae_source = "default"
+        else:
+            require_finite(ae_arg, "--ae")
+            if ae_arg <= 0.0:
+                raise ValueError("--ae must be > 0 m")
+            ae = ae_arg
+            ae_source = "input"
     else:
         require_finite(j2_arg, "--j2")
         if j2_arg <= 0.0:
@@ -2192,6 +2326,7 @@ def resolve_time_of_flight(
     orbit: Orbit,
     nu2: float | None,
     mean2: float | None,
+    n: float | None = None,
 ) -> TimeOfFlight:
     """Forward ellipse coast from the epoch anomaly, or one orbit when no end is given."""
     if nu2 is not None and mean2 is not None:
@@ -2212,19 +2347,61 @@ def resolve_time_of_flight(
         require_finite(nu2, "--nu2")
         end_nu = wrap_pi(nu2)
         end_m = wrap_pi(kepler_equation(eccentric_from_true(orbit.e, end_nu), orbit.e))
-    tof = time_of_flight_ellipse(mu, orbit.a, orbit.M, end_m)
+    tof = time_of_flight_ellipse(mu, orbit.a, orbit.M, end_m, n)
     delta_m = wrap_two_pi(end_m - orbit.M)
     span = "one_orbit" if delta_m == 0.0 else "anomaly_pair"
     return TimeOfFlight(tof=tof, span=span, nu2=end_nu, M2=end_m)
 
 
+def resolve_eclipse(body: Body, orbit: Orbit, beta: float | None) -> Eclipse:
+    """Optional Rickman circular cylindrical-umbra eclipse for one period."""
+    if beta is None:
+        return Eclipse(
+            beta=None,
+            beta_star=None,
+            fraction=None,
+            duration=None,
+            sunlit=None,
+            source="off",
+        )
+    require_finite(beta, "--beta")
+    if orbit.conic != "ellipse" or orbit.a is None or orbit.period is None:
+        raise ValueError("eclipse duration is defined on an ellipse only")
+    if orbit.e >= NEAR_CIRCULAR_ECLIPSE:
+        raise ValueError(
+            "eclipse duration uses the circular-orbit cylindrical umbra; "
+            f"pass e < {NEAR_CIRCULAR_ECLIPSE:g}"
+        )
+    if orbit.a <= body.radius:
+        raise ValueError("circular radius a must exceed planetary radius R0 for eclipse")
+    beta_star = eclipse_critical_beta(body.radius, orbit.a)
+    fe = circular_orbit_eclipse_fraction(body.radius, orbit.a, beta)
+    te = circular_orbit_eclipse_duration(orbit.period, body.radius, orbit.a, beta)
+    return Eclipse(
+        beta=beta,
+        beta_star=beta_star,
+        fraction=fe,
+        duration=te,
+        sunlit=orbit.period - te,
+        source="orbit",
+    )
+
+
 def run(ns: argparse.Namespace) -> int:
-    body = resolve_body(ns.R0, ns.flattening, ns.j2, ns.ae)
+    body = resolve_body(ns.R0, ns.flattening, ns.j2, ns.ae, ns.oblate)
     elev, azim = resolve_camera(ns.elev, ns.azim)
     orbit = resolve_request(ns, body)
     if body.j2 > 0.0 and orbit.conic != "ellipse":
         raise ValueError("J2 secular rates are defined on an ellipse only")
-    flight = resolve_time_of_flight(body.mu, orbit, ns.nu2, ns.M2)
+    corrected_n = None
+    if body.j2 > 0.0 and orbit.conic == "ellipse" and orbit.a is not None and orbit.period is not None:
+        n_kepler = mean_motion(body.mu, orbit.a)
+        corrected_n = j2_mean_motion(n_kepler, body.j2, body.ae, orbit.a, orbit.e, orbit.i)
+        if corrected_n <= 0.0 or not math.isfinite(corrected_n):
+            raise ValueError("J2 mean motion is not positive")
+        orbit = replace(orbit, period=2.0 * math.pi / corrected_n)
+    flight = resolve_time_of_flight(body.mu, orbit, ns.nu2, ns.M2, corrected_n)
+    eclipse = resolve_eclipse(body, orbit, ns.beta)
     script_dir = Path(__file__).resolve().parent
     out_path = Path(ns.out) if ns.out else script_dir / "orbital_parameters.png"
     out_path = out_path.resolve()
@@ -2232,7 +2409,7 @@ def run(ns: argparse.Namespace) -> int:
     scene = build_scene(body, orbit, elev, azim)
     plot_orbit(out_path, scene)
     write_viewer_html(viewer_path, scene)
-    print_report(body, orbit, flight, elev, azim, out_path, viewer_path)
+    print_report(body, orbit, flight, eclipse, elev, azim, out_path, viewer_path)
     if ns.open:
         webbrowser.open(viewer_path.as_uri())
     return 0
@@ -2823,6 +3000,104 @@ def run_check() -> int:
     if not close_enough(simple.h, specific_angular_momentum(1.0, simple.p), simple.h):
         return fail("h is not sqrt(mu*p)")
 
+    # Circular cylindrical-umbra eclipse (Rickman): fe = acos(sqrt(1-(re/r)^2)/cos(beta))/pi.
+    fe_unit = circular_orbit_eclipse_fraction(3.0, 5.0, 0.0)
+    if not close_enough(fe_unit, math.acos(0.8) / math.pi, 1.0):
+        return fail("eclipse fraction unit case")
+    te_unit = circular_orbit_eclipse_duration(10.0, 3.0, 5.0, 0.0)
+    if not close_enough(te_unit, 10.0 * fe_unit, 10.0):
+        return fail("eclipse duration is not fe*T")
+    beta_star_unit = eclipse_critical_beta(3.0, 5.0)
+    if not close_enough(beta_star_unit, math.asin(0.6), 1.0):
+        return fail("critical beta")
+    if not close_enough(circular_orbit_eclipse_fraction(3.0, 5.0, beta_star_unit), 0.0, 1.0):
+        return fail("critical beta did not clear eclipse")
+    if not close_enough(circular_orbit_eclipse_duration(10.0, 3.0, 5.0, beta_star_unit), 0.0, 1.0):
+        return fail("critical beta left a nonzero duration")
+    fe_elevated = circular_orbit_eclipse_fraction(3.0, 5.0, 0.3)
+    if not (0.0 < fe_elevated < fe_unit):
+        return fail("elevated beta must shorten the eclipse")
+    # Continuity: just below beta* the duration approaches zero from above.
+    barely = beta_star_unit * (1.0 - 1e-6)
+    te_barely = circular_orbit_eclipse_duration(10.0, 3.0, 5.0, barely)
+    if te_barely <= 0.0 or te_barely > 1e-2:
+        return fail(f"near-critical duration {te_barely}")
+
+    # Earth LEO at 400 km, beta = 0: classic ~35-37 min eclipse in a ~92 min orbit.
+    earth = resolve_body(None, None)
+    leo_a = R0_EARTH + 400_000.0
+    leo = orbit_from_elements(earth.mu, leo_a, 0.0, 0.0, 0.0, 0.0, 0.0, None, "elements")
+    if leo.period is None:
+        return fail("LEO period missing")
+    leo_eclipse = resolve_eclipse(earth, leo, 0.0)
+    if leo_eclipse.source != "orbit" or leo_eclipse.duration is None or leo_eclipse.fraction is None:
+        return fail("LEO eclipse resolve")
+    if leo_eclipse.sunlit is None or leo_eclipse.beta_star is None:
+        return fail("LEO eclipse sunlit or beta*")
+    expected_leo_fe = math.acos(math.sqrt(1.0 - (R0_EARTH / leo_a) ** 2)) / math.pi
+    if not close_enough(leo_eclipse.fraction, expected_leo_fe, 1.0):
+        return fail("LEO eclipse fraction closed form")
+    if not close_enough(leo_eclipse.duration, expected_leo_fe * leo.period, leo.period):
+        return fail("LEO te != fe*T")
+    if not close_enough(leo_eclipse.duration + leo_eclipse.sunlit, leo.period, leo.period):
+        return fail("LEO te + td != period")
+    if not (0.35 <= leo_eclipse.fraction <= 0.42):
+        return fail(f"LEO beta=0 fraction out of range {leo_eclipse.fraction}")
+    if not (30.0 * 60.0 <= leo_eclipse.duration <= 40.0 * 60.0):
+        return fail(f"LEO beta=0 duration out of range {leo_eclipse.duration / 60.0} min")
+    if not (88.0 * 60.0 <= leo.period <= 95.0 * 60.0):
+        return fail(f"LEO period out of range {leo.period / 60.0} min")
+    # Higher beta shortens LEO eclipse; beta* clears it.
+    leo_mid = resolve_eclipse(earth, leo, 0.5)
+    if leo_mid.duration is None or not (0.0 < leo_mid.duration < leo_eclipse.duration):
+        return fail("LEO mid-beta did not shorten eclipse")
+    leo_clear = resolve_eclipse(earth, leo, leo_eclipse.beta_star)
+    if leo_clear.duration != 0.0 or leo_clear.fraction != 0.0:
+        return fail("LEO at beta* still eclipsed")
+
+    # GEO radius ~42164 km: beta=0 cylindrical eclipse ~70 min (seasonal max ~72 min conical).
+    geo_a = 4.2164e7
+    geo = orbit_from_elements(earth.mu, geo_a, 0.0, 0.0, 0.0, 0.0, 0.0, None, "elements")
+    if geo.period is None:
+        return fail("GEO period missing")
+    geo_eclipse = resolve_eclipse(earth, geo, 0.0)
+    if geo_eclipse.duration is None or geo_eclipse.fraction is None:
+        return fail("GEO eclipse resolve")
+    if not (0.04 <= geo_eclipse.fraction <= 0.06):
+        return fail(f"GEO beta=0 fraction out of range {geo_eclipse.fraction}")
+    if not (60.0 * 60.0 <= geo_eclipse.duration <= 75.0 * 60.0):
+        return fail(f"GEO beta=0 duration out of range {geo_eclipse.duration / 60.0} min")
+    if not (23.5 * 3600.0 <= geo.period <= 24.5 * 3600.0):
+        return fail(f"GEO period out of range {geo.period / 3600.0} h")
+    # Higher orbits have a smaller eclipse fraction at beta = 0.
+    if not (geo_eclipse.fraction < leo_eclipse.fraction):
+        return fail("GEO fraction should be smaller than LEO at beta=0")
+    # Mild eccentricity still uses a as the circular radius.
+    mild = orbit_from_elements(earth.mu, leo_a, 5e-3, 0.9, 0.1, 0.2, 0.0, None, "elements")
+    mild_eclipse = resolve_eclipse(earth, mild, 0.0)
+    if mild_eclipse.duration is None or not close_enough(
+        mild_eclipse.duration, leo_eclipse.duration, leo_eclipse.duration
+    ):
+        return fail("mild-e eclipse should match the circular a model")
+    try:
+        resolve_eclipse(earth, orbit_from_elements(earth.mu, leo_a, 0.05, 0.0, 0.0, 0.0, 0.0, None, "elements"), 0.0)
+    except ValueError:
+        pass
+    else:
+        return fail("eccentric eclipse was accepted")
+    try:
+        resolve_eclipse(
+            earth,
+            orbit_from_elements(earth.mu, -2.0e7, 1.5, 0.5, 0.1, 0.2, 0.3, None, "elements"),
+            0.0,
+        )
+    except ValueError:
+        pass
+    else:
+        return fail("hyperbola eclipse was accepted")
+    if resolve_eclipse(earth, leo, None).source != "off":
+        return fail("omitted beta did not leave eclipse off")
+
     # Same ellipse at true anomaly pi/2. Position and velocity are expanded by hand.
     quarter = orbit_from_elements(1.0, 4.0, 0.5, 0.0, 0.0, 0.0, math.pi / 2.0, None, "elements")
     if not vector_close((quarter.rx, quarter.ry, quarter.rz), (0.0, 3.0, 0.0)):
@@ -3236,6 +3511,12 @@ def run_check() -> int:
             "rp_m",
             "ra_m",
             "period_s",
+            "eclipse_source",
+            "beta",
+            "beta_star",
+            "fe",
+            "te",
+            "td",
             "rx_m",
             "ry_m",
             "rz_m",
@@ -3270,6 +3551,14 @@ def run_check() -> int:
             return fail("default time of flight is not one orbit")
         if abs(float(values["tof_s"]) - float(values["period_s"])) > 1e-6 * float(values["period_s"]):
             return fail("one-orbit tof does not match period")
+        if (
+            values.get("eclipse_source") != "off"
+            or values.get("beta") != "none"
+            or values.get("fe") != "none"
+            or values.get("te") != "none"
+            or values.get("td") != "none"
+        ):
+            return fail("eclipse should be off without --beta")
         tof_out = str(Path(tmp) / "tof.png")
         code_tof, text_tof, err_tof = invoke(
             [
@@ -3305,6 +3594,46 @@ def run_check() -> int:
             return fail("apoapsis coast is not half a period")
         if abs(float(tof_values["nu2_rad"]) - math.pi) > 1e-6:
             return fail("printed nu2")
+        eclipse_out = str(Path(tmp) / "eclipse.png")
+        leo_radius = str(R0_EARTH + 400_000.0)
+        code_e, text_e, err_e = invoke(
+            [
+                "--a",
+                leo_radius,
+                "--e",
+                "0",
+                "--i",
+                "0",
+                "--raan",
+                "0",
+                "--aop",
+                "0",
+                "--nu",
+                "0",
+                "--beta",
+                "0",
+                "--out",
+                eclipse_out,
+            ]
+        )
+        if code_e != 0:
+            return fail(f"eclipse main returned {code_e}: {err_e}")
+        eclipse_values = parse_stdout(text_e)
+        if eclipse_values.get("eclipse_source") != "orbit":
+            return fail("eclipse run did not mark eclipse_source")
+        for key in ("beta_rad", "beta_star_rad", "fe", "te_s", "td_s", "period_s"):
+            if key not in eclipse_values:
+                return fail(f"eclipse stdout missing {key}")
+        te_printed = float(eclipse_values["te_s"])
+        td_printed = float(eclipse_values["td_s"])
+        period_e = float(eclipse_values["period_s"])
+        fe_printed = float(eclipse_values["fe"])
+        if abs(te_printed + td_printed - period_e) > 1e-6 * period_e:
+            return fail("printed te + td does not match period")
+        if abs(te_printed - fe_printed * period_e) > 1e-6 * period_e:
+            return fail("printed te is not fe*period")
+        if not (30.0 * 60.0 <= te_printed <= 40.0 * 60.0):
+            return fail(f"printed LEO eclipse duration {te_printed / 60.0} min")
         issue = viewer_issues(text, out)
         if issue:
             return fail(issue)
@@ -3500,6 +3829,53 @@ def run_check() -> int:
         if abs(float(j2_values["rx_m"]) - pictured_j2.rx) > 1e-6 * max(abs(pictured_j2.rx), 1.0):
             return fail("J2 changed the epoch state")
 
+    oblate_body = resolve_body(None, None, None, None, True)
+    if oblate_body.j2_source != "oblate" or not close_enough(oblate_body.j2, J2_GSFC, J2_GSFC):
+        return fail("Earth --oblate J2")
+    if not close_enough(oblate_body.ae, AE_WGS84, AE_WGS84):
+        return fail("Earth --oblate equatorial radius")
+    if not close_enough(oblate_body.mu, body.mu, body.mu):
+        return fail("--oblate changed mu")
+    n0_oblate = mean_motion(oblate_body.mu, pictured.a)
+    n_oblate = j2_mean_motion(n0_oblate, oblate_body.j2, oblate_body.ae, pictured.a, pictured.e, pictured.i)
+    if close_enough(n_oblate, n0_oblate, n0_oblate):
+        return fail("J2 mean motion was Keplerian")
+    with tempfile.TemporaryDirectory() as tmp:
+        oblate_out = str(Path(tmp) / "oblate.png")
+        code, text, err = invoke(EARTH_ELLIPSE_ARGV + ["--oblate", "--nu2", "1.2", "--out", oblate_out])
+        if code != 0:
+            return fail(f"Earth --oblate failed: {err or text}")
+        oblate_values = parse_stdout(text)
+        if oblate_values.get("J2_source") != "oblate":
+            return fail("printed J2_source is not oblate")
+        if abs(float(oblate_values["n_rad_s"]) - n_oblate) > 5e-8 * n_oblate:
+            return fail("printed J2 mean motion")
+        if abs(float(oblate_values["n_kepler_rad_s"]) - n0_oblate) > 5e-8 * n0_oblate:
+            return fail("printed Keplerian mean motion")
+        want_period = 2.0 * math.pi / n_oblate
+        if abs(float(oblate_values["period_s"]) - want_period) > 5e-8 * want_period:
+            return fail("period did not use the J2 mean motion")
+        if close_enough(float(oblate_values["period_s"]), orbital_period(oblate_body.mu, pictured.a), pictured.a):
+            return fail("oblate period stayed Keplerian")
+        node_oblate, apsis_oblate = secular_j2_rates(oblate_body, pictured)
+        if not close_enough(float(oblate_values["Omega_dot_rad_s"]), node_oblate, max(abs(node_oblate), 1.0)):
+            return fail("oblate nodal rate left the unperturbed mean motion")
+        tof_oblate = float(oblate_values["tof_s"])
+        if not angle_close(float(oblate_values["Omega_rad"]), pictured.Omega):
+            return fail("--oblate moved the epoch node")
+        if not angle_close(
+            float(oblate_values["Omega2_rad"]),
+            wrap_two_pi(pictured.Omega + node_oblate * tof_oblate),
+        ):
+            return fail("Omega2 secular advance")
+        if not angle_close(
+            float(oblate_values["omega2_rad"]),
+            wrap_two_pi(pictured.omega + apsis_oblate * tof_oblate),
+        ):
+            return fail("omega2 secular advance")
+        if abs(float(oblate_values["rx_m"]) - pictured.rx) > 1e-6 * max(abs(pictured.rx), 1.0):
+            return fail("--oblate changed the epoch state")
+
     iss = parse_tle(f"ISS (ZARYA)\n{ISS_TLE_LINE1}\n{ISS_TLE_LINE2}")
     if iss.name != "ISS (ZARYA)" or iss.catalog != 25544 or iss.designator != "98067A":
         return fail("ISS TLE identity")
@@ -3583,8 +3959,12 @@ def run_check() -> int:
         ["--a", "-2e7", "--e", "1.4", "--i", "0.2", "--raan", "0.1", "--aop", "0.1", "--M", "0.2"],
         ["--a", "-2e7", "--e", "1.4", "--i", "0.2", "--raan", "0.1", "--aop", "0.1", "--nu", "3"],
         ["--a", "-2e7", "--e", "1.4", "--i", "0.2", "--raan", "0.1", "--aop", "0.1", "--nu", "0.5", "--j2"],
+        ["--a", "-2e7", "--e", "1.4", "--i", "0.2", "--raan", "0.1", "--aop", "0.1", "--nu", "0.5", "--oblate"],
         ["--a", "-2e7", "--e", "1.4", "--i", "0.2", "--raan", "0.1", "--aop", "0.1", "--nu", "0.5", "--nu2", "0.6"],
+        ["--a", "-2e7", "--e", "1.4", "--i", "0.2", "--raan", "0.1", "--aop", "0.1", "--nu", "0.5", "--beta", "0"],
         ["--a", "1e7", "--e", "0.1", "--i", "0.2", "--raan", "0.1", "--aop", "0.1", "--nu", "0.2", "--nu2", "0.3", "--M2", "0.4"],
+        ["--a", "1e7", "--e", "0.1", "--i", "0.2", "--raan", "0.1", "--aop", "0.1", "--nu", "0.2", "--beta", "0"],
+        ["--a", str(R0_EARTH), "--e", "0", "--i", "0", "--raan", "0", "--aop", "0", "--nu", "0", "--beta", "0"],
         ["--ae", "6378137", "--a", "1e7", "--e", "0.1", "--i", "0.2", "--raan", "0.1", "--aop", "0.1", "--nu", "0.2"],
         ["--rx", "1", "--ry", "0", "--rz", "0", "--vx", "1", "--vy", "0", "--vz", "0"],
         [],
@@ -3639,6 +4019,7 @@ def _bind_negative_values(argv: list[str]) -> list[str]:
         "--flattening",
         "--j2",
         "--ae",
+        "--beta",
         "--elev",
         "--azim",
     }
@@ -3716,10 +4097,21 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         help=f"optional first-order J2; bare --j2 uses Earth {J2_GSFC:.8g}",
     )
     parser.add_argument(
+        "--oblate",
+        action="store_true",
+        help="Earth J2 switch: GSFC J2 and WGS 84 equatorial radius, including printed mean motion",
+    )
+    parser.add_argument(
         "--ae",
         type=float,
         default=None,
         help="equatorial radius in the J2 term [m]; Earth default WGS 84, else R0",
+    )
+    parser.add_argument(
+        "--beta",
+        type=float,
+        default=None,
+        help="orbit beta angle [rad] for circular cylindrical-umbra eclipse duration",
     )
     parser.add_argument("--elev", type=float, default=None, help=f"camera elevation [deg]; default {ELEV_DEG:g}")
     parser.add_argument("--azim", type=float, default=None, help=f"camera azimuth [deg]; default {AZIM_DEG:g}")

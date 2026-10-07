@@ -5,7 +5,7 @@ A formula is listed when every identity named for it passed, or when it is a def
 A definition is exempt from the identity check.
 Use only these formula ids. Do not use a formula that is absent from this file.
 
-Passed: 553
+Passed: 627
 Failed: 0
 Unchecked: 0
 
@@ -173,6 +173,14 @@ Exempt from the identity check.
 - `propellant_mass_fraction` (rocket): four_fifths_propellant
 - `mass_ratio` (rocket): final_over_initial
 - `delta_v_vacuum` (rocket): mass_ratio_e
+- `payload_ratio` (rocket): one_quarter
+- `structural_coefficient` (rocket): one_quarter
+- `mass_ratio_from_payload_and_structure` (rocket): two_and_a_half
+- `structure_mass_linear` (rocket): ten_plus_tenth
+- `leo_design_delta_v` (rocket): stacked_budget
+- `cylinder_shell_mass` (rocket): unit_wall
+- `cone_shell_mass` (rocket): three_four_five
+- `tangent_ogive_shell_mass` (rocket): hemisphere
 - `gravitational_parameter_surface` (rocket): unit_sphere
 - `powered_path_acceleration` (rocket): vertical_with_drag
 - `gravity_loss_definition` (rocket): definition, exempt from the identity check
@@ -201,10 +209,16 @@ Exempt from the identity check.
 - `plane_change_impulse` (flight): half_turn, sixty_deg
 - `j2_nodal_rate` (flight): polar, equatorial_unit, scaled_ellipse
 - `j2_apsidal_rate` (flight): equatorial_unit, critical, scaled_equator
+- `j2_mean_motion` (flight): equatorial_unit, polar_cancels
 - `sun_sync_nodal_rate` (flight): primer_year
 - `sun_sync_inclination_cosine` (flight): minus_one, minus_half, scaled_orbit
 - `specific_orbital_energy` (flight): circular_energy
 - `specific_orbital_energy_from_speed` (flight): circular_energy
+- `launch_inclination_cosine` (flight): due_east_equator
+- `launch_azimuth_sine` (flight): equatorial_from_equator
+- `earth_rotation_inertial_speed` (flight): equator
+- `launch_rotation_assist` (flight): due_east
+- `circularization_delta_v` (flight): speed_up_by_one
 - `orbital_period` (flight): unit_orbit, axis_four
 - `elliptic_half_period` (flight): unit_coast, axis_four
 - `hohmann_phase_angle` (flight): quarter_coast, fast_target
@@ -337,6 +351,23 @@ Exempt from the identity check.
 - `pressure_temperature_sensitivity` (rocket): definition, exempt from the identity check
 - `vacuum_propellant_mass` (rocket): mass_ratio_e
 - `vacuum_wet_mass` (rocket): mass_ratio_e
+- `electric_propulsion_burn_time` (rocket): two_kilograms
+- `electric_propulsion_power` (rocket): half_efficient
+- `hall_beam_current` (rocket): xenon_unit_flow, half_utilization
+- `electric_propulsion_specific_power` (rocket): ten_watts
+- `phasing_wait_catch` (flight): quarter_revolution
+- `phasing_wait_loiter` (flight): quarter_revolution
+- `phasing_semimajor_from_period` (flight): unit_orbit
+- `phasing_delta_v` (flight): two_metres_per_second
+- `clohessy_wiltshire_radial` (flight): along_track_rate_coupling
+- `clohessy_wiltshire_along_track` (flight): radial_offset_quarter_period
+- `clohessy_wiltshire_hold_rate` (flight): outward_offset
+- `pressurant_blowdown_pressure` (rocket): isothermal_half
+- `pressurant_mass` (rocket): unit_mass
+- `eccentricity_removal_impulse` (flight): two_burns
+- `elevation_mask_earth_angle` (flight): horizon_half
+- `swath_arc` (flight): twice_footprint
+- `footprint_radius` (flight): one_radian
 
 ## Aerodynamics
 
@@ -470,6 +501,8 @@ Exempt from the identity check.
 - `turbofan_thermal_efficiency` (aerodynamics): static_core, bypass_only_jet
 - `turbofan_propulsive_efficiency` (aerodynamics): classic_half, static
 - `turbofan_overall_efficiency` (aerodynamics): no_bypass, with_bypass
+- `propeller_shaft_power` (aerodynamics): dry_unit_jet, residual_flight_speed
+- `propeller_thrust` (aerodynamics): half_efficient
 - `airflow_from_thrust` (aerodynamics): ten, two
 - `capture_area` (aerodynamics): unit, sea_level
 - `circular_capture_diameter` (aerodynamics): unit_area, four
@@ -500,6 +533,18 @@ Exempt from the identity check.
 - `naca4_glauert_A2` (aerodynamics): circular_arc, quarter_chord_camber
 - `naca4_quarter_chord_moment` (aerodynamics): circular_arc_two_percent
 - `drag_delta_v_per_revolution` (aerodynamics): unit_case
+- `phugoid_natural_frequency` (aerodynamics): unit_speed
+- `phugoid_period` (aerodynamics): unit_speed
+- `short_period_natural_frequency` (aerodynamics): fifty_radians_per_second
+- `short_period_period` (aerodynamics): matches_frequency
+- `dutch_roll_side_acceleration` (aerodynamics): unit_side
+- `dutch_roll_directional_stiffness` (aerodynamics): unit_yaw_stiffness
+- `dutch_roll_yaw_damping` (aerodynamics): unit_yaw_damping
+- `dutch_roll_roll_stiffness` (aerodynamics): unit_roll_stiffness
+- `dutch_roll_roll_damping` (aerodynamics): unit_roll_damping
+- `dutch_roll_omega_sq` (aerodynamics): both_springs
+- `dutch_roll_damping_product` (aerodynamics): yaw_and_side
+- `parachute_descent_rate` (aerodynamics): unit_balance
 
 ## Structures
 
@@ -520,17 +565,28 @@ Exempt from the identity check.
 - `cylinder_hoop_stress` (shell): forty_inch_cylinder
 - `margin_of_safety` (design): zero_margin, quarter_margin
 - `weld_radial_mismatch` (shell): five_percent_mismatch, unit_offset
+- `cylinder_longitudinal_stress` (shell): sample_cylinder
+- `sphere_membrane_stress` (shell): same_numbers
+- `thin_wall_hoop_thickness` (shell): fifty_kilopascal
+- `thin_wall_membrane_thickness` (shell): half_the_hoop_wall
+- `simply_supported_plate_k` (shell): square_plate
+- `plate_buckling_stress` (shell): long_plate_sample
+- `fracture_critical_half_length` (shell): unit_plate
 
 ## Mass properties
 
 - `total_mass` (mass): unit_parts, unequal_parts
 - `mass_first_moment` (mass): unit_arm, two_kg_at_half_metre
+- `stage_propellant_mass` (mass): half_burned
+- `stage_propellant_station` (mass): halfway
 - `center_of_mass_coordinate` (mass): unit_centroid, two_equal_masses
 - `point_mass_moment` (mass): unit_offset, two_metre_diagonal
 - `point_mass_product` (mass): unit_product, offset_pair
 - `parallel_axis_moment` (mass): point_mass_transfer, own_plus_transfer
 - `parallel_axis_product` (mass): point_mass_product_transfer, own_plus_product
 - `inertia_shift_to_cg` (mass): unit_shift, tn575_style_shift
+- `propellant_slosh_frequency` (mass): unit_cylinder
+- `slosh_pendulum_length` (mass): one_radian
 
 ## Aerothermodynamics
 
@@ -556,6 +612,11 @@ Exempt from the identity check.
 - `spacecraft_absorbed_power` (aerotherm): sun_only
 - `spacecraft_equilibrium_temperature` (aerotherm): three_hundred_kelvin
 - `radiator_area_for_temperature` (aerotherm): one_square_metre
+- `equilibrium_glide_peak_deceleration` (aerotherm): lift_equals_twice_drag
+- `equilibrium_glide_entry_deceleration` (aerotherm): half_circular
+- `equilibrium_glide_heating_density` (aerotherm): three_quarters
+- `equilibrium_glide_heat_flux_scale` (aerotherm): two_and_four
+- `equilibrium_glide_heating_speed` (aerotherm): three_metres_per_second
 
 ## Spacecraft power
 
@@ -567,6 +628,7 @@ Exempt from the identity check.
 - `solar_array_eol_power` (power): ten_percent_life_loss
 - `solar_array_orbit_average_power` (power): thirty_five_percent_eclipse
 - `circular_orbit_eclipse_fraction` (power): beta_zero_unit, elevated_beta
+- `circular_orbit_eclipse_duration` (power): beta_zero_unit_period, elevated_beta_leo_period
 - `battery_energy_from_capacity_ah` (power): one_hundred_ah_at_twenty_eight_v, unit_wh
 - `battery_depth_of_discharge` (power): twenty_percent, full_nameplate
 - `battery_usable_energy` (power): half_dod_ninety_discharge
@@ -598,6 +660,11 @@ Exempt from the identity check.
 - `link_margin_eb_n0` (comms): three_db_linear
 - `required_pass_bit_rate` (comms): two_gigabits
 - `pass_data_volume` (comms): round_trip
+- `rain_specific_attenuation` (comms): square_law
+- `rain_path_attenuation` (comms): four_kilometres
+- `rain_power_ratio` (comms): ten_decibels
+- `doppler_shift` (comms): one_part_per_million
+- `orbit_mask_range_rate` (comms): horizon
 
 ## Dynamics and control
 
@@ -614,6 +681,13 @@ Exempt from the identity check.
 - `aerodynamic_disturbance_torque` (control): unit_dynamic_pressure
 - `solar_radiation_torque` (control): unit_factors
 - `magnetic_disturbance_torque` (control): perpendicular
+- `magnetic_moment` (control): perpendicular
+- `magnetic_coil_current` (control): hundred_amperes
 - `rest_to_rest_slew_torque` (control): two_radian_ten_seconds
 - `rest_to_rest_slew_impulse` (control): matches_half_time
 - `disturbance_momentum_storage` (control): one_orbit
+- `reaction_wheel_inertia` (control): hundred_radians_per_second
+- `frequency_ratio` (control): twice_natural
+- `displacement_transmissibility` (control): isolation_corner
+- `transmissibility_peak_ratio` (control): five_percent
+- `miles_rms_acceleration` (control): unit_rms

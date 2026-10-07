@@ -8,7 +8,7 @@ description: >-
   safety, elastic Euler column buckling load or critical stress, center of mass or rigid-body inertia, stagnation-point heating,
   radiative-equilibrium wall temperature, Allen-Eggers ballistic-entry peak
   deceleration or peak-load altitude in an exponential atmosphere, solar-array beginning- or end-of-life
-  power, circular-orbit eclipse fraction, battery usable energy or required
+  power, circular-orbit eclipse fraction and duration, battery usable energy or required
   capacity with depth of discharge and charge/discharge efficiency, vacuum
   free-space path loss, Friis received power, antenna gain from aperture
   efficiency, carrier-to-noise, Eb/N0, link margin, linear second-order step
@@ -19,8 +19,15 @@ description: >-
   recovery, non-ideal turbojet or afterburner fuel flow, separate-stream
   turbofan thrust, or engine airflow sizing, 1976 density above 86 km,
   spacecraft radiative balance, disturbance torques, drag delta-v, in-space
-  propellant, pass data volume, duty-cycled load, or what a formula's symbols and
-  units mean. Use only formulas listed in checks/check.md. Definitions listed
+  propellant, pass data volume, duty-cycled load, thin-wall hoop or sphere
+  membrane stress, base-excitation transmissibility, reaction-wheel inertia,
+  phasing wait or phasing delta-v, Clohessy-Wiltshire relative motion,
+  electric-propulsion burn time or input power, rain attenuation, phugoid or
+  short-period period, equilibrium-glide peak deceleration, pressurant blowdown,
+  propellant slosh frequency, simply supported plate buckling, Miles rms
+  acceleration, magnetic moment, Doppler shift, Dutch-roll frequency, geostationary
+  east-west removal, or an elevation-mask swath, or what a formula's
+  symbols and units mean. Use only formulas listed in checks/check.md. Definitions listed
   there are exempt from the identity check.
 ---
 
@@ -30,7 +37,7 @@ Read [formulas.md](formulas.md) before answering. Use only a formula whose id is
 
 ## Select the formula
 
-1. Start in the category that matches the question: Compressible flow, Atmosphere (including 1976 density above 86 km), Rocket propulsion (including two-body orbits and anomalies, injector orifice flow, feed-system pressure, pump power, Bartz throat heat flux, regenerative coolant heat pickup, and in-space propellant), Aerodynamics (including ideal propeller, ideal Brayton turbojet, ideal Brayton ramjet, design-point inlet recovery, non-ideal turbojet, afterburner, separate-stream turbofan, airflow sizing, and drag delta-v), Structures, Mass properties, Aerothermodynamics (including spacecraft radiative balance), Spacecraft power (including duty-cycled load), Space communications (including pass data volume), or Dynamics and control (including second-order response, true proportional navigation, and disturbance torques). Read another category only if that one does not contain a fit.
+1. Start in the category that matches the question: Compressible flow, Atmosphere (including 1976 density above 86 km), Rocket propulsion (including two-body orbits and anomalies, injector orifice flow, feed-system pressure, pump power, Bartz throat heat flux, regenerative coolant heat pickup, in-space propellant, electric-propulsion burn time and power, Hall beam current, phasing, Clohessy–Wiltshire motion, pressurant blowdown, geostationary east–west removal, elevation-mask swath, and the first-order \(J_2\) mean motion), Aerodynamics (including ideal propeller, ideal Brayton turbojet, ideal Brayton ramjet, design-point inlet recovery, non-ideal turbojet, afterburner, separate-stream turbofan, afterburning turbofan, ideal scramjet, ideal turboprop, airflow sizing, drag delta-v, parachute descent rate, phugoid and short-period periods, and Dutch-roll frequency), Structures (including thin-wall cylinder and sphere membrane stress and simply supported plate buckling, and a wide-plate critical crack), Mass properties (including the first lateral slosh frequency and stage-burn center-of-mass travel), Aerothermodynamics (including spacecraft radiative balance and equilibrium-glide peak load), Spacecraft power (including duty-cycled load), Space communications (including pass data volume, rain attenuation, and Doppler shift), or Dynamics and control (GNC family for second-order response and true proportional navigation; also disturbance torques, base-excitation transmissibility, reaction-wheel inertia, magnetic moment, and Miles rms acceleration). Read another category only if that one does not contain a fit.
 2. Use the user's wording, known quantities, and requested result to choose the formula that fits.
 3. Reject any formula that is not listed in [checks/check.md](checks/check.md). A listed definition is allowed.
 4. If more than one listed formula fits, choose the one that uses the quantities the user already has. If the choice is still ambiguous, ask which result they want before calculating.

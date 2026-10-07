@@ -1,5 +1,5 @@
 ---
-name: CTRL - SecondOrderResponse
+name: GNC - SecondOrderResponse
 description: >-
   Run the linear second-order unit-step response program and report its printed
   results and optional PNG. Use when the user wants damped frequency, overshoot,
@@ -8,7 +8,7 @@ description: >-
   damping. Do not redraw the plot or recompute the numbers by hand.
 ---
 
-# CTRL - SecondOrderResponse
+# GNC - SecondOrderResponse
 
 Use this skill for a linear, constant-coefficient, single-input second-order plant with unity DC gain. Run the program once; quote its stdout and include the PNG when `graph:` is printed. Do not redraw the plot or recompute the numbers by hand.
 
@@ -43,7 +43,7 @@ Percent overshoot is \(100 M_p\). Default settling band is 2%, so \(\delta=0.02\
 Run:
 
 ```text
-python "skills/CTRL - SecondOrderResponse/second_order_response.py" (--wn <rad/s> --zeta <zeta> | --mass <kg> --stiffness <N/m> --damping <N*s/m>) [--settling-percent <percent>] [--out <png>]
+python "skills/GNC - SecondOrderResponse/second_order_response.py" (--wn <rad/s> --zeta <zeta> | --mass <kg> --stiffness <N/m> --damping <N*s/m>) [--settling-percent <percent>] [--out <png>]
 ```
 
 | Flag | Meaning | Unit | Required? |

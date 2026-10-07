@@ -11,7 +11,7 @@ description: >-
 
 # ADCS - EnvironmentalTorques
 
-Use this skill for the external torques a spacecraft must fight. Attitude determination and control is pointing. Guidance stays in `CTRL`. Run the program once; quote its stdout and include the PNG when `graph:` is printed.
+Use this skill for the external torques a spacecraft must fight. Attitude determination and control is pointing. Guidance is the GNC family. Run the program once; quote its stdout and include the PNG when `graph:` is printed.
 
 Gravity-gradient torque is `gravity_gradient_torque`, \(\frac{3}{2} n^{2}(I_z-I_y)\sin 2\theta\), from NASA SP-8024. Orbit rate uses Earth \(\mu = g_0 R_0^{2}\) with \(R_0 = 6.3742\times 10^{6}\,\mathrm{m}\). Inertia may come from `MASS - CenterOfMassAndInertia`.
 

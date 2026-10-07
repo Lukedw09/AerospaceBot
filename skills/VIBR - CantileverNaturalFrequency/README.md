@@ -24,4 +24,4 @@ SI only at the program boundary. Pass `--mu` (primary) or `--mass` (\(\mu = m_{\
 
 ## Out of scope
 
-Higher bending modes, tip mass / massless-beam tip-mass formulas, damping, forced response (use `CTRL - SecondOrderResponse`), axial or torsional modes, non-cantilever end conditions.
+Higher bending modes, tip mass / massless-beam tip-mass formulas, damping, forced response (use `GNC - SecondOrderResponse`), axial or torsional modes, non-cantilever end conditions.

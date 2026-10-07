@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>__TITLE__</title>
+<style>
+  :root { color-scheme: light; --ink: #1b2631; --muted: #34495e; --line: #d5d8dc; --paper: #f4f7f8; }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; background: var(--paper); color: var(--ink); font-family: "Segoe UI", Helvetica, Arial, sans-serif; }
+  body { overflow: hidden; }
+  #app { height: 100%; display: flex; flex-direction: column; }
+  header { padding: 12px 16px 8px; }
+  h1 { margin: 0; font-size: 20px; font-weight: 560; }
+  #units { margin: 4px 0 0; color: var(--muted); font-size: 13px; }
+  #stage { flex: 1; min-height: 0; display: flex; }
+  #viewport { flex: 1; min-width: 0; position: relative; }
+  #legend { width: 280px; margin: 0 12px 12px 0; background: #fff; border: 1px solid var(--line); padding: 12px 14px; overflow: auto; font-size: 13px; }
+  #legend h2 { margin: 0 0 8px; font-size: 13px; }
+  .row { display: flex; align-items: center; gap: 8px; margin: 6px 0; }
+  .swatch { width: 14px; height: 14px; border-radius: 2px; flex: 0 0 auto; border: 1px solid rgba(27, 38, 49, 0.15); }
+  #hud { margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--line); color: var(--muted); line-height: 1.45; }
+  button { margin-right: 8px; }
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <h1>__TITLE__</h1>
+    <p id="units"></p>
+  </header>
+  <div id="stage">
+    <div id="viewport"></div>
+    <aside id="legend"><h2>Legend</h2></aside>
+  </div>
+</div>
+<script>
+__THREE_SOURCE__
+</script>
+<script type="application/json" id="scene-json">__SCENE_JSON__</script>
+<script>
+(function () {
+  const data = JSON.parse(document.getElementById("scene-json").textContent);
+  const samples = data.samples || [];
+  const viewport = document.getElementById("viewport");
+  const legend = document.getElementById("legend");
+  document.getElementById("units").textContent = (data.units || "") + " Follow stays with the vehicle. Trajectory frames the whole path.";
+  const renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.setSize(viewport.clientWidth, viewport.clientHeight);
+  renderer.setClearColor(0xf4f7f8, 1);
+  viewport.appendChild(renderer.domElement);
+  const scene = new THREE.Scene();
+  scene.add(new THREE.AmbientLight(0xffffff, 0.82));
+  const sun = new THREE.DirectionalLight(0xffffff, 0.55);
+  sun.position.set(1, 0.6, 0.8);
+  scene.add(sun);
+  const camera = new THREE.PerspectiveCamera(42, 1, 0.5, 1e7);
+  camera.up.set(0, 0, 1);
+  const cam = data.camera || { position: [0, data.R || 4000, data.R || 4000], target: [0, 0, data.R || 6000] };
+  const target = new THREE.Vector3(cam.target[0], cam.target[1], cam.target[2]);
+  camera.position.set(cam.position[0], cam.position[1], cam.position[2]);
+  camera.lookAt(target);
+  let radius = camera.position.distanceTo(target);
+  const radiusHome = radius;
+  let yaw = Math.atan2(camera.position.x - target.x, camera.position.z - target.z);
+  let pitch = Math.asin(Math.max(-1, Math.min(1, (camera.position.y - target.y) / Math.max(radius, 1e-6))));
+
+  function row(color, text, object3d) {
+    const label = document.createElement("label");
+    label.className = "row";
+    const box = document.createElement("input");
+    box.type = "checkbox";
+    box.checked = true;
+    box.addEventListener("change", function () { object3d.visible = box.checked; });
+    const swatch = document.createElement("i");
+    swatch.className = "swatch";
+    swatch.style.background = color;
+    label.appendChild(box);
+    label.appendChild(swatch);
+    label.appendChild(document.createTextNode(text));
+    legend.appendChild(label);
+  }
+
+  const earthR = data.R || 6371;
+  const earth = new THREE.Mesh(
+    new THREE.SphereGeometry(earthR, 64, 48),
+    new THREE.MeshLambertMaterial({ color: 0x7fb3d5 })
+  );
+  scene.add(earth);
+  row("#7fb3d5", "Earth", earth);
+  const atm = new THREE.Mesh(
+    new THREE.SphereGeometry(data.atm || earthR + 120, 64, 48),
+    new THREE.MeshBasicMaterial({ color: 0x5dade2, transparent: true, opacity: 0.16, depthWrite: false })
+  );
+  scene.add(atm);
+  row("#5dade2", "120 km atmosphere", atm);
+
+  function lineFrom(points, color, opacity) {
+    const arr = [];
+    points.forEach(function (p) { arr.push(p[0], p[1], p[2]); });
+    const geom = new THREE.BufferGeometry();
+    geom.setAttribute("position", new THREE.Float32BufferAttribute(arr, 3));
+    const mesh = new THREE.Line(geom, new THREE.LineBasicMaterial({
+      color: color,
+      transparent: opacity < 1,
+      opacity: opacity
+    }));
+    scene.add(mesh);
+    return mesh;
+  }
+  const route = lineFrom(samples, 0xf5cba7, 0.85);
+  row("#f5cba7", "Ascent", route);
+  const trailGeom = new THREE.BufferGeometry();
+  const trail = new THREE.Line(trailGeom, new THREE.LineBasicMaterial({ color: 0xb9770e }));
+  scene.add(trail);
+  row("#b9770e", "Flown path", trail);
+
+  const rocketLen = earthR * 0.006;
+  const rocket = new THREE.Mesh(
+    new THREE.ConeGeometry(rocketLen * 0.28, rocketLen, 14),
+    new THREE.MeshBasicMaterial({ color: 0xc0392b })
+  );
+  scene.add(rocket);
+  row("#c0392b", "Vehicle", rocket);
+  const up = new THREE.Vector3(0, 1, 0);
+  if (samples.length) {
+    rocket.position.set(samples[0][0], samples[0][1], samples[0][2]);
+  }
+
+  const hud = document.createElement("div");
+  hud.id = "hud";
+  const play = document.createElement("button");
+  play.type = "button";
+  play.textContent = "Pause";
+  const followBtn = document.createElement("button");
+  followBtn.type = "button";
+  followBtn.textContent = "Follow";
+  const pathBtn = document.createElement("button");
+  pathBtn.type = "button";
+  pathBtn.textContent = "Trajectory";
+  const readout = document.createElement("div");
+  readout.style.whiteSpace = "pre-line";
+  hud.appendChild(play);
+  hud.appendChild(followBtn);
+  hud.appendChild(pathBtn);
+  hud.appendChild(readout);
+  legend.appendChild(hud);
+  let playing = samples.length > 1;
+  let cameraMode = "trajectory";
+  const homeTarget = target.clone();
+  const homeRadius = radius;
+  const homeYaw = yaw;
+  const homePitch = pitch;
+  function markMode() {
+    followBtn.style.fontWeight = cameraMode === "follow" ? "700" : "400";
+    pathBtn.style.fontWeight = cameraMode === "trajectory" ? "700" : "400";
+  }
+  function useTrajectory() {
+    cameraMode = "trajectory";
+    target.copy(homeTarget);
+    radius = homeRadius;
+    yaw = homeYaw;
+    pitch = homePitch;
+    markMode();
+  }
+  function useFollow() {
+    cameraMode = "follow";
+    radius = earthR * 0.12;
+    yaw = homeYaw;
+    pitch = 0.45;
+    markMode();
+  }
+  followBtn.addEventListener("click", useFollow);
+  pathBtn.addEventListener("click", useTrajectory);
+  markMode();
+  let elapsed = 0;
+  const duration = 14;
+  play.addEventListener("click", function () {
+    playing = !playing;
+    play.textContent = playing ? "Pause" : "Play";
+  });
+
+  let drag = null;
+  renderer.domElement.addEventListener("pointerdown", function (ev) {
+    drag = { x: ev.clientX, y: ev.clientY, yaw: yaw, pitch: pitch };
+  });
+  window.addEventListener("pointerup", function () { drag = null; });
+  window.addEventListener("pointermove", function (ev) {
+    if (!drag) return;
+    yaw = drag.yaw - (ev.clientX - drag.x) * 0.005;
+    pitch = Math.max(-1.2, Math.min(1.2, drag.pitch + (ev.clientY - drag.y) * 0.005));
+  });
+  renderer.domElement.addEventListener("wheel", function (ev) {
+    ev.preventDefault();
+    radius *= ev.deltaY > 0 ? 1.08 : 0.92;
+    radius = Math.max(radiusHome * 0.15, Math.min(radius, radiusHome * 8));
+  }, { passive: false });
+
+  function placeCamera() {
+    const cp = Math.cos(pitch);
+    camera.position.set(
+      target.x + radius * cp * Math.sin(yaw),
+      target.y + radius * Math.sin(pitch),
+      target.z + radius * cp * Math.cos(yaw)
+    );
+    if (cameraMode === "follow" && camera.position.length() < earthR * 1.04) {
+      camera.position.normalize().multiplyScalar(earthR * 1.12);
+    }
+    camera.lookAt(target);
+  }
+  function sampleAt(u) {
+    const f = u * (samples.length - 1);
+    const i = Math.min(samples.length - 2, Math.floor(f));
+    const t = f - i;
+    const a = samples[Math.max(0, i)];
+    const b = samples[Math.min(samples.length - 1, i + 1)];
+    const p = [];
+    for (let k = 0; k < 6; k += 1) p.push(a[k] + (b[k] - a[k]) * t);
+    return { p: p, index: i, frac: t };
+  }
+  function aim(at, ahead) {
+    const dir = new THREE.Vector3(ahead[0] - at[0], ahead[1] - at[1], ahead[2] - at[2]);
+    if (dir.lengthSq() < 1e-8) dir.set(at[0], at[1], at[2]).normalize();
+    else dir.normalize();
+    rocket.position.set(at[0], at[1], at[2]);
+    rocket.quaternion.setFromUnitVectors(up, dir);
+  }
+  let last = performance.now();
+  function frame() {
+    const now = performance.now();
+    const dt = Math.max(0, Math.min(0.05, (now - last) / 1000));
+    last = now;
+    if (playing && samples.length > 1) elapsed = (elapsed + dt) % duration;
+    const u = samples.length > 1 ? (elapsed / duration) : 0;
+    const here = sampleAt(u);
+    const nextU = Math.min(1, u + 1 / Math.max(samples.length, 2));
+    aim(here.p, sampleAt(nextU).p);
+    if (cameraMode === "follow") target.set(here.p[0], here.p[1], here.p[2]);
+    const flown = [];
+    const lastIndex = Math.max(1, here.index + 1);
+    for (let i = 0; i <= lastIndex && i < samples.length; i += 1) {
+      flown.push(samples[i][0], samples[i][1], samples[i][2]);
+    }
+    flown.push(here.p[0], here.p[1], here.p[2]);
+    trailGeom.setAttribute("position", new THREE.Float32BufferAttribute(flown, 3));
+    trailGeom.computeBoundingSphere();
+    const alt = here.p[4];
+    const speed = here.p[5];
+    readout.textContent = "t " + here.p[3].toFixed(1) + " s\naltitude " + alt.toFixed(1) + " km\nspeed " + speed.toFixed(0) + " m/s";
+    placeCamera();
+    renderer.render(scene, camera);
+    requestAnimationFrame(frame);
+  }
+  function resize() {
+    const w = viewport.clientWidth || 800;
+    const h = viewport.clientHeight || 600;
+    camera.aspect = w / Math.max(h, 1);
+    camera.updateProjectionMatrix();
+    renderer.setSize(w, h);
+  }
+  window.addEventListener("resize", resize);
+  resize();
+  placeCamera();
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

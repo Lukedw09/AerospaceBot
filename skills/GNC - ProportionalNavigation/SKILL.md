@@ -1,18 +1,17 @@
 ---
-name: CTRL - ProportionalNavigation
+name: GNC - ProportionalNavigation
 description: >-
   Run the planar true proportional navigation program and report its printed
   results and optional PNG. Use when the user wants the instantaneous true-PN
   commanded acceleration a_c = N' V_c λ̇ from navigation constant, closing
   speed, and LOS rate, or a simple planar constant-speed intercept engagement
-  with PN steering. Guidance kinematics live under CTRL with SecondOrderResponse;
-  do not invent a GNC family. Do not redraw the plot or recompute the numbers
-  by hand.
+  with PN steering. The family name is GNC, with SecondOrderResponse.
+  Do not redraw the plot or recompute the numbers by hand.
 ---
 
-# CTRL - ProportionalNavigation
+# GNC - ProportionalNavigation
 
-Use this skill for planar true proportional navigation: an instantaneous commanded acceleration and/or a simple constant-speed planar intercept. Run the program once; quote its stdout and include the PNG when `graph:` is printed. Do not redraw the plot or recompute the numbers by hand. Second-order plant metrics stay in `CTRL - SecondOrderResponse`; this skill does not replace that.
+Use this skill for planar true proportional navigation: an instantaneous commanded acceleration and/or a simple constant-speed planar intercept. Run the program once; quote its stdout and include the PNG when `graph:` is printed. Do not redraw the plot or recompute the numbers by hand. Second-order plant metrics stay in `GNC - SecondOrderResponse`; this skill does not replace that.
 
 True PN commanded acceleration is `true_pn_commanded_acceleration`:
 
@@ -40,14 +39,14 @@ with relative velocity \(\mathbf{V}=\mathbf{v}_t-\mathbf{v}_m\). The true-PN acc
 4. For Mode 2, pass exactly one velocity API: `--vm --hm --vt --ht`, or `--vmx --vmy --vtx --vty`. Do not mix them.
 5. Pass `--at-lat`, `--dt`, `--t-max`, or `--hit-radius` only when the user gave them or when documenting the program defaults. Safe defaults are target lateral accel 0, `dt=0.01` s, `t_max=300` s, hit radius 1 m.
 6. Pass `--out` only for Mode 2 when the user wants the engagement-plane PNG. Do not invent a plot path when they did not ask for a figure. Mode 1 ignores `--out` if it is present.
-7. Do not use this skill for 3D PN, seeker noise, filters, gravity, atmosphere, autopilot lag, pursuit, or APN. Do not use it for second-order step-response metrics (`CTRL - SecondOrderResponse`).
+7. Do not use this skill for 3D PN, seeker noise, filters, gravity, atmosphere, autopilot lag, pursuit, or APN. Do not use it for second-order step-response metrics (`GNC - SecondOrderResponse`).
 
 ## Flags
 
 Run:
 
 ```text
-python "skills/CTRL - ProportionalNavigation/proportional_navigation.py" --n-prime <N'> (--vc <m/s> --los-rate <rad/s> | --range <m> --los-angle <rad> (--vm <m/s> --hm <rad> --vt <m/s> --ht <rad> | --vmx <m/s> --vmy <m/s> --vtx <m/s> --vty <m/s>) [--at-lat <m/s^2>] [--dt <s>] [--t-max <s>] [--hit-radius <m>] [--out <png>])
+python "skills/GNC - ProportionalNavigation/proportional_navigation.py" --n-prime <N'> (--vc <m/s> --los-rate <rad/s> | --range <m> --los-angle <rad> (--vm <m/s> --hm <rad> --vt <m/s> --ht <rad> | --vmx <m/s> --vmy <m/s> --vtx <m/s> --vty <m/s>) [--at-lat <m/s^2>] [--dt <s>] [--t-max <s>] [--hit-radius <m>] [--out <png>])
 ```
 
 | Flag | Meaning | Unit | Required? |

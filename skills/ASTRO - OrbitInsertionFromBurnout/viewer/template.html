@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>__TITLE__</title>
+<style>
+  :root { color-scheme: light; --ink: #1b2631; --muted: #34495e; --line: #d5d8dc; --paper: #f4f7f8; }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; background: var(--paper); color: var(--ink); font-family: "Segoe UI", Helvetica, Arial, sans-serif; }
+  body { overflow: hidden; }
+  #app { height: 100%; display: flex; flex-direction: column; }
+  header { padding: 12px 16px 8px; }
+  h1 { margin: 0; font-size: 20px; font-weight: 560; }
+  #units { margin: 4px 0 0; color: var(--muted); font-size: 13px; }
+  #stage { flex: 1; min-height: 0; display: flex; }
+  #viewport { flex: 1; min-width: 0; position: relative; }
+  #legend { width: 280px; margin: 0 12px 12px 0; background: #fff; border: 1px solid var(--line); padding: 12px 14px; overflow: auto; font-size: 13px; }
+  #legend h2 { margin: 0 0 8px; font-size: 13px; }
+  .row { display: flex; align-items: center; gap: 8px; margin: 6px 0; }
+  .swatch { width: 14px; height: 14px; border-radius: 2px; flex: 0 0 auto; border: 1px solid rgba(27, 38, 49, 0.15); }
+  #hud { margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--line); color: var(--muted); line-height: 1.45; }
+  button { margin-right: 8px; }
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <h1>__TITLE__</h1>
+    <p id="units"></p>
+  </header>
+  <div id="stage">
+    <div id="viewport"></div>
+    <aside id="legend"><h2>Legend</h2></aside>
+  </div>
+</div>
+<script>
+__THREE_SOURCE__
+</script>
+<script type="application/json" id="scene-json">__SCENE_JSON__</script>
+<script>
+(function () {
+  const data = JSON.parse(document.getElementById("scene-json").textContent);
+  const viewport = document.getElementById("viewport");
+  const legend = document.getElementById("legend");
+  document.getElementById("units").textContent = (data.units || "") + " The part of the orbit seen through Earth is dotted.";
+  const renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.setSize(viewport.clientWidth, viewport.clientHeight);
+  renderer.setClearColor(0xf4f7f8, 1);
+  viewport.appendChild(renderer.domElement);
+  const scene = new THREE.Scene();
+  scene.add(new THREE.AmbientLight(0xffffff, 0.85));
+  const sun = new THREE.DirectionalLight(0xffffff, 0.5);
+  sun.position.set(0.4, -0.2, 1);
+  scene.add(sun);
+  const camera = new THREE.PerspectiveCamera(48, 1, 0.5, 1e8);
+  const cam = data.camera || { position: [0, -9000, 4000], target: [0, 0, 0] };
+  const target = new THREE.Vector3(cam.target[0], cam.target[1], cam.target[2]);
+  camera.position.set(cam.position[0], cam.position[1], cam.position[2]);
+  camera.lookAt(target);
+  let radius = camera.position.distanceTo(target);
+  const radiusHome = radius;
+  let yaw = Math.atan2(camera.position.x - target.x, camera.position.z - target.z);
+  let pitch = Math.asin(Math.max(-1, Math.min(1, (camera.position.y - target.y) / Math.max(radius, 1e-6))));
+
+  function row(color, text, object3d) {
+    const label = document.createElement("label");
+    label.className = "row";
+    const box = document.createElement("input");
+    box.type = "checkbox";
+    box.checked = true;
+    box.addEventListener("change", function () { object3d.visible = box.checked; });
+    const swatch = document.createElement("i");
+    swatch.className = "swatch";
+    swatch.style.background = color;
+    label.appendChild(box);
+    label.appendChild(swatch);
+    label.appendChild(document.createTextNode(text));
+    legend.appendChild(label);
+  }
+
+  const earthR = data.R;
+  const earth = new THREE.Mesh(
+    new THREE.SphereGeometry(earthR, 64, 48),
+    new THREE.MeshLambertMaterial({ color: 0x7fb3d5, transparent: true, opacity: 0.42, depthWrite: false })
+  );
+  scene.add(earth);
+  row("#7fb3d5", "Earth", earth);
+  const atm = new THREE.Mesh(
+    new THREE.SphereGeometry(data.atm, 64, 48),
+    new THREE.MeshBasicMaterial({ color: 0x5dade2, transparent: true, opacity: 0.14, depthWrite: false })
+  );
+  scene.add(atm);
+  row("#5dade2", "120 km atmosphere", atm);
+
+  const orbitGroup = new THREE.Group();
+  scene.add(orbitGroup);
+  row("#b9770e", "Orbit", orbitGroup);
+  const vehicle = new THREE.Mesh(
+    new THREE.SphereGeometry(data.markerRadius || 50, 16, 12),
+    new THREE.MeshBasicMaterial({ color: 0xc0392b })
+  );
+  const start = data.marker || [earthR, 0, 0];
+  vehicle.position.set(start[0], start[1], start[2]);
+  scene.add(vehicle);
+  row("#c0392b", "Vehicle", vehicle);
+  const apo = new THREE.Mesh(
+    new THREE.SphereGeometry((data.markerRadius || 50) * 0.8, 14, 10),
+    new THREE.MeshBasicMaterial({ color: 0x6c3483 })
+  );
+  if (data.closed && data.ra >= earthR) {
+    apo.position.set(-data.ra, 0, 0);
+    scene.add(apo);
+    row("#6c3483", "Apoapsis", apo);
+  }
+  const peri = new THREE.Mesh(
+    new THREE.SphereGeometry((data.markerRadius || 50) * 0.7, 14, 10),
+    new THREE.MeshBasicMaterial({ color: 0x1e8449 })
+  );
+  peri.visible = false;
+  scene.add(peri);
+  row("#1e8449", "Periapsis", peri);
+
+  function clearGroup(group) {
+    for (let i = group.children.length - 1; i >= 0; i -= 1) {
+      const child = group.children[i];
+      group.remove(child);
+      if (child.geometry) child.geometry.dispose();
+      if (child.material) child.material.dispose();
+    }
+  }
+  function addSolid(pts, color) {
+    if (pts.length < 2) return;
+    const arr = [];
+    pts.forEach(function (p) { arr.push(p[0], p[1], p[2]); });
+    const geom = new THREE.BufferGeometry();
+    geom.setAttribute("position", new THREE.Float32BufferAttribute(arr, 3));
+    const mesh = new THREE.Line(geom, new THREE.LineBasicMaterial({ color: color, depthTest: false }));
+    mesh.renderOrder = 4;
+    orbitGroup.add(mesh);
+  }
+  function addDashed(pts, color) {
+    const dash = earthR * 0.045;
+    const gap = earthR * 0.03;
+    const period = dash + gap;
+    let acc = 0;
+    let drawing = [];
+    function flush() {
+      if (drawing.length > 1) addSolid(drawing, color);
+      drawing = [];
+    }
+    for (let i = 1; i < pts.length; i += 1) {
+      const a = pts[i - 1];
+      const b = pts[i];
+      const dx = b[0] - a[0];
+      const dy = b[1] - a[1];
+      const dz = b[2] - a[2];
+      const len = Math.hypot(dx, dy, dz);
+      if (!(len > 0)) continue;
+      let left = len;
+      let s0 = 0;
+      while (left > 1e-6) {
+        const phase = acc % period;
+        const on = phase < dash;
+        const room = on ? (dash - phase) : (period - phase);
+        if (!(room > 1e-6)) break;
+        const take = Math.min(left, room);
+        const s1 = s0 + take / len;
+        if (on) {
+          if (!drawing.length) drawing.push([a[0] + dx * s0, a[1] + dy * s0, a[2] + dz * s0]);
+          drawing.push([a[0] + dx * s1, a[1] + dy * s1, a[2] + dz * s1]);
+        } else if (drawing.length) {
+          flush();
+        }
+        acc += take;
+        left -= take;
+        s0 = s1;
+      }
+    }
+    flush();
+  }
+  function behindPoint(p, n) {
+    const depth = p[0] * n.x + p[1] * n.y + p[2] * n.z;
+    const off = p[0] * p[0] + p[1] * p[1] + p[2] * p[2] - depth * depth;
+    if (off >= earthR * earthR) return false;
+    return depth < Math.sqrt(Math.max(0, earthR * earthR - off));
+  }
+  function ellipsePoints(rp, ra) {
+    if (!(ra > 0) || !(rp > 0)) return [];
+    const a = 0.5 * (rp + ra);
+    const e = (ra - rp) / (ra + rp);
+    const pts = [];
+    const n = 240;
+    for (let k = 0; k <= n; k += 1) {
+      const nu = -Math.PI + (2 * Math.PI * k) / n;
+      const denom = 1 + e * Math.cos(nu);
+      if (denom <= 1e-8) continue;
+      const rad = (a * (1 - e * e)) / denom;
+      if (rad > 0) pts.push([rad * Math.cos(nu), 0, rad * Math.sin(nu)]);
+    }
+    return pts;
+  }
+  function drawSplit(pts, color) {
+    const n = new THREE.Vector3().subVectors(camera.position, target).normalize();
+    let run = [];
+    let far = null;
+    function flushRun() {
+      if (run.length > 1) {
+        if (far) addDashed(run, color);
+        else addSolid(run, color);
+      }
+      run = [];
+    }
+    for (let i = 0; i < pts.length; i += 1) {
+      const flag = behindPoint(pts[i], n);
+      if (far !== null && flag !== far) {
+        run.push(pts[i]);
+        flushRun();
+      }
+      far = flag;
+      run.push(pts[i]);
+    }
+    flushRun();
+  }
+  function place(nu, rp, ra) {
+    const a = 0.5 * (rp + ra);
+    const e = Math.abs(ra + rp) < 1e-9 ? 0 : (ra - rp) / (ra + rp);
+    const denom = 1 + e * Math.cos(nu);
+    const rad = denom <= 1e-8 ? a : (a * (1 - e * e)) / denom;
+    return { x: rad * Math.cos(nu), y: 0, z: rad * Math.sin(nu), r: rad };
+  }
+  const coastPts = [];
+  if (data.closed) {
+    const nu0 = data.nu;
+    for (let k = 0; k <= 90; k += 1) {
+      const nu = nu0 + (Math.PI - nu0) * (k / 90);
+      const s = place(nu, data.rp, data.ra);
+      if (s.r < earthR) {
+        if (coastPts.length) break;
+        continue;
+      }
+      coastPts.push(s);
+    }
+  } else {
+    ((data.coast && data.coast[0]) || []).forEach(function (p) {
+      coastPts.push({ x: p[0], y: p[1], z: p[2], r: Math.hypot(p[0], p[1], p[2]) });
+    });
+  }
+  if (!coastPts.length) coastPts.push({ x: start[0], y: start[1], z: start[2], r: earthR });
+
+  let drawnKey = "";
+  let curveRp = data.rp;
+  let curveColor = 0xb9770e;
+  function showCurve(rpNow, color) {
+    curveRp = rpNow;
+    curveColor = color;
+    if (data.closed) {
+      peri.position.set(rpNow, 0, 0);
+      peri.visible = true;
+    }
+  }
+  function drawOrbit() {
+    const key = curveColor + ":" + curveRp.toFixed(1) + ":" + yaw.toFixed(2) + ":" + pitch.toFixed(2) + ":" + radius.toFixed(0);
+    if (key === drawnKey) return;
+    drawnKey = key;
+    clearGroup(orbitGroup);
+    const pts = data.closed ? ellipsePoints(curveRp, data.ra) : ((data.coast && data.coast[0]) || []);
+    drawSplit(pts, curveColor);
+  }
+
+  const hud = document.createElement("div");
+  hud.id = "hud";
+  const play = document.createElement("button");
+  play.type = "button";
+  play.textContent = "Pause";
+  const readout = document.createElement("div");
+  readout.style.whiteSpace = "pre-line";
+  hud.appendChild(play);
+  hud.appendChild(readout);
+  legend.appendChild(hud);
+  let playing = true;
+  let elapsed = 0;
+  const coastSec = 6.5;
+  const burnSec = 7.5;
+  const holdSec = 2.5;
+  const loop = coastSec + burnSec + holdSec;
+  play.addEventListener("click", function () {
+    playing = !playing;
+    play.textContent = playing ? "Pause" : "Play";
+  });
+  let drag = null;
+  renderer.domElement.addEventListener("pointerdown", function (ev) {
+    drag = { x: ev.clientX, y: ev.clientY, yaw: yaw, pitch: pitch };
+  });
+  window.addEventListener("pointerup", function () { drag = null; });
+  window.addEventListener("pointermove", function (ev) {
+    if (!drag) return;
+    yaw = drag.yaw - (ev.clientX - drag.x) * 0.005;
+    pitch = Math.max(-1.2, Math.min(1.2, drag.pitch + (ev.clientY - drag.y) * 0.005));
+  });
+  renderer.domElement.addEventListener("wheel", function (ev) {
+    ev.preventDefault();
+    radius *= ev.deltaY > 0 ? 1.08 : 0.92;
+    radius = Math.max(radiusHome * 0.2, Math.min(radius, radiusHome * 6));
+  }, { passive: false });
+  function placeCamera() {
+    const cp = Math.cos(pitch);
+    camera.position.set(
+      target.x + radius * cp * Math.sin(yaw),
+      target.y + radius * Math.sin(pitch),
+      target.z + radius * cp * Math.cos(yaw)
+    );
+    camera.lookAt(target);
+  }
+  let last = performance.now();
+  function along(u) {
+    const n = coastPts.length;
+    if (n < 1) return;
+    const clamped = Math.max(0, Math.min(0.999999, u));
+    const f = clamped * (n - 1);
+    const i = Math.floor(f);
+    const t = f - i;
+    const a = coastPts[i];
+    const b = coastPts[Math.min(i + 1, n - 1)];
+    vehicle.position.set(a.x + (b.x - a.x) * t, a.y + (b.y - a.y) * t, a.z + (b.z - a.z) * t);
+  }
+  function frame() {
+    const now = performance.now();
+    const dt = Math.max(0, Math.min(0.05, (now - last) / 1000));
+    last = now;
+    if (playing) elapsed = (elapsed + dt) % loop;
+    let rpNow = data.rp;
+    let label = "Suborbital coast";
+    if (!data.closed) {
+      const u = (elapsed % (coastSec + holdSec)) / coastSec;
+      along(u);
+      showCurve(data.rp, 0xb9770e);
+      label = "Not a closed orbit";
+    } else if (elapsed < coastSec) {
+      along(elapsed / coastSec);
+      showCurve(data.rp, 0xb9770e);
+      label = "Suborbital coast";
+    } else {
+      const s = Math.min(1, (elapsed - coastSec) / burnSec);
+      rpNow = data.rp + s * (data.rCirc - data.rp);
+      const at = place(Math.PI, Math.max(rpNow, 1), data.ra);
+      vehicle.position.set(at.x, at.y, at.z);
+      showCurve(rpNow, s > 0.92 ? 0x1e8449 : 0xb9770e);
+      label = s >= 1 ? data.finalName : "Orbital insertion";
+    }
+    const alt = (Math.hypot(vehicle.position.x, vehicle.position.y, vehicle.position.z) - earthR);
+    readout.textContent = label + "\naltitude " + alt.toFixed(0) + " km";
+    placeCamera();
+    drawOrbit();
+    renderer.render(scene, camera);
+    requestAnimationFrame(frame);
+  }
+  function resize() {
+    const w = viewport.clientWidth || 800;
+    const h = viewport.clientHeight || 600;
+    camera.aspect = w / Math.max(h, 1);
+    camera.updateProjectionMatrix();
+    renderer.setSize(w, h);
+  }
+  window.addEventListener("resize", resize);
+  resize();
+  placeCamera();
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

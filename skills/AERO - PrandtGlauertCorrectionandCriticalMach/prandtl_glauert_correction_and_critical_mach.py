@@ -23,13 +23,18 @@ M_LO = 1.0e-8
 M_HI = 1.0 - 1.0e-10
 
 SKILL_DIR = Path(__file__).resolve().parent
+NACA_DIR = SKILL_DIR.parent / "AERO - NACAFourDigitSection"
 
 ASSUMPTIONS = (
     "calorically perfect gas; steady inviscid shock-free subsonic flow; "
     "two-dimensional Prandtl-Glauert from NACA TN 1127: "
     "prandtl_glauert_factor beta = sqrt(1 - M**2), "
-    "prandtl_glauert_coefficient C = C0/beta for lift or pressure; "
+    "prandtl_glauert_coefficient C = C0/beta for lift, moment, or pressure; "
+    "drag is not divided by beta; an uncorrected Cd stays incompressible; "
     "that 1/beta factor is not a three-dimensional correction; "
+    "user coefficients are used as given; a NACA designation uses the "
+    "Report 824 lookup in AERO - NACAFourDigitSection and does not fall "
+    "back to 2*pi*alpha; "
     "critical_pressure_coefficient is pressure_coefficient_from_mach at "
     "local Mach 1 on an isentropic streamline from sonic_pressure and "
     "stagnation_pressure; "
@@ -109,11 +114,37 @@ def critical_mach(cp0_min: float, gamma: float) -> float:
     return 0.5 * (lo + hi)
 
 
+def load_naca():
+    folder = str(NACA_DIR)
+    if folder not in sys.path:
+        sys.path.insert(0, folder)
+    import naca_four_digit_section as naca
+
+    return naca
+
+
+def naca_coefficients(designation: str, alpha_rad: float, reynolds: float | None) -> tuple[float, float, float]:
+    """Incompressible cl, cd, and cm from the Report 824 lookup. No 2*pi*alpha fallback."""
+    if not math.isfinite(alpha_rad):
+        raise ValueError("angle of attack must be finite")
+    naca = load_naca()
+    digits = naca.parse_designation(designation)
+    polar = naca.polar_for(digits, naca.load_catalog(), reynolds)
+    alpha_deg = math.degrees(alpha_rad)
+    return (
+        naca.cl_at(polar, alpha_deg),
+        naca.cd_at(polar, alpha_deg),
+        naca.cm_at(polar, alpha_deg),
+    )
+
+
 def require_inputs(
     mach: float,
     gamma: float,
     cl0: float | None,
     cp0_min: float | None,
+    cm0: float | None = None,
+    cd0: float | None = None,
 ) -> None:
     if not math.isfinite(mach) or not math.isfinite(gamma):
         raise ValueError("Mach and gamma must be finite")
@@ -121,12 +152,16 @@ def require_inputs(
         raise ValueError("freestream Mach must satisfy 0 <= M < 1")
     if gamma <= 1.0:
         raise ValueError("gamma must be > 1")
-    if cl0 is None and cp0_min is None:
-        raise ValueError("requires --cl-inc and/or --cpmin-inc")
-    if cl0 is not None and not math.isfinite(cl0):
-        raise ValueError("incompressible lift coefficient must be finite")
-    if cp0_min is not None and not math.isfinite(cp0_min):
-        raise ValueError("incompressible minimum pressure coefficient must be finite")
+    if cl0 is None and cp0_min is None and cm0 is None and cd0 is None:
+        raise ValueError("requires a coefficient or --naca")
+    for name, value in (
+        ("incompressible lift coefficient", cl0),
+        ("incompressible moment coefficient", cm0),
+        ("incompressible drag coefficient", cd0),
+        ("incompressible minimum pressure coefficient", cp0_min),
+    ):
+        if value is not None and not math.isfinite(value):
+            raise ValueError(f"{name} must be finite")
 
 
 def correction_state(
@@ -134,11 +169,15 @@ def correction_state(
     gamma: float,
     cl0: float | None,
     cp0_min: float | None,
+    cm0: float | None = None,
+    cd0: float | None = None,
+    coeff_source: str | None = None,
 ) -> dict[str, float | str | None]:
-    require_inputs(mach, gamma, cl0, cp0_min)
+    require_inputs(mach, gamma, cl0, cp0_min, cm0, cd0)
     beta = prandtl_glauert_factor(mach)
     cp_crit_m = critical_pressure_coefficient(gamma, mach) if mach > 0.0 else None
     cl = prandtl_glauert_coefficient(cl0, mach) if cl0 is not None else None
+    cm = prandtl_glauert_coefficient(cm0, mach) if cm0 is not None else None
     cp_min = (
         prandtl_glauert_coefficient(cp0_min, mach) if cp0_min is not None else None
     )
@@ -156,11 +195,16 @@ def correction_state(
         "beta": beta,
         "CL0": cl0,
         "CL": cl,
+        "Cm0": cm0,
+        "Cm": cm,
+        "Cd0": cd0,
+        "Cd": cd0,
         "Cp0_min": cp0_min,
         "Cp_min": cp_min,
         "Cp_crit": cp_crit_m,
         "M_cr": m_cr,
         "supercritical": supercritical,
+        "coeff_source": coeff_source,
     }
 
 
@@ -170,9 +214,18 @@ def emit(result: dict[str, float | str | None], gamma_source: str, graph: Path) 
     print_kv("gamma", result["gamma"])
     print_kv("gamma_source", gamma_source)
     print_kv("beta", result["beta"])
+    if result["coeff_source"] is not None:
+        print_kv("coeff_source", result["coeff_source"])
     if result["CL0"] is not None:
         print_kv("CL0", result["CL0"])
         print_kv("CL", result["CL"])
+    if result["Cm0"] is not None:
+        print_kv("Cm0", result["Cm0"])
+        print_kv("Cm", result["Cm"])
+    if result["Cd0"] is not None:
+        print_kv("Cd0", result["Cd0"])
+        print_kv("Cd", result["Cd"])
+        print_kv("cd_source", "incompressible")
     if result["Cp0_min"] is not None:
         print_kv("Cp0_min", result["Cp0_min"])
         print_kv("Cp_min", result["Cp_min"])
@@ -199,13 +252,16 @@ def write_plot(
     mach = float(result["M"])
     gamma = float(result["gamma"])
     cl0 = result["CL0"]
+    cm0 = result["Cm0"]
     cp0_min = result["Cp0_min"]
     m_cr = result["M_cr"]
-    has_cl = cl0 is not None
+    cd0 = result["Cd0"]
+    has_force = cl0 is not None or cm0 is not None
     has_cp = cp0_min is not None
-    n_rows = int(has_cl) + int(has_cp)
+    has_cd_only = cd0 is not None and not has_force and not has_cp
+    n_rows = int(has_force) + int(has_cp) + int(has_cd_only)
     if n_rows == 0:
-        raise ValueError("plot requires --cl-inc and/or --cpmin-inc")
+        raise ValueError("plot requires a lift, moment, drag, or minimum pressure coefficient")
 
     m_grid = [i / (N_CURVE - 1) * 0.98 for i in range(N_CURVE)]
     m_grid[0] = 1.0e-4
@@ -214,13 +270,34 @@ def write_plot(
     if n_rows == 1:
         axes = [axes]
     row = 0
-    if has_cl:
+    if has_force:
         ax = axes[row]
-        cl_vals = [prandtl_glauert_coefficient(float(cl0), m) for m in m_grid]
-        ax.plot(m_grid, cl_vals, color="C0", label=r"$C_L = C_{L0}/\beta$")
-        ax.axhline(float(cl0), color="0.5", linestyle=":", label=r"$C_{L0}$")
-        ax.plot(mach, float(result["CL"]), "s", color="C0")
-        ax.set_ylabel(r"$C_L$")
+        if cl0 is not None:
+            cl_vals = [prandtl_glauert_coefficient(float(cl0), m) for m in m_grid]
+            ax.plot(m_grid, cl_vals, color="C0", label=r"$C_L = C_{L0}/\beta$")
+            ax.axhline(float(cl0), color="0.5", linestyle=":", label=r"$C_{L0}$")
+            ax.plot(mach, float(result["CL"]), "s", color="C0")
+            ax.set_ylabel(r"$C_L$")
+        handles, labels = ax.get_legend_handles_labels()
+        if cm0 is not None:
+            cm_axis = ax.twinx() if cl0 is not None else ax
+            cm_vals = [prandtl_glauert_coefficient(float(cm0), m) for m in m_grid]
+            cm_line = cm_axis.plot(m_grid, cm_vals, color="C1", label=r"$c_m = c_{m0}/\beta$")
+            cm_axis.plot(mach, float(result["Cm"]), "s", color="C1")
+            cm_axis.set_ylabel(r"$c_m$")
+            if cl0 is None:
+                ax.set_ylabel(r"$c_m$")
+            handles = handles + cm_line
+            labels = labels + [r"$c_m = c_{m0}/\beta$"]
+        if handles:
+            ax.legend(handles, labels, loc="best", frameon=False)
+        ax.grid(True, alpha=0.3)
+        row += 1
+    if has_cd_only:
+        ax = axes[row]
+        ax.axhline(float(cd0), color="C0", label=r"$c_d$ incompressible")
+        ax.plot(mach, float(cd0), "s", color="C0")
+        ax.set_ylabel(r"$c_d$")
         ax.legend(loc="best", frameon=False)
         ax.grid(True, alpha=0.3)
         row += 1
@@ -298,6 +375,29 @@ def run_check() -> int:
         return fail("compressible lift is not CL0/beta")
     if not close(float(state["Cp_min"]), -0.5):
         return fail("compressible Cp_min is not -1/2")
+    moment = correction_state(0.6, gamma, None, None, cm0=-0.04, cd0=0.008, coeff_source="user")
+    if not close(float(moment["Cm"]), -0.04 / 0.8):
+        return fail("moment was not divided by beta")
+    if not close(float(moment["Cd"]), 0.008):
+        return fail("drag was divided by beta")
+    if moment["coeff_source"] != "user":
+        return fail("user coefficient source")
+    try:
+        cl_naca, cd_naca, cm_naca = naca_coefficients("0012", 0.0, None)
+    except ValueError as exc:
+        return fail(f"NACA lookup: {exc}")
+    naca_state = correction_state(
+        0.6, gamma, cl_naca, None, cm0=cm_naca, cd0=cd_naca, coeff_source="naca"
+    )
+    if not close(float(naca_state["CL"]), cl_naca / 0.8):
+        return fail("NACA lift was not divided by beta")
+    if not close(float(naca_state["Cd"]), cd_naca):
+        return fail("NACA drag was corrected")
+    try:
+        naca_coefficients("9999", 0.0, None)
+        return fail("unknown NACA designation was accepted")
+    except ValueError:
+        pass
     if state["M_cr"] is None:
         return fail("critical Mach was omitted for a suction peak")
     if abs(critical_mach_residual(-0.4, float(state["M_cr"]), gamma)) > 1e-10:
@@ -349,10 +449,39 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         help="incompressible lift coefficient",
     )
     parser.add_argument(
+        "--cm-inc",
+        type=float,
+        default=None,
+        help="incompressible section moment coefficient",
+    )
+    parser.add_argument(
+        "--cd-inc",
+        type=float,
+        default=None,
+        help="incompressible drag coefficient; not divided by beta",
+    )
+    parser.add_argument(
         "--cpmin-inc",
         type=float,
         default=None,
         help="incompressible minimum pressure coefficient (suction, < 0)",
+    )
+    parser.add_argument(
+        "--naca",
+        default=None,
+        help="NACA four-digit designation in the Report 824 table",
+    )
+    parser.add_argument(
+        "--alpha",
+        type=float,
+        default=None,
+        help="angle of attack for --naca [rad]",
+    )
+    parser.add_argument(
+        "--re",
+        type=float,
+        default=None,
+        help="Reynolds number for --naca; omitted uses the nearest 6e6 chart",
     )
     parser.add_argument(
         "--gamma",
@@ -378,8 +507,27 @@ def main(argv: list[str] | None = None) -> int:
     if args.mach is None:
         print("error: requires --mach", file=sys.stderr)
         return 2
-    if args.cl_inc is None and args.cpmin_inc is None:
-        print("error: requires --cl-inc and/or --cpmin-inc", file=sys.stderr)
+    user_coeff = args.cl_inc is not None or args.cm_inc is not None or args.cd_inc is not None
+    if args.naca is not None and user_coeff:
+        print("error: do not pass --naca together with --cl-inc, --cm-inc, or --cd-inc", file=sys.stderr)
+        return 2
+    if args.naca is None and args.alpha is not None:
+        print("error: --alpha requires --naca", file=sys.stderr)
+        return 2
+    if args.naca is None and args.re is not None:
+        print("error: --re requires --naca", file=sys.stderr)
+        return 2
+    if args.naca is not None and args.alpha is None:
+        print("error: --naca requires --alpha", file=sys.stderr)
+        return 2
+    if (
+        args.naca is None
+        and args.cl_inc is None
+        and args.cm_inc is None
+        and args.cd_inc is None
+        and args.cpmin_inc is None
+    ):
+        print("error: requires a coefficient or --naca", file=sys.stderr)
         return 2
 
     if args.gamma is None:
@@ -389,8 +537,17 @@ def main(argv: list[str] | None = None) -> int:
         gamma = args.gamma
         gamma_source = "flag"
 
+    cl0 = args.cl_inc
+    cm0 = args.cm_inc
+    cd0 = args.cd_inc
+    coeff_source = "user" if user_coeff else None
     try:
-        result = correction_state(args.mach, gamma, args.cl_inc, args.cpmin_inc)
+        if args.naca is not None:
+            cl0, cd0, cm0 = naca_coefficients(args.naca, args.alpha, args.re)
+            coeff_source = "naca"
+        result = correction_state(
+            args.mach, gamma, cl0, args.cpmin_inc, cm0, cd0, coeff_source
+        )
     except ValueError as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2

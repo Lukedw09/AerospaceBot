@@ -15,5 +15,5 @@ Identities in [identities.md](identities.md) for the script records in [../formu
 Run the program self-check:
 
 ```text
-python "skills/CTRL - ProportionalNavigation/proportional_navigation.py" --check
+python "skills/GNC - ProportionalNavigation/proportional_navigation.py" --check
 ```

@@ -37,6 +37,7 @@ FUNCTIONS = {
     "atan": math.atan,
     "asin": math.asin,
     "acos": math.acos,
+    "tanh": math.tanh,
     "abs": abs,
 }
 CONSTANTS = {"pi": math.pi, "e": math.e}
