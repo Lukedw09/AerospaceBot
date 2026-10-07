@@ -938,4 +938,4 @@ SI is the working system (Pa, m², N). Skills convert other units before calling
 
 ## License
 
-This project is licensed under the [MIT License](LICENSE).
+Proprietary. See [LICENSE](LICENSE). All rights reserved; no open-source license is granted.
