@@ -1,6 +1,93 @@
 # Reference sources
 
-Public-domain and U.S. government publications used for AerospaceBot equations, constants, and small physics programs. Entries were screened on 3–4 October 2026. Ground-track, Greenwich, and geodetic-ellipsoid sources were added on 4 October 2026. Coplanar three-impulse circular-orbit transfer geometry was added on 5 October 2026. Powered-ascent gravity, drag, and steering losses from a spherical body, with a constant flight-path-angle closed form and a gravity-turn kick, were added on 5 October 2026. First-order \(J_2\) secular rates and sun-synchronous inclination from V34, with \(J_2\) from V30, were added on 5 October 2026. Hyperbolic excess speed, characteristic energy \(C_3\), and the hyperbola asymptote from V16 and V53 were added on 5 October 2026. Classical Laplace sphere-of-influence radius from V56, with patched-conic usage from V57, were added on 5 October 2026. Circular-cone Taylor–Maccoll sources were added on 4 October 2026. Moist-air and humidity sources were added on 4 October 2026. NACA four-digit section and thin-airfoil sources were added on 4 October 2026. Ideal actuator-disk propeller sources were added on 4 October 2026. Steady-glide angle, range, and sink-rate sources were added on 5 October 2026. Takeoff ground-roll sources were added on 5 October 2026. Landing ground-roll sources were added on 5 October 2026. Steady climb rate, climb angle, and service-ceiling cutoff sources were added on 5 October 2026. Symmetric pull-up radius, pitch rate, and load factor from V58 were added on 5 October 2026. Pure beam bending stress and elastic section modulus from V59, with the section-modulus definition restated in V60, were added on 5 October 2026. Elastic Euler column buckling load, effective length, end-fixity coefficient, radius of gyration, and critical stress from V59, V80, and V81 were added on 5 October 2026. Elastic circular-shaft torsion (polar second moment, shear, and twist) from V81, with supporting circular torsion context in V80, was added on 5 October 2026. Stagnation-point convective heating for Earth air from V61, with the cold-wall freestream-density form derived from that coefficient and radiative-equilibrium wall temperature from V62 and V6, were added on 5 October 2026. Nonlifting ballistic-entry peak deceleration and altitude in an exponential atmosphere (Allen–Eggers) from V83, with the same closed form restated in V84, were added on 5 October 2026. Lumped thermal-capacitance transient under convection, Biot number \(\mathrm{Bi}=h L_c/k\), and the Bi ≪ 1 (Bi ≤ 0.1) validity limit from V87 and V89, with the Heisler / distributed-conduction limit discussion from V88, were added on 5 October 2026. Rigid-assembly center of mass, parallel-axis inertia transfer, and composite inertia tensor from V63 and V64 were added on 5 October 2026. Vacuum free-space link budget, circular-aperture antenna gain, thermal noise \(kTB\), carrier-to-noise, and \(E_b/N_0\) from V69–V72, with \(c\) and \(k\) from V6, were added on 5 October 2026. Spacecraft solar-array cosine irradiance, packing, inherent and life degradation, and circular-orbit eclipse fraction from V65–V68 were added on 5 October 2026. Spacecraft battery energy budget, depth of discharge, charge and discharge efficiencies, and orbit energy-balance sizing from V82 were added on 5 October 2026. Linear second-order step-response metrics (damped frequency, overshoot, peak time, envelope settling) from V73–V76 were added on 5 October 2026. Planar true proportional navigation commanded acceleration \(a_c=N' V_c\dot{\lambda}\) and closing-speed / LOS-rate definitions from V90, with planar PN engagement geometry from V91, were added on 5 October 2026. Ideal air-breathing Brayton turbojet cycle performance (specific thrust, TSFC, thermal/propulsive/overall efficiency) from V77–V79 was added on 5 October 2026. Ideal air-breathing Brayton ramjet (ram compression only) from V85, with shared burner/nozzle/efficiency definitions from V77–V78, was added on 5 October 2026. Uniform cantilever fundamental bending natural frequency from V86 was added on 5 October 2026. Injector orifice flow, injector-manifold pressure, feed-pressure summation with hydrostatic head, pump fluid and shaft power, Bartz gas-side heat transfer, and regenerative coolant capacity from V8 (NASA SP-125) were added on 5 October 2026. Hohmann target lead angle and synodic period from V92, the inclined excess speed from the single-impulse magnitude in V46, and solar-system body constants from V93 were added on 5 October 2026. Species mass density above 86 km from V4 and V5, spacecraft radiative balance from V62 and V66, duty-cycled electrical load from V82, drag delta-v per revolution from V10 and V16, vacuum propellant from V7, pass data volume from V72, and environmental torques and principal-axis momentum from V94–V97 were added on 5 October 2026. Design-point inlet recovery, isentropic component efficiencies, afterburner fuel flow, separate-stream turbofan thrust, and airflow sizing from V98 and V99 were added on 6 October 2026. Stage payload ratio, structural coefficient, and the Glenn mass-ratio identity from V100, linear stage structure mass from V101, and launch inclination, launch azimuth, and Earth-rotation assist from V102 were added on 6 October 2026. Coplanar circular phasing from V16 and V92, planar Clohessy–Wiltshire motion from V105, electric-propulsion burn time and input power from V7 and V107, Marshall–Palmer rain attenuation from V104, classical phugoid and short-period periods from V106, equilibrium-glide peak load from V103, thin-wall membrane stress accompanying NASA SP-8025, base-excitation transmissibility from V108, and single-axis reaction-wheel inertia from V94 were added on 7 October 2026. A MIL-E-5008B inlet Mach schedule was not added: the specification text was not in hand from a government host, and university restatements of that curve are not a source. Geostationary east–west removal \(2ve\) from V109, pressurant blowdown from V110, lateral slosh from V111, simply supported plate buckling from V112, Miles’ rms acceleration from V113, the Dutch-roll approximation from V114, and the elevation-mask Earth angle from V115 were added on 7 October 2026. Parachute terminal velocity from V116, a wide-plate critical half-length from V117, the scramjet diffuser-stop statement from V118, ideal turboprop shaft power from V119, a Hall beam current using the elementary charge in V6, stage-burn center-of-mass travel with V63, and the first-order \(J_2\) mean motion accompanying V34 were added on 7 October 2026.
+Public-domain and U.S. government publications used for AerospaceBot equations, constants, and small physics programs.
+
+## Changelog
+
+### 3–4 October 2026
+
+- Entries were screened.
+
+### 4 October 2026
+
+- Ground-track, Greenwich, and geodetic-ellipsoid sources.
+- Circular-cone Taylor–Maccoll sources.
+- Moist-air and humidity sources.
+- NACA four-digit section and thin-airfoil sources.
+- Ideal actuator-disk propeller sources.
+
+### 5 October 2026
+
+- Coplanar three-impulse circular-orbit transfer geometry.
+- Powered-ascent gravity, drag, and steering losses from a spherical body, with a constant flight-path-angle closed form and a gravity-turn kick.
+- First-order \(J_2\) secular rates and sun-synchronous inclination from V34, with \(J_2\) from V30.
+- Hyperbolic excess speed, characteristic energy \(C_3\), and the hyperbola asymptote from V16 and V53.
+- Classical Laplace sphere-of-influence radius from V56, with patched-conic usage from V57.
+- Steady-glide angle, range, and sink-rate sources.
+- Takeoff ground-roll sources.
+- Landing ground-roll sources.
+- Steady climb rate, climb angle, and service-ceiling cutoff sources.
+- Symmetric pull-up radius, pitch rate, and load factor from V58.
+- Pure beam bending stress and elastic section modulus from V59, with the section-modulus definition restated in V60.
+- Elastic Euler column buckling load, effective length, end-fixity coefficient, radius of gyration, and critical stress from V59, V80, and V81.
+- Elastic circular-shaft torsion (polar second moment, shear, and twist) from V81, with supporting circular torsion context in V80.
+- Stagnation-point convective heating for Earth air from V61, with the cold-wall freestream-density form derived from that coefficient and radiative-equilibrium wall temperature from V62 and V6.
+- Nonlifting ballistic-entry peak deceleration and altitude in an exponential atmosphere (Allen–Eggers) from V83, with the same closed form restated in V84.
+- Lumped thermal-capacitance transient under convection, Biot number \(\mathrm{Bi}=h L_c/k\), and the Bi ≪ 1 (Bi ≤ 0.1) validity limit from V87 and V89, with the Heisler / distributed-conduction limit discussion from V88.
+- Rigid-assembly center of mass, parallel-axis inertia transfer, and composite inertia tensor from V63 and V64.
+- Vacuum free-space link budget, circular-aperture antenna gain, thermal noise \(kTB\), carrier-to-noise, and \(E_b/N_0\) from V69–V72, with \(c\) and \(k\) from V6.
+- Spacecraft solar-array cosine irradiance, packing, inherent and life degradation, and circular-orbit eclipse fraction from V65–V68.
+- Spacecraft battery energy budget, depth of discharge, charge and discharge efficiencies, and orbit energy-balance sizing from V82.
+- Linear second-order step-response metrics (damped frequency, overshoot, peak time, envelope settling) from V73–V76.
+- Planar true proportional navigation commanded acceleration \(a_c=N' V_c\dot{\lambda}\) and closing-speed / LOS-rate definitions from V90, with planar PN engagement geometry from V91.
+- Ideal air-breathing Brayton turbojet cycle performance (specific thrust, TSFC, thermal/propulsive/overall efficiency) from V77–V79.
+- Ideal air-breathing Brayton ramjet (ram compression only) from V85, with shared burner/nozzle/efficiency definitions from V77–V78.
+- Uniform cantilever fundamental bending natural frequency from V86.
+- Injector orifice flow, injector-manifold pressure, feed-pressure summation with hydrostatic head, pump fluid and shaft power, Bartz gas-side heat transfer, and regenerative coolant capacity from V8 (NASA SP-125).
+- Hohmann target lead angle and synodic period from V92.
+- Inclined excess speed from the single-impulse magnitude in V46.
+- Solar-system body constants from V93.
+- Species mass density above 86 km from V4 and V5.
+- Spacecraft radiative balance from V62 and V66.
+- Duty-cycled electrical load from V82.
+- Drag delta-v per revolution from V10 and V16.
+- Vacuum propellant from V7.
+- Pass data volume from V72.
+- Environmental torques and principal-axis momentum from V94–V97.
+
+### 6 October 2026
+
+- Design-point inlet recovery, isentropic component efficiencies, afterburner fuel flow, separate-stream turbofan thrust, and airflow sizing from V98 and V99.
+- Stage payload ratio, structural coefficient, and the Glenn mass-ratio identity from V100.
+- Linear stage structure mass from V101.
+- Launch inclination, launch azimuth, and Earth-rotation assist from V102.
+
+### 7 October 2026
+
+- Coplanar circular phasing from V16 and V92.
+- Planar Clohessy–Wiltshire motion from V105.
+- Electric-propulsion burn time and input power from V7 and V107.
+- Marshall–Palmer rain attenuation from V104.
+- Classical phugoid and short-period periods from V106.
+- Equilibrium-glide peak load from V103.
+- Thin-wall membrane stress accompanying NASA SP-8025.
+- Base-excitation transmissibility from V108.
+- Single-axis reaction-wheel inertia from V94.
+- Not added: a MIL-E-5008B inlet Mach schedule. The specification text was not in hand from a government host, and university restatements of that curve are not a source.
+- Geostationary east–west removal \(2ve\) from V109.
+- Pressurant blowdown from V110.
+- Lateral slosh from V111.
+- Simply supported plate buckling from V112.
+- Miles’ rms acceleration from V113.
+- Dutch-roll approximation from V114.
+- Elevation-mask Earth angle from V115.
+- Parachute terminal velocity from V116.
+- Wide-plate critical half-length from V117.
+- Scramjet diffuser-stop statement from V118.
+- Ideal turboprop shaft power from V119.
+- Hall beam current using the elementary charge in V6.
+- Stage-burn center-of-mass travel with V63.
+- First-order \(J_2\) mean motion accompanying V34.
 
 Works of U.S. federal employees, prepared as official duties, are not protected by copyright in the United States (17 U.S.C. § 105). NTRS records marked “Work of the US Gov. Public Use Permitted” are accepted when the item is an official NACA or NASA report, TM, SP, or RP, or when the authors are NASA, NACA, NOAA, FAA, or NIST employees. NASA Glenn educational pages that state they were developed in the public domain are included on that basis.
 

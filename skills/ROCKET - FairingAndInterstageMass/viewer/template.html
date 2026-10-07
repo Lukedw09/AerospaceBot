@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>__TITLE__</title>
+<style>
+  :root { color-scheme: light; --ink: #1b2631; --muted: #34495e; --line: #d5d8dc; --paper: #f4f7f8; }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; background: var(--paper); color: var(--ink); font-family: "Segoe UI", Helvetica, Arial, sans-serif; }
+  body { overflow: hidden; }
+  #app { height: 100%; display: flex; flex-direction: column; }
+  header { padding: 12px 16px 8px; }
+  h1 { margin: 0; font-size: 20px; font-weight: 560; }
+  #units { margin: 4px 0 0; color: var(--muted); font-size: 13px; }
+  #stage { flex: 1; min-height: 0; display: flex; }
+  #viewport { flex: 1; min-width: 0; position: relative; }
+  #legend { width: 260px; margin: 0 12px 12px 0; background: #fff; border: 1px solid var(--line); padding: 12px 14px; overflow: auto; font-size: 13px; }
+  #legend h2 { margin: 0 0 8px; font-size: 13px; }
+  .row { display: flex; align-items: center; gap: 8px; margin: 6px 0; }
+  .swatch { width: 14px; height: 14px; border-radius: 2px; flex: 0 0 auto; border: 1px solid rgba(27, 38, 49, 0.15); }
+  #hud { margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--line); color: var(--muted); }
+  button { margin-right: 8px; }
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <h1>__TITLE__</h1>
+    <p id="units"></p>
+  </header>
+  <div id="stage">
+    <div id="viewport"></div>
+    <aside id="legend"><h2>Legend</h2></aside>
+  </div>
+</div>
+<script>
+__THREE_SOURCE__
+</script>
+<script type="application/json" id="scene-json">__SCENE_JSON__</script>
+<script>
+(function () {
+  const data = JSON.parse(document.getElementById("scene-json").textContent);
+  const viewport = document.getElementById("viewport");
+  const legend = document.getElementById("legend");
+  document.getElementById("units").textContent = data.units || "Drag to rotate. Scroll to zoom.";
+  const renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.setSize(viewport.clientWidth, viewport.clientHeight);
+  renderer.setClearColor(0xf4f7f8, 1);
+  viewport.appendChild(renderer.domElement);
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(40, 1, 0.01, 1e7);
+  const cam = data.camera || { position: [2.4, 1.6, 1.8], target: [0, 0, 0] };
+  const target = new THREE.Vector3(cam.target[0], cam.target[1], cam.target[2]);
+  camera.position.set(cam.position[0], cam.position[1], cam.position[2]);
+  camera.lookAt(target);
+  let radius = camera.position.distanceTo(target);
+  const radiusHome = radius;
+  let yaw = Math.atan2(camera.position.x - target.x, camera.position.z - target.z);
+  let pitch = Math.asin(Math.max(-1, Math.min(1, (camera.position.y - target.y) / Math.max(radius, 1e-6))));
+
+  function row(color, text, object3d) {
+    const label = document.createElement("label");
+    label.className = "row";
+    const box = document.createElement("input");
+    box.type = "checkbox";
+    box.checked = true;
+    box.addEventListener("change", function () { object3d.visible = box.checked; });
+    const swatch = document.createElement("i");
+    swatch.className = "swatch";
+    swatch.style.background = color;
+    label.appendChild(box);
+    label.appendChild(swatch);
+    label.appendChild(document.createTextNode(text));
+    legend.appendChild(label);
+  }
+
+  (data.polylines || []).forEach(function (line) {
+    const geom = new THREE.BufferGeometry();
+    const arr = [];
+    (line.points || []).forEach(function (p) { arr.push(p[0], p[1], p[2]); });
+    if (line.closed && line.points && line.points.length) {
+      const p0 = line.points[0];
+      arr.push(p0[0], p0[1], p0[2]);
+    }
+    geom.setAttribute("position", new THREE.Float32BufferAttribute(arr, 3));
+    const material = new THREE.LineBasicMaterial({ color: line.color || "#1b2631" });
+    const mesh = new THREE.Line(geom, material);
+    scene.add(mesh);
+    row(line.color || "#1b2631", line.name || "line", mesh);
+  });
+  (data.spheres || []).forEach(function (ball) {
+    const mesh = new THREE.Mesh(
+      new THREE.SphereGeometry(ball.radius, 48, 32),
+      new THREE.MeshBasicMaterial({
+        color: ball.color || "#d4e6f1",
+        transparent: (ball.opacity == null ? 0.45 : ball.opacity) < 0.99,
+        opacity: ball.opacity == null ? 0.45 : ball.opacity,
+        depthWrite: (ball.opacity == null ? 0.45 : ball.opacity) > 0.9
+      })
+    );
+    mesh.position.set(ball.center[0], ball.center[1], ball.center[2]);
+    scene.add(mesh);
+    row(ball.color || "#d4e6f1", ball.name || "shape", mesh);
+  });
+  const path = data.path || [];
+  const marker = new THREE.Mesh(
+    new THREE.SphereGeometry(data.markerRadius || 0.035, 16, 12),
+    new THREE.MeshBasicMaterial({ color: data.markerColor || "#c0392b" })
+  );
+  if (path.length) {
+    marker.position.set(path[0][0], path[0][1], path[0][2]);
+    scene.add(marker);
+    row(data.markerColor || "#c0392b", data.markerLabel || "marker", marker);
+  }
+  const hud = document.createElement("div");
+  hud.id = "hud";
+  const play = document.createElement("button");
+  play.type = "button";
+  play.textContent = "Pause";
+  const readout = document.createElement("span");
+  hud.appendChild(play);
+  hud.appendChild(readout);
+  if (path.length > 1) legend.appendChild(hud);
+  let playing = path.length > 1;
+  let u = 0;
+  play.addEventListener("click", function () {
+    playing = !playing;
+    play.textContent = playing ? "Pause" : "Play";
+  });
+  let drag = null;
+  renderer.domElement.addEventListener("pointerdown", function (ev) {
+    drag = { x: ev.clientX, y: ev.clientY, yaw: yaw, pitch: pitch };
+  });
+  window.addEventListener("pointerup", function () { drag = null; });
+  window.addEventListener("pointermove", function (ev) {
+    if (!drag) return;
+    yaw = drag.yaw - (ev.clientX - drag.x) * 0.005;
+    pitch = Math.max(-1.2, Math.min(1.2, drag.pitch + (ev.clientY - drag.y) * 0.005));
+  });
+  renderer.domElement.addEventListener("wheel", function (ev) {
+    ev.preventDefault();
+    radius *= ev.deltaY > 0 ? 1.08 : 0.92;
+    radius = Math.max(radiusHome * 0.2, Math.min(radius, radiusHome * 6));
+  }, { passive: false });
+  function placeCamera() {
+    const cp = Math.cos(pitch);
+    camera.position.set(
+      target.x + radius * cp * Math.sin(yaw),
+      target.y + radius * Math.sin(pitch),
+      target.z + radius * cp * Math.cos(yaw)
+    );
+    camera.lookAt(target);
+  }
+  function frame() {
+    if (playing && path.length > 1) {
+      u = (u + 0.0025) % 1;
+      const f = u * (path.length - 1);
+      const i = Math.floor(f);
+      const t = f - i;
+      const a = path[i];
+      const b = path[Math.min(i + 1, path.length - 1)];
+      marker.position.set(a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t);
+      readout.textContent = (data.markerLabel || "marker") + " " + (100 * u).toFixed(0) + "%";
+    }
+    placeCamera();
+    renderer.render(scene, camera);
+    requestAnimationFrame(frame);
+  }
+  function resize() {
+    const w = viewport.clientWidth || 800;
+    const h = viewport.clientHeight || 600;
+    camera.aspect = w / Math.max(h, 1);
+    camera.updateProjectionMatrix();
+    renderer.setSize(w, h);
+  }
+  window.addEventListener("resize", resize);
+  resize();
+  placeCamera();
+  frame();
+})();
+</script>
+</body>
+</html>

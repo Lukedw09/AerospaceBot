@@ -13,8 +13,9 @@ from dataclasses import dataclass
 from pathlib import Path
 
 SKILL_DIR = Path(__file__).resolve().parent
-if str(SKILL_DIR.parent) not in sys.path:
-    sys.path.insert(0, str(SKILL_DIR.parent))
+CHART_DIR = SKILL_DIR.parents[1] / "app" / "tests"
+if str(CHART_DIR) not in sys.path:
+    sys.path.insert(0, str(CHART_DIR))
 import leo_chart  # noqa: E402
 
 PLOT_TITLE = "Vehicle mass budget"
