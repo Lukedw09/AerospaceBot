@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import ast
+import json
 import os
 import shutil
 import subprocess
@@ -29,6 +30,24 @@ def _argument_value(arguments: dict[str, object], flag: Flag) -> object:
     return None
 
 
+def _jsonable(value: object) -> object:
+    dump = getattr(value, "model_dump", None)
+    if callable(dump):
+        return dump()
+    if isinstance(value, list | tuple):
+        return [_jsonable(item) for item in value]
+    if isinstance(value, dict):
+        return {str(key): _jsonable(item) for key, item in value.items()}
+    return value
+
+
+def _cli_text(raw: object) -> str:
+    """Lists and objects become JSON so a native bank schedule stays valid."""
+    if isinstance(raw, list | tuple | dict) or callable(getattr(raw, "model_dump", None)):
+        return json.dumps(_jsonable(raw), separators=(",", ":"))
+    return str(raw)
+
+
 def _coerce(flag: Flag, raw: object) -> list[str]:
     if raw is None or raw is False:
         return []
@@ -38,9 +57,9 @@ def _coerce(flag: Flag, raw: object) -> list[str]:
         values = raw if isinstance(raw, list) else [raw]
         args: list[str] = []
         for value in values:
-            args.extend([flag.option, str(value)])
+            args.extend([flag.option, _cli_text(value)])
         return args
-    return [flag.option, str(raw)]
+    return [flag.option, _cli_text(raw)]
 
 
 # Stdout keys whose values are downloadable result files (PNG, HTML, tables).
@@ -118,6 +137,11 @@ def _radial_doppler_rejects_plot(help_text: str, arguments: dict[str, object]) -
         or _given(arguments, "elev_min")
     )
     return radial and not orbit
+
+
+def _omit_unrequested_plot(tool_name: str, option: str, arguments: dict[str, object]) -> bool:
+    """lifting_entry_trajectory writes a PNG only when out is passed."""
+    return tool_name == "lifting_entry_trajectory" and option == "--out" and not _given(arguments, "out")
 
 
 def _skips_injected_plot(help_text: str, arguments: dict[str, object]) -> bool:
@@ -225,6 +249,8 @@ def run_tool(
     for flag in tool.flags:
         argv.extend(_coerce(flag, _argument_value(arguments, flag)))
     for option, help_text in _output_flags(tool.script):
+        if _omit_unrequested_plot(tool.name, option, arguments):
+            continue
         if _skips_injected_plot(help_text, arguments):
             continue
         argv.extend([option, str(_output_path(job_dir, option, help_text))])

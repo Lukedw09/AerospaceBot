@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import math
 import os
 import shutil
@@ -16,7 +17,14 @@ from app.catalog import load_catalog, repo_root_from, tool_by_name
 from app.config import Settings
 from app.formulas import lookup_formula
 from app.runner import _output_path, result_root_for, run_tool
-from app.server import INSTRUCTIONS, _Guard, build_server, dispatch_calculation, dispatch_formula
+from app.server import (
+    INSTRUCTIONS,
+    _Guard,
+    build_server,
+    dispatch_calculation,
+    dispatch_formula,
+    dispatch_list,
+)
 
 ROOT = repo_root_from(Path(__file__).resolve())
 
@@ -505,6 +513,114 @@ class PluginCases(unittest.TestCase):
         self.assertEqual(sent[0]["status"], 405)
         headers = dict(sent[0]["headers"])
         self.assertIn(b"POST", headers[b"allow"])
+
+
+class LiftingEntrySchemaTests(unittest.TestCase):
+    def test_bank_schedule_accepts_a_list_and_unknown_fields_fail(self) -> None:
+        from mcp.server.mcpserver.exceptions import ToolError
+
+        server = build_server()
+        registered = server._tool_manager._tools["lifting_entry_trajectory"]
+        self.assertIs(registered.parameters.get("additionalProperties"), False)
+        bank = registered.parameters["properties"]["bank_schedule"]
+        encoded = json.dumps(bank)
+        self.assertIn("array", encoded)
+        self.assertIn("t_s", encoded)
+        self.assertIn("bank_deg", encoded)
+        self.assertIn("out", registered.parameters["properties"])
+        description = registered.description
+        self.assertIn("inertial heading from north", description)
+        self.assertIn("heading_air_deg", description)
+        self.assertIn("lifting_entry_trajectory", dispatch_list())
+
+        async def reject():
+            await registered.run(
+                {
+                    "speed": 11032.1,
+                    "gamma": 0.113097,
+                    "altitude": 121920,
+                    "lod": 0.30076,
+                    "beta": 355.70326,
+                    "bank_deg": 0,
+                    "integrator": "rk4",
+                },
+                context=None,
+            )
+
+        with self.assertRaises(ToolError) as caught:
+            asyncio.run(reject())
+        message = str(caught.exception)
+        self.assertIn("integrator", message)
+        self.assertIn("valid parameters", message)
+        self.assertIn("beta", message)
+        self.assertIn("bank_schedule", message)
+
+        direct = dispatch_calculation(
+            "lifting_entry_trajectory",
+            {
+                "speed": 11032.1,
+                "gamma": 0.113097,
+                "altitude": 121920,
+                "lod": 0.30076,
+                "beta": 355.70326,
+                "bank_deg": 0,
+                "integrator": "rk4",
+            },
+        )
+        self.assertIn("integrator", direct)
+        self.assertIn("valid parameters", direct)
+        self.assertNotIn("peak_g", direct)
+
+    def test_graph_is_returned_only_when_out_is_passed(self) -> None:
+        tool = tool_by_name(load_catalog(ROOT), "lifting_entry_trajectory")
+        assert tool is not None
+        self.assertIn("--out", {flag.option for flag in tool.flags})
+        common = {
+            "speed": 7000,
+            "gamma": 0.1,
+            "altitude": 80000,
+            "lod": 0,
+            "beta": 1e18,
+            "bank_deg": 0,
+            "max_time_s": 4,
+            "dt": 1,
+        }
+        quiet = run_tool(tool, common, repo_root=ROOT)
+        requested = run_tool(tool, {**common, "out": "lifting.png"}, repo_root=ROOT)
+        try:
+            self.assertEqual(quiet.exit_code, 0, quiet.text)
+            self.assertNotIn("graph:", quiet.text)
+            self.assertFalse(quiet.files)
+            self.assertEqual(requested.exit_code, 0, requested.text)
+            self.assertIn("graph:", requested.text)
+            self.assertTrue(requested.files)
+            self.assertTrue(requested.files[0].read_bytes().startswith(b"\x89PNG"))
+        finally:
+            shutil.rmtree(quiet.job_dir, ignore_errors=True)
+            shutil.rmtree(requested.job_dir, ignore_errors=True)
+
+        listed = run_tool(
+            tool,
+            {
+                "speed": 11032.1,
+                "gamma": 0.113097,
+                "altitude": 121920,
+                "lod": 0.30076,
+                "beta": 355.70326,
+                "bank_schedule": [
+                    {"t_s": 0, "bank_deg": 0},
+                    {"t_s": 60, "bank_deg": 0},
+                    {"t_s": 61, "bank_deg": 90},
+                ],
+            },
+            repo_root=ROOT,
+        )
+        try:
+            self.assertEqual(listed.exit_code, 0, listed.text)
+            self.assertIn("peak_g: 14.7008", listed.text)
+            self.assertNotIn("graph:", listed.text)
+        finally:
+            shutil.rmtree(listed.job_dir, ignore_errors=True)
 
 
 if __name__ == "__main__":

@@ -101,16 +101,16 @@ def resolve_ballistic(
 ) -> tuple[float, str]:
     parts = (mass is not None, cd is not None, area is not None)
     if beta is not None:
-        require_positive("ballistic coefficient", beta)
+        require_positive("beta", beta)
         if any(parts):
             if not all(parts):
                 raise ValueError(
-                    "pass all of --mass, --cd, and --area when checking against --beta"
+                    "pass all of mass, cd, and area when checking against beta"
                 )
             built = ballistic_coefficient(mass, cd, area)
             if not close(float(beta), built):
                 raise ValueError(
-                    f"--beta {beta:g} disagrees with m/(Cd*A) = {built:g}"
+                    f"beta {beta:g} disagrees with m/(Cd*A) = {built:g}"
                 )
         return float(beta), "flag"
     if all(parts):
@@ -119,8 +119,8 @@ def resolve_ballistic(
         require_positive("reference area", area)
         return ballistic_coefficient(mass, cd, area), "mass_cd_area"
     if any(parts):
-        raise ValueError("pass --mass, --cd, and --area together, or pass --beta")
-    raise ValueError("pass --beta, or --mass with --cd and --area")
+        raise ValueError("pass mass, cd, and area together, or pass beta")
+    raise ValueError("pass beta, or mass with cd and area")
 
 
 def resolve_atmosphere(
@@ -139,19 +139,19 @@ def resolve_atmosphere(
     if kind == "us1976":
         if any(supplied):
             raise ValueError(
-                "scale-height, rho-ref, and z-ref apply only when atmosphere is exponential"
+                "scale_height, rho_ref, and z_ref apply only when atmosphere is exponential"
             )
         return "us1976", math.nan, math.nan, math.nan
     if not any(supplied):
         return "exponential", DEFAULT_H, DEFAULT_RHO_REF, DEFAULT_Z_REF
     if not all(supplied):
         raise ValueError(
-            "pass --scale-height, --rho-ref, and --z-ref together to override "
+            "pass scale_height, rho_ref, and z_ref together to override "
             "the Allen-Eggers Earth default"
         )
-    require_positive("scale height", scale_height)
-    require_positive("reference density", rho_ref)
-    require_finite("reference altitude", z_ref)
+    require_positive("scale_height", scale_height)
+    require_positive("rho_ref", rho_ref)
+    require_finite("z_ref", z_ref)
     return "exponential", float(scale_height), float(rho_ref), float(z_ref)
 
 
@@ -190,13 +190,25 @@ def us1976_density(altitude: float) -> float:
     return float(dense.state_at(z)["rho"])
 
 
-def parse_bank_schedule(text: str) -> list[tuple[float, float]]:
-    try:
-        raw = json.loads(text)
-    except json.JSONDecodeError as exc:
+def bank_schedule_argument(text: str) -> str:
+    """Argparse marker so the MCP schema accepts a list or a JSON string."""
+    return text
+
+
+def parse_bank_schedule(text: str | list) -> list[tuple[float, float]]:
+    if isinstance(text, str):
+        try:
+            raw = json.loads(text)
+        except json.JSONDecodeError as exc:
+            raise ValueError(
+                "bank_schedule must be a JSON list of objects with t_s and bank_deg"
+            ) from exc
+    elif isinstance(text, list):
+        raw = text
+    else:
         raise ValueError(
-            "bank_schedule must be a JSON list of objects with t_s and bank_deg"
-        ) from exc
+            "bank_schedule must be a list of objects with t_s and bank_deg"
+        )
     if not isinstance(raw, list) or not raw:
         raise ValueError("bank_schedule must be a non-empty list of objects")
     points: list[tuple[float, float]] = []
@@ -242,8 +254,13 @@ def air_relative_entry(
     latitude_rad: float,
     heading_rad: float,
     omega: float,
-) -> tuple[float, float]:
-    """Inertial V, gamma to air-relative V, gamma. Heading is unchanged."""
+) -> tuple[float, float, float]:
+    """Inertial V, gamma, heading to air-relative V, gamma, heading.
+
+    heading_rad is the inertial azimuth from north. The returned heading is
+    the air-relative azimuth after subtracting the planet's eastward velocity.
+    The trajectory still holds the inertial heading.
+    """
     horizontal = speed * math.cos(gamma)
     down = speed * math.sin(gamma)
     north = horizontal * math.cos(heading_rad)
@@ -252,7 +269,7 @@ def air_relative_entry(
     if not math.isfinite(speed_air) or speed_air <= 0.0:
         raise ValueError("air-relative entry speed must be finite and > 0")
     sin_gamma = max(-1.0, min(1.0, down / speed_air))
-    return speed_air, math.asin(sin_gamma)
+    return speed_air, math.asin(sin_gamma), math.atan2(east, north)
 
 
 def _axpy(y: tuple[float, ...], factor: float, k: tuple[float, ...]) -> tuple[float, ...]:
@@ -273,6 +290,10 @@ def _combine(
         for i, ki in enumerate(k):
             out[i] += step * ki
     return (out[0], out[1], out[2], out[3])
+
+
+class _SpeedFloor(Exception):
+    """Speed fell below 1 m/s. The samples already stored are the result."""
 
 
 class _Run:
@@ -309,6 +330,8 @@ class _Run:
     def rates(self, t: float, y: tuple[float, float, float, float]) -> tuple[tuple[float, float, float, float], float]:
         speed, gamma, altitude, _downrange = y
         if not math.isfinite(speed) or speed < 1.0:
+            if math.isfinite(speed):
+                raise _SpeedFloor()
             raise ValueError("speed collapsed below 1 m/s before an end condition")
         radius = self.planet_radius + altitude
         if radius <= 0.0:
@@ -536,7 +559,10 @@ def integrate(
 ) -> dict[str, object]:
     t = 0.0
     y = y0
-    samples = [_record(run, t, y)]
+    try:
+        samples = [_record(run, t, y)]
+    except _SpeedFloor as exc:
+        raise ValueError("speed collapsed below 1 m/s before an end condition") from exc
     seen_below = y[2] < run.skip_altitude
     end_reason = "max_time"
     step = 0.05 if dt is None else dt
@@ -551,51 +577,55 @@ def integrate(
         dt_try = min(dt_try, run.max_time - t)
         if dt_try <= 0.0:
             break
-        if integrator == "rk4":
-            y1 = _rk4(run, t, y, dt_try)
-            err = 0.0
-        else:
-            accepted = False
-            y1 = y
-            err = 0.0
-            for _ in range(40):
-                y5, y4 = _rk45(run, t, y, dt_try)
-                err = _rk45_error(y, y5, y4, rtol, atol_scale)
-                y1 = y5
-                if err <= 1.0 or dt_try <= H_MIN * 1.01:
-                    accepted = True
-                    break
-                dt_try = max(H_MIN, dt_try * min(0.2, 0.9 * err ** -0.25))
-            if not accepted and err > 1.0:
-                raise ValueError("RK45 could not meet the tolerance; increase rtol or max_time_s")
-            if err < 1e-16:
-                factor = 5.0
+        try:
+            if integrator == "rk4":
+                y1 = _rk4(run, t, y, dt_try)
+                err = 0.0
             else:
-                factor = min(5.0, max(0.2, 0.9 * err ** -0.2))
-            step = min(H_MAX, max(H_MIN, dt_try * factor))
-        if y[2] < run.skip_altitude:
-            seen_below = True
-        frac, hit = _event_fraction(
-            y[2], y1[2], run.end_altitude, run.skip_altitude, seen_below
-        )
-        if hit is not None and frac is not None and frac < 1.0:
-            t, y, end_reason = _locate_event(
-                run,
-                t,
-                y,
-                dt_try,
-                integrator,
-                run.end_altitude,
-                run.skip_altitude,
-                seen_below,
+                accepted = False
+                y1 = y
+                err = 0.0
+                for _ in range(40):
+                    y5, y4 = _rk45(run, t, y, dt_try)
+                    err = _rk45_error(y, y5, y4, rtol, atol_scale)
+                    y1 = y5
+                    if err <= 1.0 or dt_try <= H_MIN * 1.01:
+                        accepted = True
+                        break
+                    dt_try = max(H_MIN, dt_try * min(0.2, 0.9 * err ** -0.25))
+                if not accepted and err > 1.0:
+                    raise ValueError("RK45 could not meet the tolerance; increase rtol or max_time_s")
+                if err < 1e-16:
+                    factor = 5.0
+                else:
+                    factor = min(5.0, max(0.2, 0.9 * err ** -0.2))
+                step = min(H_MAX, max(H_MIN, dt_try * factor))
+            if y[2] < run.skip_altitude:
+                seen_below = True
+            frac, hit = _event_fraction(
+                y[2], y1[2], run.end_altitude, run.skip_altitude, seen_below
             )
+            if hit is not None and frac is not None and frac < 1.0:
+                t, y, end_reason = _locate_event(
+                    run,
+                    t,
+                    y,
+                    dt_try,
+                    integrator,
+                    run.end_altitude,
+                    run.skip_altitude,
+                    seen_below,
+                )
+                samples.append(_record(run, t, y))
+                break
+            t = t + dt_try
+            y = y1
+            if y[2] < run.skip_altitude:
+                seen_below = True
             samples.append(_record(run, t, y))
+        except _SpeedFloor:
+            end_reason = "speed_floor"
             break
-        t = t + dt_try
-        y = y1
-        if y[2] < run.skip_altitude:
-            seen_below = True
-        samples.append(_record(run, t, y))
         if t >= run.max_time - 1e-9:
             end_reason = "max_time"
             break
@@ -606,10 +636,12 @@ def integrate(
         raise ValueError("integrator produced no samples")
     peaks = _local_peaks(samples)
     richest = max(samples, key=lambda row: row["load_g"])
+    interior_peak = False
     if peaks:
         best = max(peaks, key=lambda row: row["load_g"])
         if best["load_g"] >= richest["load_g"]:
             richest = best
+            interior_peak = True
     final = samples[-1]
     t_skip = final["t"] if end_reason == "skip_out" else None
     return {
@@ -620,6 +652,7 @@ def integrate(
         "end_reason": end_reason,
         "min_altitude_m": min(row["h"] for row in samples),
         "skip_out": end_reason == "skip_out",
+        "interior_peak": interior_peak,
         "t_skip_s": t_skip,
         "downrange_m": final["x"],
         "flight_time_s": final["t"],
@@ -655,18 +688,24 @@ def _assumptions(
             f"Zref = {z_ref:.8g} m"
         )
     if integrator == "rk4":
-        stepper = f"fixed-step RK4 with dt = {dt:.8g} s; convergence rerun uses dt/2"
+        stepper = (
+            f"fixed-step RK4 with dt = {dt:.8g} s; convergence rerun uses dt/2; "
+            "n/a when there is no interior load peak or the tighter rerun does not move it"
+        )
     else:
         stepper = (
             f"adaptive RK45 (Dormand-Prince 5(4)) with rtol = {rtol:.8g}; "
-            "convergence rerun uses a 10x tighter tolerance"
+            "convergence rerun uses a 100x tighter tolerance; "
+            "n/a when there is no interior load peak or the tighter rerun does not move it"
         )
     rotation = (
         "non-rotating; no Coriolis or centrifugal acceleration"
         if not rotating
         else (
             "rotating frame with V and gamma relative to the air; "
+            "heading_deg is the inertial heading from north; "
             "latitude and heading held constant; "
+            "heading_air_deg is the entry air-relative heading; "
             "dV/dt += -omega^2*r*cos(lat)*(cos(lat)*sin(gamma) + sin(lat)*cos(gamma)*cos(psi)); "
             "dgamma/dt += -(2*omega*V*cos(lat)*sin(psi) + omega^2*r*cos(lat)*"
             "(cos(lat)*cos(gamma) - sin(lat)*sin(gamma)*cos(psi)))/V"
@@ -698,7 +737,7 @@ def simulate(
     cd: float | None,
     area: float | None,
     bank_deg: float | None,
-    bank_schedule: str | None,
+    bank_schedule: str | list | None,
     planet_radius: float,
     mu: float,
     atmosphere: str,
@@ -784,7 +823,7 @@ def simulate(
         assert omega is not None and latitude_deg is not None and heading_deg is not None
         lat_rad = math.radians(latitude_deg)
         heading_rad = math.radians(heading_deg)
-        speed_air, gamma_air = air_relative_entry(
+        speed_air, gamma_air, heading_air = air_relative_entry(
             speed, gamma, radius_entry, lat_rad, heading_rad, omega
         )
 
@@ -811,13 +850,17 @@ def simulate(
     y0 = (speed_air, gamma_air, altitude, 0.0)
     primary = integrate(make_run(), y0, integrator, rtol, dt)
     peak_g = float(primary["peak"]["load_g"])
-    if converge:
+    if converge and not primary["interior_peak"]:
+        convergence: float | str = "n/a (no interior aerodynamic-load peak)"
+    elif converge:
         if integrator == "rk4":
             assert dt is not None
             refined = integrate(make_run(), y0, "rk4", rtol, 0.5 * dt)
         else:
-            refined = integrate(make_run(), y0, "rk45", 0.1 * rtol, None)
+            refined = integrate(make_run(), y0, "rk45", rtol / 100.0, None)
         convergence = _relative_peak_change(peak_g, float(refined["peak"]["load_g"]))
+        if convergence == 0.0:
+            convergence = "n/a (tighter rerun reproduced the same peak)"
     else:
         convergence = 0.0
 
@@ -878,6 +921,7 @@ def simulate(
         result["gamma_inertial_rad"] = gamma
         result["speed_air_m_s"] = speed_air
         result["gamma_air_rad"] = gamma_air
+        result["heading_air_deg"] = math.degrees(heading_air)
     if primary["t_skip_s"] is not None:
         result["t_skip_s"] = float(primary["t_skip_s"])
     if mass is not None:
@@ -972,6 +1016,7 @@ def emit(result: dict[str, object], graph: Path | None) -> None:
         "gamma_inertial_rad",
         "speed_air_m_s",
         "gamma_air_rad",
+        "heading_air_deg",
         "integrator",
         "dt_s",
         "rtol",
@@ -1026,6 +1071,11 @@ def run_check() -> int:
         return fail("pair-array bank schedule was accepted")
     except ValueError:
         pass
+    native = parse_bank_schedule(
+        [{"t_s": 0, "bank_deg": 0}, {"t_s": 1, "bank_deg": 10}]
+    )
+    if native != [(0.0, 0.0), (1.0, 10.0)]:
+        return fail("native bank schedule list was rejected")
 
     # Vacuum coast: specific energy stays put when drag is negligible.
     radius = R0_EARTH
@@ -1192,8 +1242,10 @@ def run_check() -> int:
                 "8000",
             ]
         )
-        if code != 2 or "scale-height" not in err:
-            return fail("partial atmosphere override was accepted")
+        if code != 2 or "scale_height" not in err or "--scale-height" in err:
+            return fail(f"partial atmosphere override was accepted: {err}")
+        if "rho_ref" not in err or "z_ref" not in err:
+            return fail(f"atmosphere error omitted MCP names: {err}")
 
     print("check: pass")
     print_kv("energy_rel", abs(e1 - e0) / abs(e0))
@@ -1220,9 +1272,9 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--bank-deg", type=float, default=None, help="constant bank angle [deg]")
     parser.add_argument(
         "--bank-schedule",
-        type=str,
+        type=bank_schedule_argument,
         default=None,
-        help='bank schedule JSON list of objects {"t_s": number, "bank_deg": number}',
+        help="list of objects {t_s, bank_deg}, or that list as a JSON string",
     )
     parser.add_argument("--radius", type=float, default=None, help="planet radius [m]")
     parser.add_argument("--mu", type=float, default=None, help="gravitational parameter [m^3/s^2]")
@@ -1239,11 +1291,21 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--max-time-s", type=float, default=None, help="maximum flight time [s]")
     parser.add_argument("--skip-altitude", type=float, default=None, help="skip-out altitude [m]")
     parser.add_argument("--latitude-deg", type=float, default=None, help="latitude [deg]")
-    parser.add_argument("--heading-deg", type=float, default=None, help="heading from north [deg]")
+    parser.add_argument(
+        "--heading-deg",
+        type=float,
+        default=None,
+        help="inertial heading from north, held constant [deg]",
+    )
     parser.add_argument("--omega", type=float, default=None, help="planet rotation rate [rad/s]")
     parser.add_argument("--rtol", type=float, default=None, help="RK45 relative tolerance")
     parser.add_argument("--dt", type=float, default=None, help="fixed RK4 step [s]")
-    parser.add_argument("--out", type=str, default=None, help="optional PNG path")
+    parser.add_argument(
+        "--out",
+        type=str,
+        default=None,
+        help="PNG path; omit and no figure is written",
+    )
     parser.add_argument("--check", action="store_true", help="run built-in checks")
     return parser.parse_args(argv)
 
@@ -1255,10 +1317,10 @@ def main(argv: list[str] | None = None) -> int:
     missing = [
         name
         for name, value in (
-            ("--speed", args.speed),
-            ("--gamma", args.gamma),
-            ("--altitude", args.altitude),
-            ("--lod", args.lod),
+            ("speed", args.speed),
+            ("gamma", args.gamma),
+            ("altitude", args.altitude),
+            ("lod", args.lod),
         )
         if value is None
     ]
@@ -1266,7 +1328,7 @@ def main(argv: list[str] | None = None) -> int:
         print(f"error: requires {', '.join(missing)}", file=sys.stderr)
         return 2
     if args.dt is not None and args.rtol is not None:
-        print("error: pass either --dt or --rtol, not both", file=sys.stderr)
+        print("error: pass either dt or rtol, not both", file=sys.stderr)
         return 2
     try:
         result = simulate(

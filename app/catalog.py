@@ -121,6 +121,8 @@ def _type_name(keywords: dict[str, ast.AST]) -> tuple[str, bool]:
         return "bool", False
     kind = keywords.get("type")
     type_name = "string"
+    if isinstance(kind, ast.Name) and kind.id == "bank_schedule_argument":
+        return "bank_schedule", False
     if isinstance(kind, ast.Name) and kind.id in {"float", "int", "str"}:
         type_name = {"float": "float", "int": "int", "str": "string"}[kind.id]
     if isinstance(action, ast.Constant) and action.value == "append":
@@ -154,7 +156,9 @@ def flags_from_script(script: Path, required: set[str]) -> list[Flag]:
         if not option.startswith("--"):
             continue
         if option in EXCLUDED_FLAGS or is_output_option(option):
-            continue
+            # This trajectory writes a PNG only when the caller passes --out.
+            if not (option == "--out" and script.name == "lifting_entry_trajectory.py"):
+                continue
         if option in seen:
             continue
         seen.add(option)

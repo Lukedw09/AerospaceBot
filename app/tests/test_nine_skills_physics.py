@@ -996,8 +996,202 @@ class LiftingEntryPhysics(unittest.TestCase):
         run_fail(self.program, [*base, "--bank-deg", "0", "--bank-schedule", '[{"t_s": 0, "bank_deg": 5}]'])
         run_fail(self.program, [*base, "--bank-schedule", "[[0, 0], [10, 20]]"])
         run_fail(self.program, [*base, "--bank-deg", "0", "--mass", "500", "--cd", "0.5", "--area", "2"])
-        run_fail(self.program, [*base, "--bank-deg", "0", "--scale-height", "8000"])
+        atmosphere = run_fail(self.program, [*base, "--bank-deg", "0", "--scale-height", "8000"])
+        self.assertIn("scale_height", atmosphere)
+        self.assertIn("rho_ref", atmosphere)
+        self.assertIn("z_ref", atmosphere)
+        self.assertNotIn("--scale-height", atmosphere)
+        self.assertNotIn("--beta", atmosphere)
+        beta = run_fail(
+            self.program,
+            [*base, "--bank-deg", "0", "--mass", "500", "--cd", "0.5", "--area", "2"],
+        )
+        self.assertIn("beta", beta)
+        self.assertNotIn("--beta", beta)
         run_fail(self.program, [*base, "--bank-deg", "0", "--latitude-deg", "10"])
+
+    def test_baseline_peak_and_tighter_convergence(self) -> None:
+        data = run(
+            self.program,
+            [
+                "--speed",
+                "11032.1",
+                "--gamma",
+                "0.113097",
+                "--altitude",
+                "121920",
+                "--lod",
+                "0.30076",
+                "--beta",
+                "355.70326",
+                "--bank-deg",
+                "0",
+            ],
+        )
+        assert_close(self, num(data, "peak_g"), 6.7570058, "baseline peak", rel=1e-7, abs_tol=0.0)
+        self.assertIn("100x tighter tolerance", data["assumptions"])
+        self.assertNotIn("10x tighter", data["assumptions"])
+        convergence = num(data, "convergence_peak_g_rel")
+        self.assertGreater(convergence, 1.5e-4)
+        self.assertLess(convergence, 2.5e-4)
+
+    def test_bank_schedule_json_and_native_list(self) -> None:
+        schedule = (
+            '[{"t_s":0,"bank_deg":0},{"t_s":60,"bank_deg":0},{"t_s":61,"bank_deg":90}]'
+        )
+        data = run(
+            self.program,
+            [
+                "--speed",
+                "11032.1",
+                "--gamma",
+                "0.113097",
+                "--altitude",
+                "121920",
+                "--lod",
+                "0.30076",
+                "--beta",
+                "355.70326",
+                "--bank-schedule",
+                schedule,
+            ],
+        )
+        assert_close(self, num(data, "peak_g"), 14.7008, "banked peak", rel=1e-4, abs_tol=0.0)
+        lifting = self._module()
+        native = lifting.simulate(
+            11032.1,
+            0.113097,
+            121920.0,
+            0.30076,
+            355.70326,
+            None,
+            None,
+            None,
+            None,
+            [
+                {"t_s": 0, "bank_deg": 0},
+                {"t_s": 60, "bank_deg": 0},
+                {"t_s": 61, "bank_deg": 90},
+            ],
+            lifting.R0_EARTH,
+            lifting.MU_EARTH,
+            "exponential",
+            None,
+            None,
+            None,
+            0.0,
+            3000.0,
+            None,
+            None,
+            None,
+            None,
+            1.0e-6,
+            None,
+            converge=False,
+        )
+        assert_close(self, float(native["peak_g"]), num(data, "peak_g"), "native list matches JSON", rel=1e-8, abs_tol=0.0)
+
+    def test_glide_without_a_measurable_peak_change_prints_na(self) -> None:
+        # On the lift balance at L/D 1.5 the 100x rerun reproduces the peak
+        # exactly, so the old print was 0.
+        lifting = self._module()
+        glide = load_module(
+            script("skills", "THERM - EquilibriumGlideEntry", "equilibrium_glide_entry.py")
+        )
+        speed = 7000.0
+        beta = 200.0
+        lod = 1.5
+        circular = math.sqrt(G0 * lifting.R0_EARTH)
+        rho = glide.heating_density(beta, G0, speed, circular, lod)
+        altitude = lifting.DEFAULT_Z_REF + lifting.DEFAULT_H * math.log(
+            lifting.DEFAULT_RHO_REF / rho
+        )
+        data = run(
+            self.program,
+            [
+                "--speed",
+                str(speed),
+                "--gamma",
+                "0",
+                "--altitude",
+                f"{altitude:.8g}",
+                "--lod",
+                str(lod),
+                "--beta",
+                str(beta),
+                "--bank-deg",
+                "0",
+                "--end-altitude",
+                "20000",
+                "--max-time-s",
+                "2000",
+            ],
+        )
+        self.assertTrue(data["convergence_peak_g_rel"].startswith("n/a"), data["convergence_peak_g_rel"])
+        self.assertIn("same peak", data["convergence_peak_g_rel"])
+
+    def test_speed_floor_returns_the_peak(self) -> None:
+        data = run(
+            self.program,
+            [
+                "--speed",
+                "7000",
+                "--gamma",
+                "0.5235987755982988",
+                "--altitude",
+                "121920",
+                "--lod",
+                "0",
+                "--beta",
+                "355.70326",
+                "--bank-deg",
+                "0",
+                "--radius",
+                "1e12",
+                "--mu",
+                "1e-6",
+            ],
+        )
+        self.assertEqual(data["end_reason"], "speed_floor")
+        self.assertGreater(num(data, "peak_g"), 1.0)
+
+    def test_heading_air_is_printed_for_inertial_north(self) -> None:
+        lifting = self._module()
+        speed = 7800.0
+        gamma = 0.05
+        altitude = 85000.0
+        data = run(
+            self.program,
+            [
+                "--speed",
+                str(speed),
+                "--gamma",
+                str(gamma),
+                "--altitude",
+                str(altitude),
+                "--lod",
+                "0",
+                "--beta",
+                "500",
+                "--bank-deg",
+                "0",
+                "--latitude-deg",
+                "0",
+                "--heading-deg",
+                "0",
+                "--max-time-s",
+                "2",
+                "--dt",
+                "0.5",
+            ],
+        )
+        self.assertIn("inertial heading from north", data["assumptions"])
+        radius = lifting.R0_EARTH + altitude
+        horizontal = speed * math.cos(gamma)
+        east = -lifting.OMEGA_EARTH * radius
+        expected = math.degrees(math.atan2(east, horizontal))
+        assert_close(self, num(data, "heading_air_deg"), expected, "air-relative heading", rel=1e-6, abs_tol=0.0)
+        self.assertNotEqual(data["heading_deg"], data["heading_air_deg"])
 
 
 def _equatorial_cartesian_peak_rk4(

@@ -10,7 +10,7 @@ import time
 from contextvars import ContextVar
 from typing import Annotated, Any
 
-from pydantic import AliasChoices, Field
+from pydantic import AliasChoices, BaseModel, ConfigDict, Field
 from starlette.requests import Request
 from starlette.responses import JSONResponse, Response
 
@@ -110,6 +110,10 @@ def dispatch_calculation(name: str, arguments: dict[str, Any]) -> str:
     tool = tool_by_name(load_catalog(root), name)
     if tool is None:
         return "that tool is not in the library"
+    if name == "lifting_entry_trajectory":
+        message = _unknown_parameter_message(arguments, _parameter_names(tool))
+        if message:
+            return f"error: {message}"
     if _too_large(arguments):
         return "those inputs are too large"
     identity = _identity.get()
@@ -181,13 +185,22 @@ def dispatch_list() -> str:
     return "\n".join(lines)
 
 
+class _BankPoint(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    t_s: float
+    bank_deg: float
+
+
 def _python_type(flag_type: str) -> type:
     return {"float": float, "int": int, "bool": bool, "string": str}[flag_type]
 
 
 def _annotation(flag: Flag) -> Any:
-    inner = _python_type(flag.type_name)
-    base: Any = list[inner] if flag.repeat else inner
+    if flag.type_name == "bank_schedule":
+        base: Any = list[_BankPoint] | str
+    else:
+        inner = _python_type(flag.type_name)
+        base = list[inner] if flag.repeat else inner
     extras: dict[str, Any] = {}
     if flag.help:
         extras["description"] = flag.help
@@ -224,6 +237,38 @@ def _handler_for(tool: Tool):
     return handler
 
 
+def _parameter_names(tool: Tool) -> list[str]:
+    names: set[str] = set()
+    for flag in tool.flags:
+        names.add(flag.dest)
+        names.add(flag.cli_name)
+    return sorted(names)
+
+
+def _unknown_parameter_message(arguments: dict[str, Any], valid: list[str]) -> str | None:
+    unknown = [key for key in arguments if key not in valid]
+    if not unknown:
+        return None
+    names = ", ".join(repr(key) for key in unknown)
+    return f"unknown parameter {names}; valid parameters: {', '.join(valid)}"
+
+
+def _forbid_extra_fields(registered: Any, valid: list[str]) -> None:
+    """Reject arguments that are not in the published schema."""
+    from mcp.server.mcpserver.exceptions import ToolError
+
+    registered.parameters["additionalProperties"] = False
+    original_run = registered.run
+
+    async def run(arguments: dict[str, Any], context: Any, convert_result: bool = False) -> Any:
+        message = _unknown_parameter_message(arguments, valid)
+        if message:
+            raise ToolError(f"Error executing tool {registered.name}: {message}")
+        return await original_run(arguments, context, convert_result=convert_result)
+
+    object.__setattr__(registered, "run", run)
+
+
 def build_server():
     from mcp.server.mcpserver import MCPServer
 
@@ -232,6 +277,11 @@ def build_server():
 
     for tool in load_catalog():
         mcp.add_tool(_handler_for(tool), name=tool.name, description=tool.description)
+        if tool.name == "lifting_entry_trajectory":
+            _forbid_extra_fields(
+                mcp._tool_manager._tools[tool.name],
+                _parameter_names(tool),
+            )
 
     def list_tools() -> str:
         """List aerospace tool names and the skill each one belongs to."""
