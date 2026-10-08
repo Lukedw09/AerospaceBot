@@ -124,7 +124,7 @@
       storage.setItem("access", tokens.access_token);
       storage.setItem("id", tokens.id_token);
     }
-    window.location.replace("/account.html");
+    window.location.replace("/profile.html");
     return true;
   }
 
