@@ -663,5 +663,377 @@ class EquilibriumGlidePhysics(unittest.TestCase):
         run_fail(self.program, ["--ve", "7000", "--lod", "1", "--beta", "100", "--scale-height", "8000"])
 
 
+class LiftingEntryPhysics(unittest.TestCase):
+    """Planar lifting entry. Cases are round physical states, not flights."""
+
+    program = script("skills", "THERM - LiftingEntryTrajectory", "lifting_entry_trajectory.py")
+
+    def _module(self):
+        return load_module(self.program)
+
+    def test_vacuum_energy_and_circular_orbit(self) -> None:
+        lifting = self._module()
+        radius = lifting.R0_EARTH
+        mu = lifting.MU_EARTH
+        speed = 6400.0
+        gamma = math.radians(15.0)
+        altitude = 180000.0
+        coast = lifting.simulate(
+            speed,
+            gamma,
+            altitude,
+            0.0,
+            1.0e18,
+            None,
+            None,
+            None,
+            0.0,
+            None,
+            radius,
+            mu,
+            "exponential",
+            None,
+            None,
+            None,
+            100000.0,
+            80.0,
+            None,
+            None,
+            None,
+            None,
+            1.0e-9,
+            None,
+            converge=False,
+        )
+        energy_0 = 0.5 * speed * speed - mu / (radius + altitude)
+        energy_1 = 0.5 * float(coast["V_final_m_s"]) ** 2 - mu / (
+            radius + float(coast["altitude_final_m"])
+        )
+        self.assertLess(abs(energy_1 - energy_0) / abs(energy_0), 1e-8)
+
+        height = 200000.0
+        circular = math.sqrt(mu / (radius + height))
+        held = lifting.simulate(
+            circular,
+            0.0,
+            height,
+            0.0,
+            1.0e18,
+            None,
+            None,
+            None,
+            0.0,
+            None,
+            radius,
+            mu,
+            "exponential",
+            None,
+            None,
+            None,
+            0.0,
+            120.0,
+            height + 50000.0,
+            None,
+            None,
+            None,
+            1.0e-9,
+            None,
+            converge=False,
+        )
+        self.assertLess(abs(float(held["altitude_final_m"]) - height) / height, 1e-8)
+        self.assertLess(abs(float(held["V_final_m_s"]) - circular) / circular, 1e-8)
+        self.assertLess(abs(float(held["gamma_final_rad"])), 1e-8)
+
+    def test_steep_no_lift_matches_allen_eggers(self) -> None:
+        ballistic = script("skills", "THERM - BallisticEntryPeakLoad", "ballistic_entry_peak_load.py")
+        # Peak sits near 53-57 km for this B, so the stop is below it.
+        common = ["--altitude", "100000", "--lod", "0", "--beta", "5", "--bank-deg", "0", "--end-altitude", "40000", "--max-time-s", "80"]
+        for speed in (7000, 11000):
+            for degrees in (30, 60):
+                gamma = math.radians(degrees)
+                lifted = run(
+                    self.program,
+                    ["--speed", str(speed), "--gamma", str(gamma), *common],
+                )
+                closed = run(
+                    ballistic,
+                    ["--speed", str(speed), "--gamma", str(gamma), "--beta", "5"],
+                )
+                assert_close(
+                    self,
+                    num(lifted, "peak_g"),
+                    num(closed, "a_peak_g"),
+                    f"peak g at {speed} m/s, {degrees} deg",
+                    rel=0.03,
+                    abs_tol=0.0,
+                )
+                assert_close(
+                    self,
+                    num(lifted, "Z_peak_m"),
+                    num(closed, "Z_peak_m"),
+                    f"peak altitude at {speed} m/s, {degrees} deg",
+                    rel=0.03,
+                    abs_tol=0.0,
+                )
+
+    def test_shallow_lift_settles_on_equilibrium_glide(self) -> None:
+        lifting = self._module()
+        glide = load_module(
+            script("skills", "THERM - EquilibriumGlideEntry", "equilibrium_glide_entry.py")
+        )
+        lod = 1.0
+        self.assertTrue(
+            abs(glide.peak_deceleration(G0, lod) / G0 - 1.0 / lod) < 1e-12,
+            "equilibrium peak is g/(L/D)",
+        )
+        flown = lifting.simulate(
+            7600.0,
+            math.radians(0.4),
+            80000.0,
+            lod,
+            400.0,
+            None,
+            None,
+            None,
+            0.0,
+            None,
+            lifting.R0_EARTH,
+            lifting.MU_EARTH,
+            "exponential",
+            None,
+            None,
+            None,
+            20000.0,
+            1200.0,
+            None,
+            None,
+            None,
+            None,
+            1.0e-6,
+            None,
+            converge=False,
+        )
+        checked = 0
+        for row in flown["samples"]:
+            if row["t"] < 1000.0 or row["h"] < 40000.0:
+                continue
+            radius = lifting.R0_EARTH + row["h"]
+            equilibrium = (1.0 - row["V"] ** 2 / (lifting.MU_EARTH / radius)) / lod
+            if equilibrium < 0.2:
+                continue
+            drag_g = row["load_g"] / math.sqrt(1.0 + lod * lod)
+            self.assertLess(
+                abs(drag_g - equilibrium) / equilibrium,
+                0.10,
+                f"drag load {drag_g} vs equilibrium {equilibrium} at t={row['t']}",
+            )
+            checked += 1
+        self.assertGreater(checked, 5, "settled glide window was empty")
+
+    def test_bank_180_peaks_above_ballistic_above_lift_up(self) -> None:
+        common = [
+            "--speed",
+            "7200",
+            "--gamma",
+            str(math.radians(8.0)),
+            "--altitude",
+            "90000",
+            "--beta",
+            "80",
+            "--end-altitude",
+            "30000",
+            "--max-time-s",
+            "200",
+        ]
+        lift_up = num(run(self.program, [*common, "--lod", "1", "--bank-deg", "0"]), "peak_g")
+        ballistic = num(run(self.program, [*common, "--lod", "0", "--bank-deg", "0"]), "peak_g")
+        lift_down = num(run(self.program, [*common, "--lod", "1", "--bank-deg", "180"]), "peak_g")
+        self.assertLess(lift_up, ballistic)
+        self.assertLess(ballistic, lift_down)
+
+    def test_shallow_supercircular_lift_up_skips(self) -> None:
+        data = run(
+            self.program,
+            [
+                "--speed",
+                "11000",
+                "--gamma",
+                str(math.radians(0.8)),
+                "--altitude",
+                "100000",
+                "--lod",
+                "1",
+                "--beta",
+                "200",
+                "--bank-deg",
+                "0",
+                "--max-time-s",
+                "200",
+            ],
+        )
+        self.assertEqual(data["skip_out"], "true")
+        self.assertEqual(data["end_reason"], "skip_out")
+        self.assertGreater(num(data, "t_skip_s"), 0.0)
+        self.assertLess(num(data, "min_altitude_m"), 100000.0)
+
+    def test_halving_the_step_changes_peak_by_under_half_a_percent(self) -> None:
+        data = run(
+            self.program,
+            [
+                "--speed",
+                "7000",
+                "--gamma",
+                str(math.radians(45.0)),
+                "--altitude",
+                "100000",
+                "--lod",
+                "0",
+                "--beta",
+                "20",
+                "--bank-deg",
+                "0",
+                "--end-altitude",
+                "30000",
+                "--max-time-s",
+                "80",
+                "--dt",
+                "0.25",
+            ],
+        )
+        self.assertLess(num(data, "convergence_peak_g_rel"), 0.005)
+        self.assertEqual(data["integrator"], "rk4")
+
+    def test_equatorial_rotating_frame_matches_inertial_cartesian(self) -> None:
+        lifting = self._module()
+        speed = 7800.0
+        gamma = math.radians(3.0)
+        altitude = 85000.0
+        lod = 0.7
+        beta = 120.0
+        bank_deg = 30.0
+        end_altitude = 45000.0
+        data = run(
+            self.program,
+            [
+                "--speed",
+                str(speed),
+                "--gamma",
+                str(gamma),
+                "--altitude",
+                str(altitude),
+                "--lod",
+                str(lod),
+                "--beta",
+                str(beta),
+                "--bank-deg",
+                str(bank_deg),
+                "--end-altitude",
+                str(end_altitude),
+                "--max-time-s",
+                "250",
+                "--latitude-deg",
+                "0",
+                "--heading-deg",
+                "90",
+                "--rtol",
+                "1e-7",
+            ],
+        )
+        self.assertEqual(data["entry_frame"], "rotating")
+        self.assertIn("latitude and heading held constant", data["assumptions"])
+        self.assertLess(num(data, "speed_air_m_s"), num(data, "speed_inertial_m_s"))
+        cartesian = _equatorial_cartesian_peak_rk4(
+            lifting,
+            speed,
+            gamma,
+            altitude,
+            lod,
+            beta,
+            bank_deg,
+            end_altitude,
+            0.05,
+        )
+        assert_close(
+            self,
+            num(data, "peak_g"),
+            cartesian,
+            "rotating-frame peak versus inertial cartesian",
+            rel=0.005,
+            abs_tol=0.0,
+        )
+
+    def test_rejects_illegal_inputs(self) -> None:
+        base = ["--speed", "7000", "--gamma", "0.1", "--altitude", "80000", "--lod", "1", "--beta", "100"]
+        run_fail(self.program, base)
+        run_fail(self.program, [*base, "--bank-deg", "0", "--bank-schedule", '[{"t_s": 0, "bank_deg": 5}]'])
+        run_fail(self.program, [*base, "--bank-schedule", "[[0, 0], [10, 20]]"])
+        run_fail(self.program, [*base, "--bank-deg", "0", "--mass", "500", "--cd", "0.5", "--area", "2"])
+        run_fail(self.program, [*base, "--bank-deg", "0", "--scale-height", "8000"])
+        run_fail(self.program, [*base, "--bank-deg", "0", "--latitude-deg", "10"])
+
+
+def _equatorial_cartesian_peak_rk4(
+    lifting,
+    speed: float,
+    gamma: float,
+    altitude: float,
+    lod: float,
+    beta: float,
+    bank_deg: float,
+    end_altitude: float,
+    dt: float,
+) -> float:
+    """Inertial equatorial RK4. Drag and lift act on the air-relative velocity."""
+    radius_planet = lifting.R0_EARTH
+    mu = lifting.MU_EARTH
+    omega = lifting.OMEGA_EARTH
+    radius0 = radius_planet + altitude
+    state = (radius0, 0.0, -speed * math.sin(gamma), speed * math.cos(gamma))
+    bank = math.radians(bank_deg)
+    peak = 0.0
+    t = 0.0
+    seen_below = False
+
+    def rates(y: tuple[float, float, float, float]) -> tuple[tuple[float, float, float, float], float, float]:
+        px, py, pvx, pvy = y
+        radius = math.hypot(px, py)
+        height = radius - radius_planet
+        rho = lifting.exponential_density(
+            height, lifting.DEFAULT_RHO_REF, lifting.DEFAULT_Z_REF, lifting.DEFAULT_H
+        )
+        vrx = pvx + omega * py
+        vry = pvy - omega * px
+        vrel = math.hypot(vrx, vry)
+        drag = rho * vrel * vrel / (2.0 * beta)
+        lift = lod * drag
+        inv = 1.0 / vrel
+        load = drag * math.sqrt(1.0 + lod * lod) / lifting.G0
+        lx, ly = vry * inv, -vrx * inv
+        ax = -mu * px / radius**3 - drag * vrx * inv + lift * math.cos(bank) * lx
+        ay = -mu * py / radius**3 - drag * vry * inv + lift * math.cos(bank) * ly
+        return (pvx, pvy, ax, ay), load, height
+
+    def rk4(y: tuple[float, float, float, float]) -> tuple[tuple[float, float, float, float], float, float]:
+        k1, load, height = rates(y)
+        y2 = tuple(y[i] + 0.5 * dt * k1[i] for i in range(4))
+        k2 = rates(y2)[0]
+        y3 = tuple(y[i] + 0.5 * dt * k2[i] for i in range(4))
+        k3 = rates(y3)[0]
+        y4 = tuple(y[i] + dt * k3[i] for i in range(4))
+        k4 = rates(y4)[0]
+        nxt = tuple(y[i] + dt * (k1[i] + 2.0 * k2[i] + 2.0 * k3[i] + k4[i]) / 6.0 for i in range(4))
+        return nxt, load, height
+
+    while t < 400.0:
+        state, load, height = rk4(state)
+        t += dt
+        peak = max(peak, load)
+        if height < altitude:
+            seen_below = True
+        if height <= end_altitude or (seen_below and height >= altitude and t > dt):
+            break
+    return peak
+
+
 if __name__ == "__main__":
     unittest.main()
