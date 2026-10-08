@@ -56,10 +56,39 @@
         </aside>
       </div>
     </section>
+    <section class="outputs" aria-labelledby="outputs-title">
+      <div class="outputs-head">
+        <p class="kicker">Output</p>
+        <h2 id="outputs-title">A diagram, or a page you can move</h2>
+        <p>The program prints the numbers. When it draws, it writes a PNG. When it builds a viewer, it writes one HTML file. Open that file and turn the view.</p>
+      </div>
+      <div class="outputs-pair">
+        <figure>
+          <img src="/assets/figures/plane-change.png" alt="Two orbits around Earth, with the inclination change drawn between the planes.">
+          <figcaption>Plane change. This is the PNG.</figcaption>
+        </figure>
+        <figure class="outputs-video">
+          <div class="video-frame">
+            <iframe src="https://www.youtube-nocookie.com/embed/E1QWfEx3P04" title="Orbital plane change HTML page" allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen loading="lazy"></iframe>
+          </div>
+          <figcaption>The same plane change as an HTML page. <a href="https://www.youtube.com/watch?v=E1QWfEx3P04">Orbital Plane Shift</a>.</figcaption>
+        </figure>
+      </div>
+      <div class="outputs-more">
+        <figure>
+          <img src="/assets/figures/normal-shock.png" alt="Normal shock ratios against upstream Mach number, with the Mach 2 case marked.">
+          <figcaption>Normal shock ratios.</figcaption>
+        </figure>
+        <figure>
+          <img src="/assets/figures/naca-2412.png" alt="NACA 2412 airfoil, one meter chord, with the mean line drawn.">
+          <figcaption>NACA 2412 section.</figcaption>
+        </figure>
+      </div>
+    </section>
     <section class="band">
       <div class="band-inner">
         <h2>What it does</h2>
-        <p>Ask in Cursor or Grok Bot for a density, a transfer, a shock, a section, a burn. Astraeus calls one tool with the values you gave. The program prints key: value lines, and a plot when that program writes one. Those lines are the answer.</p>
+        <p>Ask in Cursor or Grok Bot for a density, a transfer, a shock, a section, a burn. Astraeus calls one tool with the values you gave. The program prints key: value lines, a PNG when it draws, and an HTML page when it builds a viewer. Those lines are the answer.</p>
         <p>The client id in the install snippet is the same for everyone. Your Google or Meta login is the credential.</p>
         <div class="snippet">
           <button class="copy" type="button" data-copy>Copy</button>
