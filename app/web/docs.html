@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Docs — Astraeus</title>
+  <meta name="description" content="How to use the Astraeus aerospace plugin in Cursor and Grok Bot.">
+  <meta name="theme-color" content="#07090f">
+  <link rel="icon" href="/favicon.png" type="image/png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/site.css">
+</head>
+<body data-page="docs">
+  <a class="skip" href="#main">Skip to content</a>
+  <div class="stars" aria-hidden="true"></div>
+  <header class="nav">
+    <a class="brand" href="/">
+      <span class="brand-mark"><img src="/assets/astraeus.png" alt=""></span>
+      <span>Astraeus</span>
+    </a>
+    <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="nav-links">Menu</button>
+    <nav class="nav-links" id="nav-links">
+      <a href="/install.html" data-page="install">Install</a>
+      <a href="/docs.html" data-page="docs">Docs</a>
+      <a href="/pricing.html" data-page="pricing">Pricing</a>
+      <a href="/faq.html" data-page="faq">FAQ</a>
+      <a href="/account.html" data-nav="account" hidden>Account</a>
+      <button class="nav-signin" type="button" data-nav="signin" data-open-signin>Sign in</button>
+    </nav>
+  </header>
+  <main id="main" class="page">
+    <p id="status" class="banner" role="status"></p>
+    <p class="kicker">Docs</p>
+    <h1>How a call works</h1>
+    <p class="lede">You ask in Cursor or Grok Bot. The agent calls one aerospace tool with the values you gave, in the units that tool names. The program prints lines. Those lines are the result.</p>
+    <h2>Rules</h2>
+    <p>Pass only values you gave. If a tool says an input is missing, it will ask. Quote the printed lines. Do not invent a formula.</p>
+    <h2>Sign-in</h2>
+    <p>Google or Meta is the credential the plugin checks. The client id in the install snippet is shared. Your login is not. Linking a second provider, signing out, and deleting the account are on <a href="/account.html">Account</a> after you sign in.</p>
+    <h2>Daily tool calls</h2>
+    <p>Each tool call counts against a daily cap on your plan. After you sign in, Account shows how many you have used today and the cap for that plan.</p>
+    <h2>Where it runs</h2>
+    <p>The plugin endpoint is <a href="https://mcp.astraeus.de-wet.com/mcp">mcp.astraeus.de-wet.com/mcp</a>. The install snippet fills that URL and the client id for you.</p>
+  </main>
+  <footer class="foot">
+    <div><strong>Astraeus</strong><span>astraeus.de-wet.com</span></div>
+    <p>Aerospace plugin for Cursor and Grok Bot.</p>
+  </footer>
+  <script src="/js/auth.js"></script>
+  <script src="/js/site.js"></script>
+  <script>AstraeusSite.start();</script>
+</body>
+</html>

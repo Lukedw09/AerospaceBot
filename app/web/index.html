@@ -3,183 +3,83 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Aerospace plugin</title>
-  <style>
-    body { font-family: Georgia, serif; margin: 2rem auto; max-width: 40rem; line-height: 1.45; color: #1c1c1c; }
-    button, a.button { font: inherit; margin: 0.25rem 0.25rem 0.25rem 0; padding: 0.4rem 0.7rem; }
-    code, pre { font-family: Consolas, monospace; font-size: 0.9rem; }
-    pre { white-space: pre-wrap; background: #f4f4f4; padding: 0.8rem; }
-    .error { color: #8a1f1f; }
-  </style>
+  <title>Astraeus — Aerospace plugin</title>
+  <meta name="description" content="Astraeus is the aerospace plugin for Cursor and Grok Bot. Sign in, install the tools, and quote checked formulas.">
+  <meta name="theme-color" content="#07090f">
+  <link rel="icon" href="/favicon.png" type="image/png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/site.css">
 </head>
-<body>
-  <h1>Aerospace plugin</h1>
-  <p id="status">Loading…</p>
-  <div id="signed-out" hidden>
-    <p>Sign in with Google or Meta. That login is the credential for the plugin.</p>
-    <button type="button" id="google">Sign in with Google</button>
-    <button type="button" id="meta">Sign in with Meta</button>
-  </div>
-  <div id="signed-in" hidden>
-    <p id="who"></p>
-    <p id="usage"></p>
-    <h2>Add the plugin</h2>
-    <p>Paste this into Cursor or Grok Bot. The client id is the same for everyone. Your own login is the Google or Meta account above.</p>
-    <pre id="snippet"></pre>
-    <p>For aerospace formulas and calculations, use the aerospace plugin tools. Pass only values you gave. If a tool says an input is missing, it will ask. Quote the printed lines. Do not invent a formula.</p>
-    <h2>Logins</h2>
-    <ul id="linked"></ul>
-    <button type="button" id="link-google">Link Google</button>
-    <button type="button" id="link-meta">Link Meta</button>
-    <button type="button" id="unlink-google">Remove Google</button>
-    <button type="button" id="unlink-meta">Remove Meta</button>
-    <h2>Sessions</h2>
-    <button type="button" id="local-out">Sign out of this browser</button>
-    <button type="button" id="global-out">Sign out everywhere</button>
-    <button type="button" id="delete">Delete account</button>
-    <p id="note"></p>
-  </div>
+<body data-page="home">
+  <a class="skip" href="#main">Skip to content</a>
+  <div class="stars" aria-hidden="true"></div>
+  <header class="nav">
+    <a class="brand" href="/">
+      <span class="brand-mark"><img src="/assets/astraeus.png" alt=""></span>
+      <span>Astraeus</span>
+    </a>
+    <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="nav-links">Menu</button>
+    <nav class="nav-links" id="nav-links">
+      <a href="/install.html" data-page="install">Install</a>
+      <a href="/docs.html" data-page="docs">Docs</a>
+      <a href="/pricing.html" data-page="pricing">Pricing</a>
+      <a href="/faq.html" data-page="faq">FAQ</a>
+      <a href="/account.html" data-nav="account" hidden>Account</a>
+      <button class="nav-signin" type="button" data-nav="signin" data-open-signin>Sign in</button>
+    </nav>
+  </header>
+  <main id="main">
+    <p id="status" class="banner" role="status"></p>
+    <section class="hero">
+      <div class="hero-copy">
+        <h1>Astraeus</h1>
+        <p class="subtitle">Aerospace plugin for Cursor and Grok Bot</p>
+        <p class="lede">Checked formulas and small physics programs. The plugin runs them. The reply quotes the printed lines, instead of inventing an equation.</p>
+        <div class="cta">
+          <button class="btn btn-primary" type="button" data-open-signin>Get started</button>
+          <a class="btn btn-ghost" href="/install.html">Install</a>
+        </div>
+      </div>
+      <div class="hero-demo">
+        <aside class="bot" aria-label="Grok Bot">
+          <div class="bot-bar">
+            <span class="bot-title">Grok Bot</span>
+            <span class="bot-plugin">aerospace</span>
+          </div>
+          <div class="bot-thread" id="thread"></div>
+          <form class="bot-compose" action="#" onsubmit="return false;">
+            <input type="text" disabled placeholder="Message Grok Bot" aria-label="Message Grok Bot">
+            <button type="button" disabled aria-label="Send">↑</button>
+          </form>
+        </aside>
+      </div>
+    </section>
+    <section class="band">
+      <div class="band-inner">
+        <h2>What it does</h2>
+        <p>Ask in Cursor or Grok Bot for a density, a transfer, a shock, a section, a burn. Astraeus calls one tool with the values you gave. The program prints key: value lines, and a plot when that program writes one. Those lines are the answer.</p>
+        <p>The client id in the install snippet is the same for everyone. Your Google or Meta login is the credential.</p>
+        <div class="snippet">
+          <button class="copy" type="button" data-copy>Copy</button>
+          <pre data-snippet>Loading the install snippet…</pre>
+        </div>
+        <p><a class="more" href="/install.html">Install in Cursor or Grok Bot</a></p>
+      </div>
+    </section>
+  </main>
+  <footer class="foot">
+    <div><strong>Astraeus</strong><span>astraeus.de-wet.com</span></div>
+    <p>Aerospace plugin for Cursor and Grok Bot.</p>
+  </footer>
+  <script src="/js/auth.js"></script>
+  <script src="/js/site.js"></script>
+  <script src="/js/demo.js"></script>
   <script>
-    const storage = window.sessionStorage;
-    let config = null;
-
-    function $(id) { return document.getElementById(id); }
-
-    function randomBytes() {
-      const bytes = new Uint8Array(32);
-      crypto.getRandomValues(bytes);
-      return bytes;
-    }
-
-    function b64url(bytes) {
-      let text = btoa(String.fromCharCode(...bytes));
-      return text.replaceAll("+", "-").replaceAll("/", "_").replaceAll("=", "");
-    }
-
-    async function challenge(verifier) {
-      const data = new TextEncoder().encode(verifier);
-      const digest = await crypto.subtle.digest("SHA-256", data);
-      return b64url(new Uint8Array(digest));
-    }
-
-    async function startLogin(provider, linking) {
-      const verifier = b64url(randomBytes());
-      storage.setItem("verifier", verifier);
-      storage.setItem("linking", linking ? "1" : "");
-      const params = new URLSearchParams({
-        client_id: config.client_id,
-        response_type: "code",
-        scope: config.scopes,
-        redirect_uri: config.redirect_uri,
-        code_challenge: await challenge(verifier),
-        code_challenge_method: "S256",
-        identity_provider: provider
-      });
-      window.location = config.hosted_ui.replace(/\/$/, "") + "/oauth2/authorize?" + params.toString();
-    }
-
-    async function exchange(code) {
-      const body = new URLSearchParams({
-        grant_type: "authorization_code",
-        client_id: config.client_id,
-        code: code,
-        redirect_uri: config.redirect_uri,
-        code_verifier: storage.getItem("verifier") || ""
-      });
-      const response = await fetch(config.hosted_ui.replace(/\/$/, "") + "/oauth2/token", {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body
-      });
-      if (!response.ok) {
-        throw new Error(await response.text());
-      }
-      return response.json();
-    }
-
-    async function api(path, method, payload) {
-      const response = await fetch(path, {
-        method: method,
-        headers: {
-          "Authorization": "Bearer " + storage.getItem("access"),
-          "Content-Type": "application/json"
-        },
-        body: payload ? JSON.stringify(payload) : undefined
-      });
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.error || response.statusText);
-      }
-      return data;
-    }
-
-    function showError(error) {
-      $("status").textContent = error.message || String(error);
-      $("status").className = "error";
-    }
-
-    async function showAccount() {
-      const account = await api("/account", "GET");
-      $("signed-out").hidden = true;
-      $("signed-in").hidden = false;
-      $("status").textContent = "";
-      $("who").textContent = account.email || account.sub;
-      $("usage").textContent = account.used_today + " of " + account.daily_cap + " tool calls today. Plan: " + account.plan + ".";
-      $("linked").replaceChildren();
-      for (const item of account.linked || []) {
-        const li = document.createElement("li");
-        const name = item.provider === "Facebook" ? "Meta" : (item.provider || "login");
-        li.textContent = name;
-        $("linked").appendChild(li);
-      }
-      const snippet = {
-        mcpServers: {
-          aerospace: {
-            url: config.mcp_url,
-            auth: { CLIENT_ID: config.client_id, scopes: ["openid", "email", "profile"] }
-          }
-        }
-      };
-      $("snippet").textContent = JSON.stringify(snippet, null, 2);
-    }
-
-    async function boot() {
-      const response = await fetch("/account/public-config");
-      config = await response.json();
-      const params = new URLSearchParams(window.location.search);
-      if (params.get("code")) {
-        const tokens = await exchange(params.get("code"));
-        history.replaceState({}, "", "/");
-        if (storage.getItem("linking") === "1" && storage.getItem("access")) {
-          storage.removeItem("linking");
-          await api("/account/link", "POST", { id_token: tokens.id_token });
-        } else {
-          storage.setItem("access", tokens.access_token);
-          storage.setItem("id", tokens.id_token);
-        }
-      }
-      if (!storage.getItem("access")) {
-        $("status").textContent = "";
-        $("signed-out").hidden = false;
-        return;
-      }
-      await showAccount();
-    }
-
-    $("google").onclick = () => startLogin("Google", false);
-    $("meta").onclick = () => startLogin("Facebook", false);
-    $("link-google").onclick = () => startLogin("Google", true);
-    $("link-meta").onclick = () => startLogin("Facebook", true);
-    $("unlink-google").onclick = () => api("/account/unlink", "POST", { provider: "Google" }).then(showAccount).catch(showError);
-    $("unlink-meta").onclick = () => api("/account/unlink", "POST", { provider: "Facebook" }).then(showAccount).catch(showError);
-    $("local-out").onclick = () => { storage.clear(); window.location = "/"; };
-    $("global-out").onclick = () => api("/account/signout", "POST").then((data) => { $("note").textContent = data.message; }).catch(showError);
-    $("delete").onclick = () => {
-      if (!window.confirm("Delete this account and its pictures?")) return;
-      api("/account/delete", "POST").then(() => { storage.clear(); window.location = "/"; }).catch(showError);
-    };
-
-    boot().catch(showError);
+    AstraeusSite.start();
+    AstraeusDemo.start();
+    AstraeusAuth.completeRedirect().catch(AstraeusSite.showError);
   </script>
 </body>
 </html>

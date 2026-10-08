@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Account — Astraeus</title>
+  <meta name="description" content="Your Astraeus account, daily tool calls, linked logins, and sessions.">
+  <meta name="theme-color" content="#07090f">
+  <link rel="icon" href="/favicon.png" type="image/png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/site.css">
+  <script>
+    if (!sessionStorage.getItem("access")) location.replace("/");
+  </script>
+</head>
+<body data-page="account">
+  <a class="skip" href="#main">Skip to content</a>
+  <div class="stars" aria-hidden="true"></div>
+  <header class="nav">
+    <a class="brand" href="/">
+      <span class="brand-mark"><img src="/assets/astraeus.png" alt=""></span>
+      <span>Astraeus</span>
+    </a>
+    <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="nav-links">Menu</button>
+    <nav class="nav-links" id="nav-links">
+      <a href="/install.html" data-page="install">Install</a>
+      <a href="/docs.html" data-page="docs">Docs</a>
+      <a href="/pricing.html" data-page="pricing">Pricing</a>
+      <a href="/faq.html" data-page="faq">FAQ</a>
+      <a href="/account.html" data-page="account" data-nav="account">Account</a>
+      <button class="nav-signin" type="button" data-nav="signin" data-open-signin hidden>Sign in</button>
+    </nav>
+  </header>
+  <main id="main" class="page">
+    <p id="status" class="banner" role="status"></p>
+    <p class="kicker">Account</p>
+    <h1>Your login</h1>
+    <section class="panel" aria-label="Usage">
+      <p class="kicker">Identity</p>
+      <p id="who">Loading…</p>
+      <p class="kicker">Plan</p>
+      <p id="plan"></p>
+      <p class="kicker">Today</p>
+      <p id="usage"></p>
+      <div class="meter" id="meter" role="meter" aria-valuemin="0" aria-valuemax="0" aria-valuenow="0" aria-label="Tool calls used today">
+        <span id="meter-bar"></span>
+      </div>
+    </section>
+    <h2>Add the plugin</h2>
+    <p>Paste this into Cursor or Grok Bot. The client id is the same for everyone. Your own login is the Google or Meta account above.</p>
+    <div class="snippet">
+      <button class="copy" type="button" data-copy>Copy</button>
+      <pre id="snippet" data-snippet>Loading the install snippet…</pre>
+    </div>
+    <h2>Logins</h2>
+    <ul id="linked"></ul>
+    <div class="actions">
+      <button type="button" id="link-google">Link Google</button>
+      <button type="button" id="link-meta">Link Meta</button>
+      <button type="button" id="unlink-google">Remove Google</button>
+      <button type="button" id="unlink-meta">Remove Meta</button>
+    </div>
+    <h2>Sessions</h2>
+    <div class="actions">
+      <button type="button" id="local-out">Sign out of this browser</button>
+      <button type="button" id="global-out">Sign out everywhere</button>
+      <button type="button" class="btn-danger" id="delete">Delete account</button>
+    </div>
+    <p id="note"></p>
+  </main>
+  <footer class="foot">
+    <div><strong>Astraeus</strong><span>astraeus.de-wet.com</span></div>
+    <p>Aerospace plugin for Cursor and Grok Bot.</p>
+  </footer>
+  <script src="/js/auth.js"></script>
+  <script src="/js/site.js"></script>
+  <script>
+    AstraeusSite.start();
+    if (!AstraeusAuth.hasSession()) {
+      location.replace("/");
+    } else {
+      AstraeusSite.loadAccount().catch((error) => {
+        if (error.status === 401) {
+          AstraeusAuth.storage.clear();
+          location.replace("/");
+          return;
+        }
+        document.getElementById("who").textContent = "Could not load this account.";
+        AstraeusSite.showError(error);
+      });
+    }
+  </script>
+</body>
+</html>
