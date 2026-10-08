@@ -745,9 +745,28 @@ class LiftingEntryPhysics(unittest.TestCase):
         self.assertLess(abs(float(held["gamma_final_rad"])), 1e-8)
 
     def test_steep_no_lift_matches_allen_eggers(self) -> None:
+        # Allen–Eggers ignores gravity. With Earth mu the 3DOF peak sits a few
+        # percent high at 7 km/s (still under 3% for this B, but not a fair
+        # closed-form check). Kill gravity with a huge radius and tiny mu.
         ballistic = script("skills", "THERM - BallisticEntryPeakLoad", "ballistic_entry_peak_load.py")
-        # Peak sits near 53-57 km for this B, so the stop is below it.
-        common = ["--altitude", "100000", "--lod", "0", "--beta", "5", "--bank-deg", "0", "--end-altitude", "40000", "--max-time-s", "80"]
+        common = [
+            "--altitude",
+            "100000",
+            "--lod",
+            "0",
+            "--beta",
+            "5",
+            "--bank-deg",
+            "0",
+            "--end-altitude",
+            "15000",
+            "--max-time-s",
+            "80",
+            "--radius",
+            "1e12",
+            "--mu",
+            "1e-6",
+        ]
         for speed in (7000, 11000):
             for degrees in (30, 60):
                 gamma = math.radians(degrees)
@@ -777,58 +796,67 @@ class LiftingEntryPhysics(unittest.TestCase):
                 )
 
     def test_shallow_lift_settles_on_equilibrium_glide(self) -> None:
+        # Start on the lift balance. Compare drag-g at the speed of the peak
+        # load to equilibrium_glide_entry_deceleration at that same speed.
+        # Do not compare to a_peak = g/(L/D): that is the low-speed limit.
         lifting = self._module()
         glide = load_module(
             script("skills", "THERM - EquilibriumGlideEntry", "equilibrium_glide_entry.py")
         )
-        lod = 1.0
-        self.assertTrue(
-            abs(glide.peak_deceleration(G0, lod) / G0 - 1.0 / lod) < 1e-12,
-            "equilibrium peak is g/(L/D)",
-        )
-        flown = lifting.simulate(
-            7600.0,
-            math.radians(0.4),
-            80000.0,
-            lod,
-            400.0,
-            None,
-            None,
-            None,
-            0.0,
-            None,
-            lifting.R0_EARTH,
-            lifting.MU_EARTH,
-            "exponential",
-            None,
-            None,
-            None,
-            20000.0,
-            1200.0,
-            None,
-            None,
-            None,
-            None,
-            1.0e-6,
-            None,
-            converge=False,
-        )
-        checked = 0
-        for row in flown["samples"]:
-            if row["t"] < 1000.0 or row["h"] < 40000.0:
-                continue
-            radius = lifting.R0_EARTH + row["h"]
-            equilibrium = (1.0 - row["V"] ** 2 / (lifting.MU_EARTH / radius)) / lod
-            if equilibrium < 0.2:
-                continue
-            drag_g = row["load_g"] / math.sqrt(1.0 + lod * lod)
-            self.assertLess(
-                abs(drag_g - equilibrium) / equilibrium,
-                0.10,
-                f"drag load {drag_g} vs equilibrium {equilibrium} at t={row['t']}",
+        speed = 7000.0
+        beta = 200.0
+        circular = math.sqrt(G0 * lifting.R0_EARTH)
+        for lod in (1.0, 1.5):
+            self.assertTrue(
+                abs(glide.peak_deceleration(G0, lod) / G0 - 1.0 / lod) < 1e-12,
+                "equilibrium peak is g/(L/D)",
             )
-            checked += 1
-        self.assertGreater(checked, 5, "settled glide window was empty")
+            rho = glide.heating_density(beta, G0, speed, circular, lod)
+            altitude = lifting.DEFAULT_Z_REF + lifting.DEFAULT_H * math.log(
+                lifting.DEFAULT_RHO_REF / rho
+            )
+            flown = lifting.simulate(
+                speed,
+                0.0,
+                altitude,
+                lod,
+                beta,
+                None,
+                None,
+                None,
+                0.0,
+                None,
+                lifting.R0_EARTH,
+                lifting.MU_EARTH,
+                "exponential",
+                None,
+                None,
+                None,
+                20000.0,
+                2000.0,
+                None,
+                None,
+                None,
+                None,
+                1.0e-6,
+                None,
+                converge=False,
+            )
+            peak = max(flown["samples"], key=lambda row: row["load_g"])
+            drag_g = peak["load_g"] / math.sqrt(1.0 + lod * lod)
+            same_speed = glide.entry_deceleration(G0, peak["V"], circular, lod) / G0
+            self.assertLess(
+                abs(drag_g - same_speed) / same_speed,
+                0.10,
+                f"lod={lod}: drag {drag_g} vs same-speed equilibrium {same_speed} "
+                f"at V={peak['V']}",
+            )
+            low_speed_limit = glide.peak_deceleration(G0, lod) / G0
+            self.assertLess(
+                same_speed,
+                low_speed_limit,
+                f"lod={lod}: peak occurs above the low-speed glide limit",
+            )
 
     def test_bank_180_peaks_above_ballistic_above_lift_up(self) -> None:
         common = [
