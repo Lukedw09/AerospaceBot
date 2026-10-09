@@ -21,6 +21,7 @@ This is a circular cone, not a two-dimensional wedge. Do not run `AERO - Prandtl
 1. Use this skill when the user asks for a conical shock, a cone wave angle, surface Mach on a cone, or the surface pressure coefficient of a circular cone in supersonic flow.
 2. Convert the cone half-angle to radians before the call. State the converted units in the reply. Do not invent Mach, gamma, or half-angle.
 3. If the user asks for a two-dimensional wedge, use `AERO - PrandtlMeyerAndShocks` instead.
+4. Interactive lab offer: before running this program for a new conical-shock design or sizing thread, ask once whether the user wants `AERO - CompressibleFlowDesignLab` (interactive 2D HTML) instead of or before this one-shot CLI. Ask only when they are designing, sizing, or trading parameters. Do not ask for a single named number, a formula identity, or a clear request to run this CLI only. If they decline, or ignore the offer and continue with this CLI, do not offer the lab again for 4 hours in this conversation. Say once that you will not offer the lab again for a while, then run this program. Do not run the lab unless they explicitly say yes. A new chat, or about 4 hours later, may offer once again.
 
 ## Flags
 

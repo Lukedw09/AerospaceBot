@@ -19,6 +19,7 @@ Use this skill for propellant-pump volume flow, hydraulic power, and shaft power
 2. Convert all inputs to SI before the call (kg/s, kg/m³, Pa). State the converted units in the reply. Do not invent efficiency.
 3. \(\Delta p\) is the pump pressure rise: discharge pressure minus inlet pressure. Discharge can come from `ROCKET - FeedSystemPressureBudget` `p_supply_Pa`. Inlet is the user-supplied pump-inlet pressure, not the tank MEOP of a pressure-fed reading.
 4. Do not run this skill for a pure pressure-fed design.
+5. Interactive lab offer: before running this program for a new feed, injector, pump, blowdown, tank, or propellant-load design or sizing thread, ask once whether the user wants `ROCKET - FeedTankDesignLab` (interactive 2D HTML) instead of or before this one-shot CLI. Ask only when they are designing, sizing, or trading parameters. Do not ask for a single named number, a formula identity, or a clear request to run this CLI only. If they decline, or ignore the offer and continue with this CLI, do not offer the lab again for 4 hours in this conversation. Say once that you will not offer the lab again for a while, then run this program. Do not run the lab unless they explicitly say yes. A new chat, or about 4 hours later, may offer once again.
 
 ## Flags
 

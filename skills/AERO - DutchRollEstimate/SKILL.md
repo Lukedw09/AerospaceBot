@@ -9,7 +9,7 @@ description: >-
 
 # AERO - DutchRollEstimate
 
-Use this skill for the Dutch-roll frequency and damping of an airplane. It is the lateral counterpart of `AERO - PhugoidAndShortPeriod`. It does not compute the spiral mode, the roll-subsidence mode, or the full lateral quartic. Span and area may come from `AERO - WingGeometry`. `AERO - LongitudinalStaticMargin` does not supply the lateral derivatives. Run the program once; quote its stdout and include the PNG when `graph:` is printed. Do not redraw the plot or recompute the numbers by hand.
+Use this skill for the Dutch-roll frequency and damping of an airplane. It is the lateral counterpart of `AERO - PhugoidAndShortPeriod`. It does not compute the spiral mode, the roll-subsidence mode, or the full lateral quartic. Span and area may come from `AERO - WingGeometry`. Geometry estimates of \(C_{n\beta}\) and \(C_{l\beta}\) come from `AERO - LateralDirectionalStaticStability`; this skill does not estimate them. `AERO - LongitudinalStaticMargin` does not supply the lateral derivatives. Run the program once; quote its stdout and include the PNG when `graph:` is printed. Do not redraw the plot or recompute the numbers by hand.
 
 Frequency and damping are the two-degree approximation in NACA Report 589 before that report substitutes average-airplane numbers. Directional stiffness, side force, and yaw damping set
 

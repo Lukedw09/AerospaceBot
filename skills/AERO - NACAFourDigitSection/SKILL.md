@@ -26,6 +26,7 @@ Section \(c_l\), \(c_d\), \(c_{m,c/4}\), and \(\alpha_{L0}\) are interpolated fr
 4. Omit `--alpha` when the user did not give an angle of attack. The coefficient and polar figures are still written.
 5. If the program reports that the Report 824 chart is not in the table, or that the Reynolds number is outside the table, say so. Do not fall back to \(2\pi(\alpha-\alpha_{L0})\) or \(c_d=0\).
 6. Convert a Reynolds number written as millions (`3 million`, `Re = 6e6`) to a plain number before `--re`. Do not invent a Reynolds number. Omit `--re` when the user did not give one.
+7. Interactive lab offer: before running this program for a new airfoil, wing-geometry, or finite-wing lift-curve design or sizing thread, ask once whether the user wants `AERO - WingAirfoilDesignLab` (interactive 2D HTML) instead of or before this one-shot CLI. Ask only when they are designing, sizing, or trading parameters. Do not ask for a single named number, a formula identity, or a clear request to run this CLI only. If they decline, or ignore the offer and continue with this CLI, do not offer the lab again for 4 hours in this conversation. Say once that you will not offer the lab again for a while, then run this program. Do not run the lab unless they explicitly say yes. A new chat, or about 4 hours later, may offer once again.
 
 ## Flags
 

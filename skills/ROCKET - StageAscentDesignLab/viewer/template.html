@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>__TITLE__</title>
+<style>
+  :root { color-scheme: light; --ink: #1b2631; --muted: #34495e; --line: #d5d8dc; --paper: #f7f9fb; --card: #ffffff; --bad: #922b21; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: var(--paper); color: var(--ink); font-family: "Segoe UI", Helvetica, Arial, sans-serif; }
+  #app { min-height: 100%; display: grid; grid-template-columns: 400px 1fr; }
+  aside { padding: 14px 14px 24px; border-right: 1px solid var(--line); background: var(--card); overflow: auto; }
+  main { min-width: 0; display: flex; flex-direction: column; padding: 12px 16px 20px; gap: 10px; }
+  h1 { margin: 0 0 4px; font-size: 20px; font-weight: 560; }
+  h2 { margin: 14px 0 6px; font-size: 13px; font-weight: 650; }
+  p.note { margin: 0 0 8px; color: var(--muted); font-size: 12px; line-height: 1.4; }
+  label { display: grid; grid-template-columns: 1fr 118px; gap: 6px; align-items: center; margin: 0 0 6px; font-size: 12px; }
+  .choice { display: flex; gap: 14px; flex-wrap: wrap; font-size: 12px; margin: 0 0 8px; }
+  .choice label, .check { display: flex; align-items: center; gap: 6px; margin: 0 0 8px; font-size: 12px; }
+  input[type="number"], select, textarea { width: 100%; font: inherit; color: inherit; background: var(--paper); border: 1px solid var(--line); padding: 3px 6px; }
+  fieldset { border: 1px solid var(--line); margin: 0 0 10px; padding: 8px 8px 2px; }
+  legend { font-size: 12px; font-weight: 650; padding: 0 4px; }
+  #path, #qchart { width: 100%; background: var(--paper); border: 1px solid var(--line); display: block; }
+  #path { height: 360px; }
+  #qchart { height: 240px; }
+  #status { margin: 0; font-size: 13px; line-height: 1.45; }
+  #readout { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px 16px; margin: 0; }
+  #readout h3 { margin: 0 0 4px; font-size: 13px; }
+  #readout p { margin: 0 0 3px; font-size: 13px; }
+  textarea { min-height: 180px; font-family: Consolas, "Courier New", monospace; font-size: 11px; }
+  body.count-1 .stage-2, body.count-1 .stage-3, body.count-2 .stage-3,
+  body.size-payload .glow-only, body.size-glow .payload-only,
+  body.path-kick .gamma-only, body.path-gamma .kick-only,
+  body.jet-off .jet-only, body.jet-alt .jet-time, body.jet-time .jet-alt { display: none; }
+  fieldset.budget-off .budget-only, fieldset.law-linear .explicit-only, fieldset.law-explicit .linear-only { display: none; }
+  @media (max-width: 980px) {
+    #app { grid-template-columns: 1fr; }
+    aside { border-right: 0; border-bottom: 1px solid var(--line); }
+    #readout { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body class="count-2 size-payload path-kick jet-off jet-alt">
+<div id="app">
+  <aside>
+    <h1>Stage ascent</h1>
+    <p class="note">Stage split, then an optional mass budget for inert. The ascent flies until gravity and drag losses settle back into the LEO delta-v.</p>
+    <label>Stages
+      <select id="count">
+        <option value="1">1</option>
+        <option value="2" selected>2</option>
+        <option value="3">3</option>
+      </select>
+    </label>
+    <h2>Size</h2>
+    <div class="choice">
+      <label><input type="radio" name="size" value="payload" checked> Payload</label>
+      <label><input type="radio" name="size" value="glow"> Liftoff mass</label>
+    </div>
+    <label class="payload-only">Payload, kg <input id="payload" type="number" min="0.001" step="any"></label>
+    <label class="glow-only">Liftoff mass, kg <input id="glow" type="number" min="0.001" step="any"></label>
+    <label>Split
+      <select id="mode">
+        <option value="equal_dv">equal delta-v</option>
+        <option value="equal_mr">equal mass ratio</option>
+        <option value="max_payload">max payload</option>
+      </select>
+    </label>
+    <h2>LEO</h2>
+    <label>Altitude, m <input id="alt" type="number" min="0" step="any"></label>
+    <label>Rotation assist, m/s <input id="vrot" type="number" min="0" step="any"></label>
+    <label>Circularization, m/s <input id="circ" type="number" min="0" step="any"></label>
+    <label>Margin, m/s <input id="margin" type="number" min="0" step="any"></label>
+    <label>Margin fraction <input id="margin-fraction" type="number" min="0" step="any"></label>
+    <h2>Path</h2>
+    <div class="choice">
+      <label><input type="radio" name="path" value="kick" checked> Gravity-turn kick</label>
+      <label><input type="radio" name="path" value="gamma"> Held angle</label>
+    </div>
+    <label class="kick-only">Kick, rad <input id="kick" type="number" min="0" max="1.5707963" step="any"></label>
+    <label class="gamma-only">Flight-path angle, rad <input id="gamma" type="number" min="0" max="1.5707963" step="any"></label>
+    <label>Drag coefficient <input id="cd" type="number" min="0" step="any"></label>
+    <label>Area, m² <input id="area" type="number" min="0" step="any"></label>
+    <label class="check"><input id="jettison" type="checkbox"> Fairing drop</label>
+    <label class="jet-only">Drop mass, kg <input id="jet-mass" type="number" min="0.001" step="any"></label>
+    <div class="choice jet-only">
+      <label><input type="radio" name="jetBy" value="alt" checked> Altitude</label>
+      <label><input type="radio" name="jetBy" value="time"> Time</label>
+    </div>
+    <label class="jet-only jet-alt">Drop altitude, m <input id="jet-alt" type="number" min="0" step="any"></label>
+    <label class="jet-only jet-time">Drop time, s <input id="jet-time" type="number" min="0" step="any"></label>
+    <fieldset class="stage-1 budget-off law-linear" data-stage="0">
+      <legend>Stage 1</legend>
+      <label>Isp, s <input data-key="isp" type="number" min="1" step="any"></label>
+      <label>Structural coefficient <input data-key="eps" type="number" min="0" max="0.999" step="any"></label>
+      <label>Burn time, s <input data-key="tb" type="number" min="0.01" step="any"></label>
+      <label class="check"><input data-key="budget" type="checkbox"> Replace inert</label>
+      <label class="budget-only">Budget
+        <select data-key="law">
+          <option value="linear">linear</option>
+          <option value="explicit">components</option>
+        </select>
+      </label>
+      <label class="budget-only linear-only">k <input data-key="k" type="number" min="0" step="any"></label>
+      <label class="budget-only linear-only">mH, kg <input data-key="mH" type="number" min="0" step="any"></label>
+      <label class="budget-only">Residuals, kg <input data-key="residuals" type="number" min="0" step="any"></label>
+      <label class="budget-only explicit-only">Tanks, kg <input data-key="tank" type="number" min="0" step="any"></label>
+      <label class="budget-only explicit-only">Engine mass, kg <input data-key="engineMass" type="number" min="0" step="any"></label>
+      <label class="budget-only explicit-only">Engine count <input data-key="engineCount" type="number" min="1" step="1"></label>
+      <label class="budget-only explicit-only">Fairing, kg <input data-key="fairing" type="number" min="0" step="any"></label>
+      <label class="budget-only explicit-only">Interstage, kg <input data-key="interstage" type="number" min="0" step="any"></label>
+      <label class="budget-only explicit-only">Other, kg <input data-key="other" type="number" min="0" step="any"></label>
+    </fieldset>
+    <fieldset class="stage-2 budget-off law-linear" data-stage="1">
+      <legend>Stage 2</legend>
+      <label>Isp, s <input data-key="isp" type="number" min="1" step="any"></label>
+      <label>Structural coefficient <input data-key="eps" type="number" min="0" max="0.999" step="any"></label>
+      <label>Burn time, s <input data-key="tb" type="number" min="0.01" step="any"></label>
+      <label class="check"><input data-key="budget" type="checkbox"> Replace inert</label>
+      <label class="budget-only">Budget
+        <select data-key="law">
+          <option value="linear">linear</option>
+          <option value="explicit">components</option>
+        </select>
+      </label>
+      <label class="budget-only linear-only">k <input data-key="k" type="number" min="0" step="any"></label>
+      <label class="budget-only linear-only">mH, kg <input data-key="mH" type="number" min="0" step="any"></label>
+      <label class="budget-only">Residuals, kg <input data-key="residuals" type="number" min="0" step="any"></label>
+      <label class="budget-only explicit-only">Tanks, kg <input data-key="tank" type="number" min="0" step="any"></label>
+      <label class="budget-only explicit-only">Engine mass, kg <input data-key="engineMass" type="number" min="0" step="any"></label>
+      <label class="budget-only explicit-only">Engine count <input data-key="engineCount" type="number" min="1" step="1"></label>
+      <label class="budget-only explicit-only">Fairing, kg <input data-key="fairing" type="number" min="0" step="any"></label>
+      <label class="budget-only explicit-only">Interstage, kg <input data-key="interstage" type="number" min="0" step="any"></label>
+      <label class="budget-only explicit-only">Other, kg <input data-key="other" type="number" min="0" step="any"></label>
+    </fieldset>
+    <fieldset class="stage-3 budget-off law-linear" data-stage="2">
+      <legend>Stage 3</legend>
+      <label>Isp, s <input data-key="isp" type="number" min="1" step="any"></label>
+      <label>Structural coefficient <input data-key="eps" type="number" min="0" max="0.999" step="any"></label>
+      <label>Burn time, s <input data-key="tb" type="number" min="0.01" step="any"></label>
+      <label class="check"><input data-key="budget" type="checkbox"> Replace inert</label>
+      <label class="budget-only">Budget
+        <select data-key="law">
+          <option value="linear">linear</option>
+          <option value="explicit">components</option>
+        </select>
+      </label>
+      <label class="budget-only linear-only">k <input data-key="k" type="number" min="0" step="any"></label>
+      <label class="budget-only linear-only">mH, kg <input data-key="mH" type="number" min="0" step="any"></label>
+      <label class="budget-only">Residuals, kg <input data-key="residuals" type="number" min="0" step="any"></label>
+      <label class="budget-only explicit-only">Tanks, kg <input data-key="tank" type="number" min="0" step="any"></label>
+      <label class="budget-only explicit-only">Engine mass, kg <input data-key="engineMass" type="number" min="0" step="any"></label>
+      <label class="budget-only explicit-only">Engine count <input data-key="engineCount" type="number" min="1" step="1"></label>
+      <label class="budget-only explicit-only">Fairing, kg <input data-key="fairing" type="number" min="0" step="any"></label>
+      <label class="budget-only explicit-only">Interstage, kg <input data-key="interstage" type="number" min="0" step="any"></label>
+      <label class="budget-only explicit-only">Other, kg <input data-key="other" type="number" min="0" step="any"></label>
+    </fieldset>
+  </aside>
+  <main>
+    <canvas id="path"></canvas>
+    <canvas id="qchart"></canvas>
+    <p id="status"></p>
+    <div id="readout"></div>
+    <h2>Astraeus</h2>
+    <p class="note">Copy these parameters into Astraeus for MultiStageAscent.</p>
+    <textarea id="parameters" readonly></textarea>
+  </main>
+</div>
+<script>
+var SEED = __SEED_JSON__;
+var RHO = __RHO_JSON__;
+__LAB_JS__
+Lab.rho = RHO;
+Lab.boot(SEED);
+</script>
+</body>
+</html>

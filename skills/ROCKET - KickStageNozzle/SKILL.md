@@ -19,6 +19,8 @@ Me, \(\epsilon\), \(p_e\), and ideal \(C_F\) come from `ROCKET - Area-Mach Graph
 
 ## When to run
 
+Interactive lab offer: before running this program for a new engine, nozzle, or chamber design or sizing thread, ask once whether the user wants `ROCKET - NozzleChamberDesignLab` (interactive 2D HTML) instead of or before this one-shot CLI. Ask only when they are designing, sizing, or trading parameters. Do not ask for a single named number, a formula identity, or a clear request to run this CLI only. If they decline, or ignore the offer and continue with this CLI, do not offer the lab again for 4 hours in this conversation. Say once that you will not offer the lab again for a while, then run this program. Do not run the lab unless they explicitly say yes. A new chat, or about 4 hours later, may offer once again.
+
 1. Design point: the user gives chamber pressure and either a design area ratio or a design exit pressure. Pass `--pc` with exactly one of `--epsilon` or `--pe`.
 2. Pass `--pa` only when the user gives a finite ambient pressure (ignition altitude residual atmosphere, test cell, etc.). Omit `--pa` for vacuum.
 3. Pass `--alt` only as a note when the user named a geometric altitude. It does not set \(p_a\) from the 1976 table. If they want pe=pa matching at or below 86 km, use `ROCKET - ExpansionMatchEarth` instead.

@@ -39,6 +39,8 @@ At fixed \(p_1\) and \(A_t\), thrust follows \(C_F\), and mass flow follows \(c^
 
 ## When to run
 
+Interactive lab offer: before running this program for a new engine, nozzle, or chamber design or sizing thread, ask once whether the user wants `ROCKET - NozzleChamberDesignLab` (interactive 2D HTML) instead of or before this one-shot CLI. Ask only when they are designing, sizing, or trading parameters. Do not ask for a single named number, a formula identity, or a clear request to run this CLI only. If they decline, or ignore the offer and continue with this CLI, do not offer the lab again for 4 hours in this conversation. Say once that you will not offer the lab again for a while, then run this program. Do not run the lab unless they explicitly say yes. A new chat, or about 4 hours later, may offer once again.
+
 1. Use this skill when the user wants actual thrust, specific impulse, thrust coefficient, \(c^{*}\), or mass flow from ideal values and efficiencies or losses.
 2. Convert all inputs to SI before the call (Pa, m², m/s). State the converted units in the reply. An efficiency is a fraction: 98 percent is `0.98`. Do not invent values the user did not give.
 3. Ideal \(C_F\) and ideal \(c^{*}\) are required. If the user already quoted them from another program in this conversation, pass those printed numbers. If either is missing, say so and stop. Do not invent one, and do not run another rocket program unless the user asked for that result.

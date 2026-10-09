@@ -44,6 +44,7 @@ The PDF is that line from the zero-lift angle to stall. The line is the lift coe
 1. Use this skill when the user wants a finite-wing lift curve, a wing lift-curve slope, or the induced angle from a section slope, a zero-lift angle, \(C_{L,\max}\), aspect ratio, and span efficiency.
 2. Convert the zero-lift angle to radians before the call. A section slope given per degree is \(a_0 = a_{0,\mathrm{deg}}\cdot 180/\pi\) per radian. State the converted units in the reply. Do not invent \(a_0\), \(\alpha_{L0}\), \(C_{L,\max}\), aspect ratio, or \(e\).
 3. Pass \(0 < e \le 1\). An elliptic wing uses \(e = 1\).
+4. Interactive lab offer: before running this program for a new airfoil, wing-geometry, or finite-wing lift-curve design or sizing thread, ask once whether the user wants `AERO - WingAirfoilDesignLab` (interactive 2D HTML) instead of or before this one-shot CLI. Ask only when they are designing, sizing, or trading parameters. Do not ask for a single named number, a formula identity, or a clear request to run this CLI only. If they decline, or ignore the offer and continue with this CLI, do not offer the lab again for 4 hours in this conversation. Say once that you will not offer the lab again for a while, then run this program. Do not run the lab unless they explicitly say yes. A new chat, or about 4 hours later, may offer once again.
 
 ## Flags
 

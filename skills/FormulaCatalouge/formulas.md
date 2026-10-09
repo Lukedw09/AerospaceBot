@@ -21,7 +21,7 @@ Each formula is also written as a script record. In those records \(\gamma\) is 
 
 # Compressible flow
 
-Perfect-gas and shock relations for steady inviscid flow, from NACA Report 1135. Circular-cone Taylor–Maccoll flow is from NASA SP-3004 and NACA TN 3485. Numerical Mach-number tables and charts in those reports are not copied here. In this category \(V\) is flow speed and \(v\) is specific volume. \(\gamma\) and the rocket-propulsion symbol \(k\) are the same ratio of specific heats. For air as a calorically perfect gas, use \(\gamma = 1.4 = 7/5\) unless the user gives another value. Above roughly \(550\,\text{K}\), use the air \(\gamma(T)\) table at the end of this category.
+Perfect-gas and shock relations for steady flow, from NACA Report 1135. Constant-area Fanno and Rayleigh sonic-reference ratios follow NASA/TM-2006-214086. Circular-cone Taylor–Maccoll flow is from NASA SP-3004 and NACA TN 3485. Numerical Mach-number tables and charts in those reports are not copied here. In this category \(V\) is flow speed and \(v\) is specific volume. \(\gamma\) and the rocket-propulsion symbol \(k\) are the same ratio of specific heats. For air as a calorically perfect gas, use \(\gamma = 1.4 = 7/5\) unless the user gives another value. Above roughly \(550\,\text{K}\), use the air \(\gamma(T)\) table at the end of this category.
 
 ## Perfect-gas equation of state
 
@@ -1174,6 +1174,168 @@ Engineering values of the corrected ratio \(\gamma\) for dry air. Temperatures i
 
 Assumptions: these values are the NACA Report 1135 engineering approximation for air from \(400^\circ\mathrm{R}\) to \(5500^\circ\mathrm{R}\). They do not include chemical dissociation. Interpolate between neighboring rows. Below about \(500^\circ\mathrm{R}\), \(\gamma = 1.400\).
 
+## Fanno flow
+
+Steady adiabatic flow of a calorically perfect gas in a constant-area duct with wall friction. Ratios are to the sonic state \(*\). NASA/TM-2006-214086 Table 4.2. The duct length that remains until Mach 1 is \(4fL^{*}/D\).
+
+\[
+\frac{T}{T^{*}}=\frac{\gamma+1}{2+(\gamma-1)M^{2}}
+\]
+
+```formula
+## fanno_temperature_ratio
+family: duct
+expr: (g+1)/(2+(g-1)*M**2)
+symbols: g, M
+```
+
+\[
+\frac{p}{p^{*}}=\frac{1}{M}\sqrt{\frac{\gamma+1}{2+(\gamma-1)M^{2}}}
+\]
+
+```formula
+## fanno_pressure_ratio
+family: duct
+expr: (1/M)*((g+1)/(2+(g-1)*M**2))**0.5
+symbols: g, M
+```
+
+\[
+\frac{\rho}{\rho^{*}}=\frac{1}{M}\sqrt{\frac{2+(\gamma-1)M^{2}}{\gamma+1}}
+\]
+
+```formula
+## fanno_density_ratio
+family: duct
+expr: (1/M)*((2+(g-1)*M**2)/(g+1))**0.5
+symbols: g, M
+```
+
+\[
+\frac{V}{V^{*}}=M\sqrt{\frac{\gamma+1}{2+(\gamma-1)M^{2}}}
+\]
+
+```formula
+## fanno_velocity_ratio
+family: duct
+expr: M*((g+1)/(2+(g-1)*M**2))**0.5
+symbols: g, M
+```
+
+\[
+\frac{p_t}{p_t^{*}}=\frac{1}{M}\left(\frac{2+(\gamma-1)M^{2}}{\gamma+1}\right)^{(\gamma+1)/(2(\gamma-1))}
+\]
+
+```formula
+## fanno_stagnation_pressure_ratio
+family: duct
+expr: (1/M)*((2+(g-1)*M**2)/(g+1))**((g+1)/(2*(g-1)))
+symbols: g, M
+```
+
+\[
+\frac{4fL^{*}}{D}=\frac{1-M^{2}}{\gamma M^{2}}+\frac{\gamma+1}{2\gamma}\ln\left(\frac{(\gamma+1)M^{2}}{2+(\gamma-1)M^{2}}\right)
+\]
+
+```formula
+## fanno_friction_parameter
+family: duct
+expr: (1-M**2)/(g*M**2)+((g+1)/(2*g))*log(((g+1)*M**2)/(2+(g-1)*M**2))
+symbols: g, M
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(M\) | Mach number at the station | dimensionless |
+| \(\gamma\) | Ratio of specific heats (script `g`) | dimensionless |
+| \(T/T^{*}\), \(p/p^{*}\), \(\rho/\rho^{*}\) | Static ratios to the sonic state | dimensionless |
+| \(V/V^{*}\) | Velocity ratio to the sonic state | dimensionless |
+| \(p_t/p_t^{*}\) | Stagnation-pressure ratio to the sonic state | dimensionless |
+| \(4fL^{*}/D\) | Friction length from this station to Mach 1 | dimensionless |
+
+Assumptions: calorically perfect gas, constant area, adiabatic wall, and a constant Fanning friction factor. \(M>0\). Every ratio is 1 at \(M=1\), and \(4fL^{*}/D=0\) there. Subsonic flow accelerates toward Mach 1 as the duct gets longer; supersonic flow decelerates toward Mach 1. \(V/V^{*}=\rho^{*}/\rho\). A duct longer than \(4fL^{*}/D\) cannot pass this mass flow without choking. Combined heat addition is Rayleigh flow, not this record.
+
+## Rayleigh flow
+
+Steady frictionless flow of a calorically perfect gas in a constant-area duct with heat addition. Ratios are to the sonic state \(*\). NASA/TM-2006-214086 Table 4.6.
+
+\[
+\frac{T_t}{T_t^{*}}=\frac{2(\gamma+1)M^{2}\left(1+\frac{\gamma-1}{2}M^{2}\right)}{(1+\gamma M^{2})^{2}}
+\]
+
+```formula
+## rayleigh_stagnation_temperature_ratio
+family: duct
+expr: 2*(g+1)*M**2*(1+((g-1)/2)*M**2)/(1+g*M**2)**2
+symbols: g, M
+```
+
+\[
+\frac{T}{T^{*}}=\frac{(\gamma+1)^{2}M^{2}}{(1+\gamma M^{2})^{2}}
+\]
+
+```formula
+## rayleigh_temperature_ratio
+family: duct
+expr: (g+1)**2*M**2/(1+g*M**2)**2
+symbols: g, M
+```
+
+\[
+\frac{p}{p^{*}}=\frac{\gamma+1}{1+\gamma M^{2}}
+\]
+
+```formula
+## rayleigh_pressure_ratio
+family: duct
+expr: (g+1)/(1+g*M**2)
+symbols: g, M
+```
+
+\[
+\frac{\rho}{\rho^{*}}=\frac{1+\gamma M^{2}}{(\gamma+1)M^{2}}
+\]
+
+```formula
+## rayleigh_density_ratio
+family: duct
+expr: (1+g*M**2)/((g+1)*M**2)
+symbols: g, M
+```
+
+\[
+\frac{p_t}{p_t^{*}}=\frac{\gamma+1}{1+\gamma M^{2}}\left(\frac{2+(\gamma-1)M^{2}}{\gamma+1}\right)^{\gamma/(\gamma-1)}
+\]
+
+```formula
+## rayleigh_stagnation_pressure_ratio
+family: duct
+expr: ((g+1)/(1+g*M**2))*((2+(g-1)*M**2)/(g+1))**(g/(g-1))
+symbols: g, M
+```
+
+\[
+\frac{V}{V^{*}}=\frac{(\gamma+1)M^{2}}{1+\gamma M^{2}}
+\]
+
+```formula
+## rayleigh_velocity_ratio
+family: duct
+expr: (g+1)*M**2/(1+g*M**2)
+symbols: g, M
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(M\) | Mach number at the station | dimensionless |
+| \(\gamma\) | Ratio of specific heats (script `g`) | dimensionless |
+| \(T_t/T_t^{*}\) | Stagnation-temperature ratio to the sonic state | dimensionless |
+| \(T/T^{*}\), \(p/p^{*}\), \(\rho/\rho^{*}\) | Static ratios to the sonic state | dimensionless |
+| \(p_t/p_t^{*}\) | Stagnation-pressure ratio to the sonic state | dimensionless |
+| \(V/V^{*}\) | Velocity ratio to the sonic state | dimensionless |
+
+Assumptions: calorically perfect gas, constant area, and no wall friction. \(M>0\). Heat addition drives the Mach number toward 1. \(T_t/T_t^{*}\) cannot exceed 1; that limit is thermal choking. Fanno friction is a separate duct.
+
 # Atmosphere
 
 Defining relations of the U.S. Standard Atmosphere, 1976 (NASA TM-X-74335 / NOAA-S/T-76-1562), with the same closed-form layer equations as NASA TR R-459. Moist-air saturation pressure and humidity of one parcel follow NASA TN D-8401, combined with the 1976 mixture sums. Keep both of those apart from the NASA Glenn three-zone curve fit at the end of the category. In this category \(R^{*}\) is the universal gas constant and \(M\) is molar mass. Geometric altitude is \(Z\); geopotential altitude is \(H\).
@@ -1961,7 +2123,7 @@ Assumptions: 1976 Boltzmann constant in `kB`, and the 1976 Avogadro constant in 
 
 # Rocket propulsion
 
-Vehicle and motor performance. In this category \(k\) is the ratio of specific heats. Nozzle area ratio and isentropic exit state use the Area-Mach and stagnation relations in Compressible flow. In the mass-flow section, \(V\) is specific volume. Circular-port grain area, web, and sliver fraction follow NASA SP-8076. Injector orifice flow, the feed-pressure stack, pump hydraulic power, Bartz throat heat flux, and regenerative coolant heat pickup follow NASA SP-125. Low-thrust electric propulsion uses `vacuum_propellant_mass` and adds burn time and input electrical power. Coplanar phasing and planar Clohessy–Wiltshire motion use the two-body mean motion already in this category. Pressurant blowdown is the polytropic ullage relation from SP-125. Geostationary east–west removal is \(2ve\). An elevation mask fixes the Earth-central swath angle.
+Vehicle and motor performance. In this category \(k\) is the ratio of specific heats. Nozzle area ratio and isentropic exit state use the Area-Mach and stagnation relations in Compressible flow. In the mass-flow section, \(V\) is specific volume. Circular-port grain area, web, and sliver fraction follow NASA SP-8076. Injector orifice flow, the feed-pressure stack, pump hydraulic power, Bartz throat heat flux, and regenerative coolant heat pickup follow NASA SP-125. Low-thrust electric propulsion uses `vacuum_propellant_mass` and adds burn time and input electrical power. Coplanar phasing and planar Clohessy–Wiltshire motion use the two-body mean motion already in this category. A single-revolution Lambert transfer follows Lancaster and Blanchard, NASA TM X-63355 and NASA TN D-5368. Pressurant blowdown is the polytropic ullage relation from SP-125. Geostationary east–west removal is \(2ve\). An elevation mask fixes the Earth-central swath angle.
 
 ## Average exhaust velocity
 
@@ -5899,9 +6061,185 @@ symbols: R, lam
 | \(\rho_g\) | Footprint radius | m |
 | \(\lambda\) | Earth-central half-angle (script `lam`) | rad |
 
+## Lambert transfer
+
+Single-revolution transfer between two position vectors in a stated time of flight. Lancaster and Blanchard reduce that problem to one unknown. The records below are the universal-variable pieces of that residual and the Lagrange reconstruction of the endpoint velocities. The root itself is iterated in the program.
+
+Chord and the cosine of the transfer angle:
+
+\[
+c=\lvert\mathbf{r}_2-\mathbf{r}_1\rvert,\qquad
+\cos\Delta\theta=\frac{\mathbf{r}_1\cdot\mathbf{r}_2}{r_1 r_2}
+\]
+
+```formula
+## lambert_chord
+family: flight
+expr: ((x2-x1)**2+(y2-y1)**2+(z2-z1)**2)**0.5
+symbols: x1, y1, z1, x2, y2, z2
+```
+
+```formula
+## lambert_transfer_cosine
+family: flight
+expr: (x1*x2+y1*y2+z1*z2)/(r1*r2)
+symbols: x1, y1, z1, x2, y2, z2, r1, r2
+```
+
+\[
+s=\frac{r_1+r_2+c}{2}
+\]
+
+```formula
+## lambert_semiperimeter
+family: flight
+expr: (r1+r2+c)/2
+symbols: r1, r2, c
+```
+
+Geometric parameter of the universal-variable residual. \(\Delta\theta\) is the transfer angle, short or long:
+
+\[
+A=\sin\Delta\theta\sqrt{\frac{r_1 r_2}{1-\cos\Delta\theta}}
+\]
+
+```formula
+## lambert_geometric_parameter
+family: flight
+expr: sin(dth)*((r1*r2)/(1-cos(dth)))**0.5
+symbols: dth, r1, r2
+```
+
+Stumpff functions. Elliptic \(z>0\) and hyperbolic \(z<0\):
+
+\[
+C(z)=\frac{1-\cos\sqrt{z}}{z},\qquad
+S(z)=\frac{\sqrt{z}-\sin\sqrt{z}}{z^{3/2}}
+\]
+
+```formula
+## stumpff_c_elliptic
+family: flight
+expr: (1-cos(z**0.5))/z
+symbols: z
+```
+
+```formula
+## stumpff_s_elliptic
+family: flight
+expr: (z**0.5-sin(z**0.5))/z**1.5
+symbols: z
+```
+
+\[
+C(z)=\frac{\cosh\sqrt{-z}-1}{-z},\qquad
+S(z)=\frac{\sinh\sqrt{-z}-\sqrt{-z}}{(-z)^{3/2}}
+\]
+
+```formula
+## stumpff_c_hyperbolic
+family: flight
+expr: (((exp((-z)**0.5)+exp(-((-z)**0.5)))/2)-1)/(-z)
+symbols: z
+```
+
+```formula
+## stumpff_s_hyperbolic
+family: flight
+expr: (((exp((-z)**0.5)-exp(-((-z)**0.5)))/2)-(-z)**0.5)/((-z)**1.5)
+symbols: z
+```
+
+\[
+y=r_1+r_2+A\frac{zS-1}{\sqrt{C}}
+\]
+
+```formula
+## lambert_y_parameter
+family: flight
+expr: r1+r2+A*(z*S-1)/C**0.5
+symbols: r1, r2, A, z, S, C
+```
+
+Time of flight, and the residual against a supplied time:
+
+\[
+t=\frac{1}{\sqrt{\mu}}\left[\left(\frac{y}{C}\right)^{3/2}S+A\sqrt{y}\right]
+\]
+
+```formula
+## lambert_time_of_flight
+family: flight
+expr: ((y/C)**1.5*S+A*y**0.5)/mu**0.5
+symbols: y, C, S, A, mu
+```
+
+```formula
+## lambert_tof_residual
+family: flight
+expr: ((y/C)**1.5*S+A*y**0.5)/mu**0.5-tof
+symbols: y, C, S, A, mu, tof
+```
+
+Lagrange coefficients and one velocity component:
+
+\[
+f=1-\frac{y}{r_1},\qquad
+g=A\sqrt{\frac{y}{\mu}},\qquad
+\dot g=1-\frac{y}{r_2}
+\]
+
+```formula
+## lagrange_f
+family: flight
+expr: 1-y/r1
+symbols: y, r1
+```
+
+```formula
+## lagrange_g
+family: flight
+expr: A*(y/mu)**0.5
+symbols: A, y, mu
+```
+
+```formula
+## lagrange_gdot
+family: flight
+expr: 1-y/r2
+symbols: y, r2
+```
+
+```formula
+## lambert_velocity_from_lagrange
+family: flight
+expr: (r2c-f*r1c)/g
+symbols: r2c, f, r1c, g
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(x_1,y_1,z_1\) | First position | m |
+| \(x_2,y_2,z_2\) | Second position | m |
+| \(r_1,r_2\) | Radii | m |
+| \(c\) | Chord | m |
+| \(s\) | Semi-perimeter | m |
+| \(\Delta\theta\) | Transfer angle (script `dth`) | rad |
+| \(A\) | Universal-variable geometric parameter | m |
+| \(z\) | Universal anomaly argument | dimensionless |
+| \(C,S\) | Stumpff functions | dimensionless |
+| \(y\) | Lambert auxiliary length | m |
+| \(\mu\) | Gravitational parameter (script `mu`) | m³/s² |
+| \(t\) | Time of flight (script `tof` in the residual) | s |
+| \(f,g,\dot g\) | Lagrange coefficients | dimensionless, s, dimensionless |
+| \(r_{1c},r_{2c}\) | One component of each position | m |
+| \(g\) | Lagrange \(g\) in the velocity record | s |
+
+Assumptions: two-body inverse-square gravity and one revolution. \(z>0\) uses the elliptic Stumpff records and \(z<0\) the hyperbolic records. At \(z=0\), \(C=1/2\) and \(S=1/6\), which the series limits of those expressions recover. The short-way angle is at most \(\pi\); the long-way angle is the supplement through \(2\pi\). A zero chord is not a transfer. Multi-revolution branches are not these records. Semi-major axis, eccentricity, and parameter of the resulting conic are `semimajor_axis_from_state`, `eccentricity_from_energy`, and `parameter_from_angular_momentum`.
+
 # Aerodynamics
 
-Incompressible flow and the dimensionless force and moment coefficients. Freestream dynamic pressure \(q_{\infty}\) is the dynamic-pressure relation in Compressible flow evaluated far ahead of the body. In this category \(V\) is flow speed. The two-dimensional Prandtl–Glauert factor follows NACA TN 1127. The isentropic critical pressure coefficient is `pressure_coefficient_from_mach` at local Mach 1 on the same stagnation streamline as NACA Report 1135. Critical Mach number follows NACA TN 1813: the freestream Mach at which that critical coefficient equals the Prandtl–Glauert correction of the incompressible minimum pressure coefficient. Wing geometry and induced drag follow NASA Glenn's Beginner's Guide (public-domain educational pages). The finite-wing lift curve follows NASA TP-2414 and NACA TN 1862. NACA four-digit thickness and mean-line ordinates follow NACA Report 460 and NASA TM X-3284. Thin-section lift, zero-lift angle, and quarter-chord moment follow Munk, NACA Report 142, applied to that mean line. Stall speed and load factor follow the usual force definitions used in FAA-H-8083 and NASA SP-367. Unaccelerated rate of climb is the specific excess power \((T-D)V/W\) of the X-57 power-off-glide note, with climb angle from that vertical component as in FAA-H-8083-25C Chapter 11. Coordinated level-turn bank, radius, and rate follow FAA-H-8083-25C Chapter 5. The sustained-turn load factor is that level-turn \(n\) with `drag_polar` when thrust equals drag. Symmetric pull-up load factor, flight-path radius, and pitch rate follow Johnson, NASA/TP-2009-215402 (NDARC), for an instantaneous wings-level pull-up from level flight. Takeoff ground roll on a level dry runway follows Diehl, NACA Report 450, with Hartman TN 557 resistance \(\mu(W-L)+D\) and Wetmore Report 583 rolling friction. Landing ground roll from contact to rest follows Gustafson, NACA WR L-245, with the same resistance, the same \(a=gF/W\), and Diehl’s integrals run from touchdown speed to zero. The default touchdown factor \(1.3\) is the FAA-H-8083-3C final-approach multiple of landing stall. Ideal propeller thrust, disk speed, induced velocity, and propulsive efficiency follow NASA Glenn's actuator-disk pages, with the incompressible ideal-efficiency definition of NACA RM L53A07. Steady unpowered glide angle, horizontal range from a height, and the force balance \(L=W\cos a\), \(D=W\sin a\) follow those same Glenn glide pages. Sink rate is the vertical component of true airspeed on that path. Breguet propeller range and endurance follow NACA Report 234. Breguet jet range follows Guynn (NASA Langley) and the cruise derivation in NASA TN D-6707. Design-point inlet recovery, compressor and turbine efficiency, burner and afterburner fuel-air ratio, separate-stream turbofan thrust, and airflow sizing follow the NASA Glenn Beginner's Guide component pages, with the isentropic-efficiency definitions in NASA/TM-20220008026. The stick-fixed neutral point and static margin follow NACA TN 1670. Classical phugoid period and the static short-period approximation follow the longitudinal-mode family in NACA Report 521; that report’s design charts are not transcribed. Dutch-roll frequency and damping follow the two-degree lateral approximation in NACA Report 589; that report’s design charts are not transcribed.
+Incompressible flow and the dimensionless force and moment coefficients. Freestream dynamic pressure \(q_{\infty}\) is the dynamic-pressure relation in Compressible flow evaluated far ahead of the body. In this category \(V\) is flow speed. The two-dimensional Prandtl–Glauert factor follows NACA TN 1127. The isentropic critical pressure coefficient is `pressure_coefficient_from_mach` at local Mach 1 on the same stagnation streamline as NACA Report 1135. Critical Mach number follows NACA TN 1813: the freestream Mach at which that critical coefficient equals the Prandtl–Glauert correction of the incompressible minimum pressure coefficient. Wing geometry and induced drag follow NASA Glenn's Beginner's Guide (public-domain educational pages). The finite-wing lift curve follows NASA TP-2414 and NACA TN 1862. NACA four-digit thickness and mean-line ordinates follow NACA Report 460 and NASA TM X-3284. Thin-section lift, zero-lift angle, and quarter-chord moment follow Munk, NACA Report 142, applied to that mean line. Stall speed and load factor follow the usual force definitions used in FAA-H-8083 and NASA SP-367. Unaccelerated rate of climb is the specific excess power \((T-D)V/W\) of the X-57 power-off-glide note, with climb angle from that vertical component as in FAA-H-8083-25C Chapter 11. Coordinated level-turn bank, radius, and rate follow FAA-H-8083-25C Chapter 5. The sustained-turn load factor is that level-turn \(n\) with `drag_polar` when thrust equals drag. Symmetric pull-up load factor, flight-path radius, and pitch rate follow Johnson, NASA/TP-2009-215402 (NDARC), for an instantaneous wings-level pull-up from level flight. Takeoff ground roll on a level dry runway follows Diehl, NACA Report 450, with Hartman TN 557 resistance \(\mu(W-L)+D\) and Wetmore Report 583 rolling friction. Landing ground roll from contact to rest follows Gustafson, NACA WR L-245, with the same resistance, the same \(a=gF/W\), and Diehl’s integrals run from touchdown speed to zero. The default touchdown factor \(1.3\) is the FAA-H-8083-3C final-approach multiple of landing stall. Ideal propeller thrust, disk speed, induced velocity, and propulsive efficiency follow NASA Glenn's actuator-disk pages, with the incompressible ideal-efficiency definition of NACA RM L53A07. Steady unpowered glide angle, horizontal range from a height, and the force balance \(L=W\cos a\), \(D=W\sin a\) follow those same Glenn glide pages. Sink rate is the vertical component of true airspeed on that path. Breguet propeller range and endurance follow NACA Report 234. Breguet jet range follows Guynn (NASA Langley) and the cruise derivation in NASA TN D-6707. Design-point inlet recovery, compressor and turbine efficiency, burner and afterburner fuel-air ratio, separate-stream turbofan thrust, and airflow sizing follow the NASA Glenn Beginner's Guide component pages, with the isentropic-efficiency definitions in NASA/TM-20220008026. The stick-fixed neutral point and static margin follow NACA TN 1670. Classical phugoid period and the static short-period approximation follow the longitudinal-mode family in NACA Report 521; that report’s design charts are not transcribed. Dutch-roll frequency and damping follow the two-degree lateral approximation in NACA Report 589; that report’s design charts are not transcribed. Flat-plate laminar and one-seventh-power skin friction follow NASA TM 84363, with Reynolds number from the compressible-flow category.
 
 ## Bernoulli's relation
 
@@ -6224,6 +6562,74 @@ symbols: tau, q_inf
 | \(q_{\infty}\) | Freestream dynamic pressure | Pa |
 
 Assumptions: \(\tau\) is the shear stress acting on the surface. Subscripts \(u\) and \(l\) denote the upper and lower surfaces.
+
+## Flat-plate boundary layer
+
+Zero-incidence smooth flat plate. NASA TM 84363 states the plate coefficients. The local coefficients are the power laws whose chordwise average is that plate coefficient. One wetted side. Reynolds number is `reynolds_number` or `reynolds_number_kinematic`.
+
+\[
+c_f=\frac{0.664}{\sqrt{Re_x}}
+\]
+
+```formula
+## blasius_local_skin_friction
+family: aerodynamics
+expr: 0.664/Re**0.5
+symbols: Re
+```
+
+\[
+C_f=\frac{1.328}{\sqrt{Re_L}}
+\]
+
+```formula
+## blasius_plate_friction
+family: aerodynamics
+expr: 1.328/Re**0.5
+symbols: Re
+```
+
+\[
+\frac{\delta}{x}=\frac{5}{\sqrt{Re_x}}
+\]
+
+```formula
+## blasius_thickness_ratio
+family: aerodynamics
+expr: 5/Re**0.5
+symbols: Re
+```
+
+\[
+C_f=\frac{0.074}{Re_L^{1/5}}
+\]
+
+```formula
+## turbulent_plate_friction_seventh
+family: aerodynamics
+expr: 0.074/Re**0.2
+symbols: Re
+```
+
+\[
+c_f=\frac{0.0592}{Re_x^{1/5}}
+\]
+
+```formula
+## turbulent_local_skin_friction_seventh
+family: aerodynamics
+expr: 0.0592/Re**0.2
+symbols: Re
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(Re\) | Reynolds number based on \(x\) or on \(L\) | dimensionless |
+| \(c_f\) | Local skin-friction coefficient | dimensionless |
+| \(C_f\) | Plate friction coefficient, one side | dimensionless |
+| \(\delta/x\) | Laminar 99-percent thickness over the station | dimensionless |
+
+Assumptions: incompressible zero-pressure-gradient flow on a smooth plate. Laminar records are the Blasius solution; TM 84363 states \(C_f=1.328\,Re_L^{-1/2}\) below about \(5\times10^5\) to \(10^6\). The local coefficient \(0.664\) is half of that plate coefficient at the same Reynolds number, which is the integral of an \(Re_x^{-1/2}\) wall shear. The thickness constant 5 is the Blasius \(\eta\approx 5\) station of that same solution. Turbulent records are Prandtl’s one-seventh-power law, \(C_f=0.074\,Re_L^{-1/5}\), stated in that memorandum for \(5\times10^5<Re_L<10^7\). The local coefficient \(0.0592=(4/5)\times 0.074\) is the \(Re_x^{-1/5}\) shear whose average is that plate coefficient. The memorandum’s logarithmic skin-friction formula is not this record. There is no transition model.
 
 ## Normal, axial, and leading-edge moment coefficients by integration
 
@@ -8515,7 +8921,7 @@ symbols: pi, A2, A1
 | \(c_{m,c/4}\) | Section pitching-moment coefficient about the quarter chord | dimensionless |
 | \(\pi\) | Circle constant | dimensionless |
 
-Assumptions: two-dimensional, inviscid, incompressible thin-section flow. Camber and angle of attack are small. Thickness does not enter \(\alpha_{L0}\), \(c_l\), or \(c_{m,c/4}\). Two-dimensional inviscid pressure drag is zero. Munk notes that a useful profile drag still requires an empirical friction estimate; that estimate is not this record. \(0 < p < 1\) and \(m \ge 0\). A symmetric mean line is \(m = 0\), so \(\alpha_{L0} = 0\) and \(c_{m,c/4} = 0\). Positive moment is pitch-up. Script `theta_p` is `naca4_glauert_station`. Script `s**1.5` in \(A_2\) is \(s^{3}\) with \(s=\sqrt{p(1-p)}\).
+Assumptions: two-dimensional, inviscid, incompressible thin-section flow. Camber and angle of attack are small. Thickness does not enter \(\alpha_{L0}\), \(c_l\), or \(c_{m,c/4}\). Two-dimensional inviscid pressure drag is zero. Munk notes that a useful profile drag still requires an empirical friction estimate; that estimate is not this record. \(0 < p < 1\) and \(m \ge 0\). A symmetric mean line is \(m = 0\), so \(\alpha_{L0} = 0\) and \(c_{m,c/4} = 0\). Positive moment is pitch-up. Script `theta_p` is `naca4_glauert_station`. Script `s**1.5` in \(A_2\) is \(s^{3}\) with \(s=\sqrt{p(1-p)}\). `AERO - ThinAirfoilTheory` evaluates these records. A sealed-flap effectiveness is not recorded. Measured section polars stay on the NACA Report 824 charts.
 
 ## Drag delta-v per revolution
 
@@ -8957,7 +9363,7 @@ symbols: T, L, G, J
 | \(L\) | Shaft length | m |
 | \(G\) | Shear modulus | Pa |
 
-Assumptions: elastic range; plane sections remain plane; radii remain straight; homogeneous isotropic linear-elastic material; circular solid or concentrically hollow prismatic section. Non-circular Saint-Venant torsion, open thin-wall warping, plastic torsion, and combined bending-plus-torsion are omitted. \(T,J,L,G>0\), \(R_o>R_i\ge 0\), and \(0\le r\le R_o\).
+Assumptions: elastic range; plane sections remain plane; radii remain straight; homogeneous isotropic linear-elastic material; circular solid or concentrically hollow prismatic section. Non-circular Saint-Venant torsion, open thin-wall warping, and plastic torsion are omitted. Combined bending-plus-torsion principals are the Mohr records below. \(T,J,L,G>0\), \(R_o>R_i\ge 0\), and \(0\le r\le R_o\).
 
 ## Cylinder hoop stress
 
@@ -11047,7 +11453,7 @@ Linear, constant-coefficient, single-input second-order response follows NASA/TM
 G(s)=\frac{\omega_n^{2}}{s^{2}+2\zeta\omega_n s+\omega_n^{2}}
 \]
 
-or the mechanical SDOF \(m\ddot{x}+c\dot{x}+kx=F\). In this category \(k\) is stiffness, not the rocket ratio of specific heats. Rise time from 10% to 90% of the final value is read from the unit-step solution in the program and is not a separate closed-form record here. Base-excitation transmissibility is the steady amplitude ratio of a mass whose support moves as \(Y\sin\omega t\). Single-axis wheel inertia is \(H/\omega_{\max}\) from the same \(H=I\omega\) used for slew storage. Magnetic moment is the inverse of the magnetic disturbance torque. Miles’ rms acceleration is the flat-spectrum response of one resonator.
+or the mechanical SDOF \(m\ddot{x}+c\dot{x}+kx=F\). In this category \(k\) is stiffness, not the rocket ratio of specific heats. Rise time from 10% to 90% of the final value is read from the unit-step solution in the program and is not a separate closed-form record here. Base-excitation transmissibility is the steady amplitude ratio of a mass whose support moves as \(Y\sin\omega t\). Single-axis wheel inertia is \(H/\omega_{\max}\) from the same \(H=I\omega\) used for slew storage. Magnetic moment is the inverse of the magnetic disturbance torque. Miles’ rms acceleration is the flat-spectrum response of one resonator. Open-loop Bode magnitude, phase, gain margin, and phase margin are the loop-shaping margins of the NASA Glenn notes NTRS 20100040421 and NTRS 20070034948. Attitude kinematics use a 3-2-1 direction-cosine matrix and a scalar-first quaternion, from the NASA Goddard representations in NTRS 19990110711 and NTRS 20020060647. Torque is not part of those maps.
 
 ## Natural frequency from mass and stiffness
 
@@ -11515,3 +11921,564 @@ symbols: pi, fn, Q, W0
 | \(W_0\) | Flat spectrum level at resonance | g²/Hz |
 
 Assumptions: one mode, white (flat) drive at that resonance. Three times this value is a usual peak estimate, not a probability bound. Not sine transmissibility and not a shock spectrum.
+
+## Bode magnitude, phase, and margins
+
+Open-loop frequency response of \(L(j\omega)=U+jW\). Magnitude in decibels and phase in degrees use the loop transfer shaped in NASA/TM-2010-216897 and the NASA Glenn loop-shaping note. The program finds the crossover frequencies. These records evaluate a supplied complex value.
+
+\[
+|L|_{\mathrm{dB}}=20\log_{10}\sqrt{U^{2}+W^{2}}
+\]
+
+```formula
+## bode_magnitude_db
+family: control
+expr: 20*log((re**2+im**2)**0.5)/log(10)
+symbols: re, im
+```
+
+\[
+\arg L=2\tan^{-1}\left(\frac{W}{|L|+U}\right)
+\]
+
+```formula
+## bode_phase_deg
+family: control
+expr: 2*atan(im/((re**2+im**2)**0.5+re))*180/pi
+symbols: im, re, pi
+```
+
+Phase margin from the phase, in degrees, at a gain crossover. Gain margin in decibels from the magnitude at a phase crossover:
+
+\[
+\mathrm{PM}=180+\arg L,\qquad
+\mathrm{GM}_{\mathrm{dB}}=-20\log_{10}|L|
+\]
+
+```formula
+## phase_margin_deg
+family: control
+expr: 180+phase
+symbols: phase
+```
+
+```formula
+## gain_margin_db
+family: control
+expr: -20*log(mag)/log(10)
+symbols: mag
+```
+
+Series PID at \(s=j\omega\), \(C=K_p+j(\omega K_d-K_i/\omega)\):
+
+```formula
+## series_pid_real
+family: control
+expr: kp
+symbols: kp
+```
+
+```formula
+## series_pid_imag
+family: control
+expr: w*kd-ki/w
+symbols: w, kd, ki
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(U,W\) | Real and imaginary parts of \(L(j\omega)\) (script `re`, `im`) | dimensionless |
+| \(\lvert L\rvert_{\mathrm{dB}}\) | Bode magnitude | dB |
+| \(\arg L\) | Bode phase | deg |
+| \(\mathrm{PM}\) | Phase margin | deg |
+| \(\mathrm{GM}\) | Gain margin | dB |
+| \(\lvert L\rvert\) | Magnitude at the phase crossover (script `mag`) | dimensionless |
+| \(K_p,K_i,K_d\) | Series proportional, integral, and derivative gains | mixed |
+| \(\omega\) | Frequency (script `w`) | rad/s |
+| \(\pi\) | Circle constant | dimensionless |
+
+Assumptions: \(L(j\omega)\) is a ratio of real polynomials, optionally times a series PID. The phase record is the four-quadrant argument except on the negative-real axis, where the half-angle form is singular. Phase margin uses the phase in degrees at \(|L|=1\). Gain margin uses \(|L|\) where the phase is \(-180^\circ\). Finding those frequencies is numerical. Root-locus geometry is not recorded. A plant with no finite phase crossover has no finite gain margin.
+
+## Attitude kinematics
+
+The 3-2-1 sequence is yaw \(\psi\), then pitch \(\theta\), then roll \(\phi\), each in radians. The direction-cosine matrix maps inertial components into body components. The quaternion is scalar-first and has unit length. NASA Goddard attitude representations (NTRS 19990110711 and NTRS 20020060647).
+
+\[
+C_{11}=\cos\theta\cos\psi
+\]
+
+```formula
+## dcm_321_c11
+family: control
+expr: cos(th)*cos(ps)
+symbols: th, ps
+```
+
+```formula
+## dcm_321_c12
+family: control
+expr: cos(th)*sin(ps)
+symbols: th, ps
+```
+
+```formula
+## dcm_321_c13
+family: control
+expr: -sin(th)
+symbols: th
+```
+
+```formula
+## dcm_321_c21
+family: control
+expr: sin(ph)*sin(th)*cos(ps)-cos(ph)*sin(ps)
+symbols: ph, th, ps
+```
+
+```formula
+## dcm_321_c22
+family: control
+expr: sin(ph)*sin(th)*sin(ps)+cos(ph)*cos(ps)
+symbols: ph, th, ps
+```
+
+```formula
+## dcm_321_c23
+family: control
+expr: sin(ph)*cos(th)
+symbols: ph, th
+```
+
+```formula
+## dcm_321_c31
+family: control
+expr: cos(ph)*sin(th)*cos(ps)+sin(ph)*sin(ps)
+symbols: ph, th, ps
+```
+
+```formula
+## dcm_321_c32
+family: control
+expr: cos(ph)*sin(th)*sin(ps)-sin(ph)*cos(ps)
+symbols: ph, th, ps
+```
+
+```formula
+## dcm_321_c33
+family: control
+expr: cos(ph)*cos(th)
+symbols: ph, th
+```
+
+Quaternion to the same matrix, scalar \(q_0\):
+
+```formula
+## quaternion_to_dcm_c11
+family: control
+expr: q0**2+q1**2-q2**2-q3**2
+symbols: q0, q1, q2, q3
+```
+
+```formula
+## quaternion_to_dcm_c12
+family: control
+expr: 2*(q1*q2+q0*q3)
+symbols: q0, q1, q2, q3
+```
+
+```formula
+## quaternion_to_dcm_c13
+family: control
+expr: 2*(q1*q3-q0*q2)
+symbols: q0, q1, q2, q3
+```
+
+```formula
+## quaternion_to_dcm_c21
+family: control
+expr: 2*(q1*q2-q0*q3)
+symbols: q0, q1, q2, q3
+```
+
+```formula
+## quaternion_to_dcm_c22
+family: control
+expr: q0**2-q1**2+q2**2-q3**2
+symbols: q0, q1, q2, q3
+```
+
+```formula
+## quaternion_to_dcm_c23
+family: control
+expr: 2*(q2*q3+q0*q1)
+symbols: q0, q1, q2, q3
+```
+
+```formula
+## quaternion_to_dcm_c31
+family: control
+expr: 2*(q1*q3+q0*q2)
+symbols: q0, q1, q2, q3
+```
+
+```formula
+## quaternion_to_dcm_c32
+family: control
+expr: 2*(q2*q3-q0*q1)
+symbols: q0, q1, q2, q3
+```
+
+```formula
+## quaternion_to_dcm_c33
+family: control
+expr: q0**2-q1**2-q2**2+q3**2
+symbols: q0, q1, q2, q3
+```
+
+Body rates to quaternion rates:
+
+```formula
+## quaternion_rate_0
+family: control
+expr: 0.5*(-wx*q1-wy*q2-wz*q3)
+symbols: wx, wy, wz, q1, q2, q3
+```
+
+```formula
+## quaternion_rate_1
+family: control
+expr: 0.5*(wx*q0+wz*q2-wy*q3)
+symbols: wx, wy, wz, q0, q2, q3
+```
+
+```formula
+## quaternion_rate_2
+family: control
+expr: 0.5*(wy*q0-wz*q1+wx*q3)
+symbols: wx, wy, wz, q0, q1, q3
+```
+
+```formula
+## quaternion_rate_3
+family: control
+expr: 0.5*(wz*q0+wy*q1-wx*q2)
+symbols: wx, wy, wz, q0, q1, q2
+```
+
+Euler-angle rates from body rates, 3-2-1:
+
+```formula
+## euler_rate_roll
+family: control
+expr: wx+sin(ph)*tan(th)*wy+cos(ph)*tan(th)*wz
+symbols: wx, wy, wz, ph, th
+```
+
+```formula
+## euler_rate_pitch
+family: control
+expr: cos(ph)*wy-sin(ph)*wz
+symbols: wy, wz, ph
+```
+
+```formula
+## euler_rate_yaw
+family: control
+expr: sin(ph)*wy/cos(th)+cos(ph)*wz/cos(th)
+symbols: wy, wz, ph, th
+```
+
+Inverse maps used when the scalar quaternion is positive and the (3,3) and (1,1) elements are positive:
+
+```formula
+## euler_pitch_from_dcm
+family: control
+expr: asin(-c13)
+symbols: c13
+```
+
+```formula
+## euler_roll_from_dcm
+family: control
+expr: atan(c23/c33)
+symbols: c23, c33
+```
+
+```formula
+## euler_yaw_from_dcm
+family: control
+expr: atan(c12/c11)
+symbols: c12, c11
+```
+
+```formula
+## quaternion_scalar_from_dcm
+family: control
+expr: 0.5*(1+c11+c22+c33)**0.5
+symbols: c11, c22, c33
+```
+
+```formula
+## quaternion_q1_from_dcm
+family: control
+expr: (c23-c32)/(4*q0)
+symbols: c23, c32, q0
+```
+
+```formula
+## quaternion_q2_from_dcm
+family: control
+expr: (c31-c13)/(4*q0)
+symbols: c31, c13, q0
+```
+
+```formula
+## quaternion_q3_from_dcm
+family: control
+expr: (c12-c21)/(4*q0)
+symbols: c12, c21, q0
+```
+
+| Symbol | Meaning | Unit |
+| --- | --- | --- |
+| \(\phi,\theta,\psi\) | Roll, pitch, yaw (script `ph`, `th`, `ps`) | rad |
+| \(C_{ij}\) | Direction-cosine element, body from inertial | dimensionless |
+| \(q_0,q_1,q_2,q_3\) | Scalar-first quaternion | dimensionless |
+| \(\omega_x,\omega_y,\omega_z\) | Body angular velocity | rad/s |
+| \(\dot q_i\) | Quaternion rate | 1/s |
+| \(\dot\phi,\dot\theta,\dot\psi\) | Euler rates | rad/s |
+
+Assumptions: right-handed frames and a unit quaternion. \(q\) and \(-q\) are the same matrix; the scalar-from-trace record takes \(q_0\ge 0\). The 3-2-1 rate map is singular at \(\theta=\pm\pi/2\). Sequences other than 3-2-1 are not recorded. These records are kinematics only.
+
+# Structures
+
+## Plane-stress principals (bending plus torsion)
+
+One normal stress and one shear, the combination of pure bending and circular-shaft torsion. Section A of the Astronautic Structures Manual gives the principals and the Mohr radius. The second normal stress is zero.
+
+\[
+\sigma_{1,2} = \frac{\sigma}{2} \pm \sqrt{\left(\frac{\sigma}{2}\right)^{2}+\tau^{2}}
+\qquad
+R = \sqrt{\left(\frac{\sigma}{2}\right)^{2}+\tau^{2}}
+\]
+
+```formula
+## principal_stress_max
+family: beam
+expr: (sx+sy)/2 + (((sx-sy)/2)**2 + tau**2)**0.5
+symbols: sx, sy, tau
+```
+
+```formula
+## principal_stress_min
+family: beam
+expr: (sx+sy)/2 - (((sx-sy)/2)**2 + tau**2)**0.5
+symbols: sx, sy, tau
+```
+
+```formula
+## mohr_center
+family: beam
+expr: (sx+sy)/2
+symbols: sx, sy
+```
+
+```formula
+## mohr_radius
+family: beam
+expr: (((sx-sy)/2)**2 + tau**2)**0.5
+symbols: sx, sy, tau
+```
+
+```formula
+## max_shear_from_mohr
+family: beam
+expr: (((sx-sy)/2)**2 + tau**2)**0.5
+symbols: sx, sy, tau
+```
+
+Assumptions: plane stress, linear elastic, \(\sigma_y=0\) on the bending-plus-torsion path. \(R\) is the in-plane maximum shear. Plasticity is omitted.
+
+## Goodman and Soderberg lines
+
+Infinite-life intercepts. Goodman runs to ultimate tensile strength. Soderberg runs to yield. Both use the fully reversed endurance amplitude.
+
+\[
+n = \frac{1}{\sigma_a/\sigma_e + \sigma_m/\sigma_{\mathrm{int}}}
+\]
+
+```formula
+## goodman_factor
+family: beam
+expr: 1/(sa/se + sm/sut)
+symbols: sa, se, sm, sut
+```
+
+```formula
+## soderberg_factor
+family: beam
+expr: 1/(sa/se + sm/sy)
+symbols: sa, se, sm, sy
+```
+
+```formula
+## goodman_allowable_alternating
+family: beam
+expr: se*(1 - sm/sut)
+symbols: se, sm, sut
+```
+
+Assumptions: tensile mean stress below the intercept, alternating stress nonnegative, one cycle shape. No Miner sum and no crack growth.
+
+# Aerodynamics
+
+## Vertical-tail yaw and geometric dihedral
+
+Zero-attack vertical-tail contribution from NACA Report 1049, times a supplied dynamic-pressure ratio. Unswept geometric dihedral uses the taper factor; rectangular taper is 1.
+
+\[
+V_v = \frac{S_v l_v}{S b}
+\qquad
+C_{n\beta} = a_v V_v \eta
+\qquad
+C_{l\beta} = -a_w \Gamma \frac{1+2\lambda}{6(1+\lambda)}
+\]
+
+```formula
+## vertical_tail_volume
+family: aerodynamics
+expr: sv*lv/(S*b)
+symbols: sv, lv, S, b
+```
+
+```formula
+## cn_beta_vertical_tail
+family: aerodynamics
+expr: av*Vv*eta
+symbols: av, Vv, eta
+```
+
+```formula
+## cl_beta_geometric_dihedral
+family: aerodynamics
+expr: -aw*gamma*(1+2*lam)/(6*(1+lam))
+symbols: aw, gamma, lam
+```
+
+Assumptions: angles in radians. \(\eta\) is the tail dynamic-pressure ratio. Fuselage, sweep, and wing \(C_{n\beta}\) are omitted. Positive \(C_{n\beta}\) weathervanes. Negative \(C_{l\beta}\) is positive effective dihedral.
+
+## Stick-fixed 1-g trim
+
+Level-flight lift coefficient, pitching-moment slope from the static margin, trim angle on a lift curve through the origin, and the elevator that sets \(C_m=0\).
+
+\[
+C_L = \frac{W}{qS}
+\qquad
+C_{m\alpha} = -a K_n
+\qquad
+\alpha = \frac{C_L}{a}
+\qquad
+\delta_e = -\frac{C_{m0}+C_{m\alpha}\alpha}{C_{m\delta_e}}
+\]
+
+```formula
+## level_flight_lift_coefficient
+family: aerodynamics
+expr: W/(q*S)
+symbols: W, q, S
+```
+
+```formula
+## cm_alpha_from_static_margin
+family: aerodynamics
+expr: -a*kn
+symbols: a, kn
+```
+
+```formula
+## trim_angle_of_attack
+family: aerodynamics
+expr: CL/a
+symbols: CL, a
+```
+
+```formula
+## trim_elevator
+family: aerodynamics
+expr: -(cm0 + cma*alpha)/cmde
+symbols: cm0, cma, alpha, cmde
+```
+
+Assumptions: stick fixed, steady 1-g, linear coefficients, lift curve through the origin. \(K_n=x/c\) is a fraction of chord, not a percent. \(C_{m\delta_e}\) is supplied.
+
+# Rocket propulsion
+
+## Planar gravity-assist patch
+
+Rotate the inbound excess velocity through the hyperbola turning angle, then add the planet’s heliocentric velocity. The heliocentric position does not change during the impulsive patch, so the specific-energy change is the kinetic change.
+
+```formula
+## planar_rotate_x
+family: flight
+expr: vx*cos(ang) - vy*sin(ang)
+symbols: vx, vy, ang
+```
+
+```formula
+## planar_rotate_y
+family: flight
+expr: vx*sin(ang) + vy*cos(ang)
+symbols: vx, vy, ang
+```
+
+```formula
+## planar_speed
+family: flight
+expr: (vx**2 + vy**2)**0.5
+symbols: vx, vy
+```
+
+```formula
+## vector_difference_speed
+family: flight
+expr: ((vx2-vx1)**2 + (vy2-vy1)**2)**0.5
+symbols: vx2, vy2, vx1, vy1
+```
+
+```formula
+## flyby_kinetic_change
+family: flight
+expr: 0.5*(vout**2 - vin**2)
+symbols: vout, vin
+```
+
+Assumptions: planar patched conic. \(|v_\infty|\) is unchanged. Turning angle is `hyperbola_turning_angle`. Multi-revolution and B-plane targeting are omitted.
+
+# Aerodynamics
+
+## Wind-tunnel load scale
+
+When lift or moment coefficients match, force and moment scale with dynamic pressure, area, and (for a moment) the reference chord. A relative mismatch is \(|a-b|/|b|\).
+
+```formula
+## force_scale_dynamic_pressure
+family: aerodynamics
+expr: (q2*S2)/(q1*S1)
+symbols: q2, S2, q1, S1
+```
+
+```formula
+## moment_scale_dynamic_pressure
+family: aerodynamics
+expr: (q2*S2*c2)/(q1*S1*c1)
+symbols: q2, S2, c2, q1, S1, c1
+```
+
+```formula
+## relative_mismatch
+family: aerodynamics
+expr: abs(a-b)/abs(b)
+symbols: a, b
+```
+
+Assumptions: equal coefficients. No wall correction and no Prandtl–Glauert correction. A mismatch above 0.05 is reported as not matched.

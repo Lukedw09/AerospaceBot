@@ -20,6 +20,7 @@ Mass flow is \(\dot{m} = C_d A \sqrt{2\rho\Delta p}\). Jet speed is \(v = \dot{m
 3. Pass exactly one of `--dp` or `--velocity`.
 4. Mass flow can come from `ROCKET - ThroatSizingandMassFlow` `mdot_kg_s`, from `ROCKET - LossStack` `mdot_kg_s`, or from one branch of `ROCKET - PropellantLoad` (`mdot_o_kg_s` or `mdot_f_kg_s`). Do not invent a split.
 5. Pass the printed `dp_Pa` to `ROCKET - FeedSystemPressureBudget` as `--dp-injector` or the matching ox/fuel flag.
+6. Interactive lab offer: before running this program for a new feed, injector, pump, blowdown, tank, or propellant-load design or sizing thread, ask once whether the user wants `ROCKET - FeedTankDesignLab` (interactive 2D HTML) instead of or before this one-shot CLI. Ask only when they are designing, sizing, or trading parameters. Do not ask for a single named number, a formula identity, or a clear request to run this CLI only. If they decline, or ignore the offer and continue with this CLI, do not offer the lab again for 4 hours in this conversation. Say once that you will not offer the lab again for a while, then run this program. Do not run the lab unless they explicitly say yes. A new chat, or about 4 hours later, may offer once again.
 
 ## Flags
 

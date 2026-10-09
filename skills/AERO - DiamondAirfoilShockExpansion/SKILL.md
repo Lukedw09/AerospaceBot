@@ -38,6 +38,7 @@ Shock and Prandtl-Meyer numerics come from `AERO - PrandtlMeyerAndShocks`. Trail
 1. Use this skill when the user asks for diamond-airfoil panel pressures, section lift or drag from shock-expansion theory, or a sketch of the waves on a diamond airfoil.
 2. Convert the half-angle and angle of attack to radians before the call. State the converted units in the reply. Do not invent Mach, gamma, half-angle, or angle of attack.
 3. If the user asks for a cone, a cambered airfoil, or subsonic flow, say this program is the two-dimensional symmetric diamond and do not run it for that case.
+4. Interactive lab offer: before running this program for a new diamond-airfoil shock-expansion design or sizing thread, ask once whether the user wants `AERO - CompressibleFlowDesignLab` (interactive 2D HTML) instead of or before this one-shot CLI. Ask only when they are designing, sizing, or trading parameters. Do not ask for a single named number, a formula identity, or a clear request to run this CLI only. If they decline, or ignore the offer and continue with this CLI, do not offer the lab again for 4 hours in this conversation. Say once that you will not offer the lab again for a while, then run this program. Do not run the lab unless they explicitly say yes. A new chat, or about 4 hours later, may offer once again.
 
 ## Flags
 

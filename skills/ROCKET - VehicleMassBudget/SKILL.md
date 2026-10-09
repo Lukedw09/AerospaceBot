@@ -19,6 +19,7 @@ Assumptions (also printed): stage 1 is the bottom stage. If `k` is set, `structu
 2. Pass one `--stage` per stage, bottom stage first. The count must equal `--stages`.
 3. On a `--stage` line, pass `k` and `mH` or the explicit masses, not both. `engine-count` needs `engine-mass`.
 4. Pass `--payload` only when the user gives a useful payload. An omitted payload is 0.
+5. Interactive lab offer: before running this program for a new stage-split, mass-budget, LEO delta-v, ascent, or max-q design or sizing thread, ask once whether the user wants `ROCKET - StageAscentDesignLab` (interactive 2D HTML) instead of or before this one-shot CLI. Ask only when they are designing, sizing, or trading parameters. Do not ask for a single named number, a formula identity, or a clear request to run this CLI only. If they decline, or ignore the offer and continue with this CLI, do not offer the lab again for 4 hours in this conversation. Say once that you will not offer the lab again for a while, then run this program. Do not run the lab unless they explicitly say yes. A new chat, or about 4 hours later, may offer once again.
 
 ## Flags
 

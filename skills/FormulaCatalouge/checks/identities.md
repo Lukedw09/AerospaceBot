@@ -1063,6 +1063,198 @@ Then run `python check_formulas.py`.
     theta: log(4)
   expected: 7/2 + (4/3)*log(2)
 
+### fanno_temperature_ratio
+
+<!-- family: duct; symbols: g, M; expr: (g+1)/(2+(g-1)*M**2); numeric: yes -->
+
+- name: sonic
+  inputs:
+    g: 7/5
+    M: 1
+  expected: 1
+
+- name: air_mach_two
+  inputs:
+    g: 7/5
+    M: 2
+  expected: 2/3
+
+### fanno_pressure_ratio
+
+<!-- family: duct; symbols: g, M; expr: (1/M)*((g+1)/(2+(g-1)*M**2))**0.5; numeric: yes -->
+
+- name: sonic
+  inputs:
+    g: 7/5
+    M: 1
+  expected: 1
+
+- name: air_mach_two
+  inputs:
+    g: 7/5
+    M: 2
+  expected: (1/2)*(2/3)**0.5
+
+### fanno_density_ratio
+
+<!-- family: duct; symbols: g, M; expr: (1/M)*((2+(g-1)*M**2)/(g+1))**0.5; numeric: yes -->
+
+- name: sonic
+  inputs:
+    g: 7/5
+    M: 1
+  expected: 1
+
+- name: air_mach_two
+  inputs:
+    g: 7/5
+    M: 2
+  expected: (1/2)*(3/2)**0.5
+
+### fanno_velocity_ratio
+
+<!-- family: duct; symbols: g, M; expr: M*((g+1)/(2+(g-1)*M**2))**0.5; numeric: yes -->
+
+- name: sonic
+  inputs:
+    g: 7/5
+    M: 1
+  expected: 1
+
+- name: air_mach_two
+  inputs:
+    g: 7/5
+    M: 2
+  expected: 2*(2/3)**0.5
+
+### fanno_stagnation_pressure_ratio
+
+<!-- family: duct; symbols: g, M; expr: (1/M)*((2+(g-1)*M**2)/(g+1))**((g+1)/(2*(g-1))); numeric: yes -->
+
+- name: sonic
+  inputs:
+    g: 7/5
+    M: 1
+  expected: 1
+
+- name: air_mach_two
+  inputs:
+    g: 7/5
+    M: 2
+  expected: 27/16
+
+### fanno_friction_parameter
+
+<!-- family: duct; symbols: g, M; expr: (1-M**2)/(g*M**2)+((g+1)/(2*g))*log(((g+1)*M**2)/(2+(g-1)*M**2)); numeric: yes -->
+
+- name: sonic
+  inputs:
+    g: 7/5
+    M: 1
+  expected: 0
+
+- name: air_mach_two
+  inputs:
+    g: 7/5
+    M: 2
+  expected: -15/28+(6/7)*log(8/3)
+
+### rayleigh_stagnation_temperature_ratio
+
+<!-- family: duct; symbols: g, M; expr: 2*(g+1)*M**2*(1+((g-1)/2)*M**2)/(1+g*M**2)**2; numeric: yes -->
+
+- name: sonic
+  inputs:
+    g: 7/5
+    M: 1
+  expected: 1
+
+- name: air_mach_two
+  inputs:
+    g: 7/5
+    M: 2
+  expected: 96/121
+
+### rayleigh_temperature_ratio
+
+<!-- family: duct; symbols: g, M; expr: (g+1)**2*M**2/(1+g*M**2)**2; numeric: yes -->
+
+- name: sonic
+  inputs:
+    g: 7/5
+    M: 1
+  expected: 1
+
+- name: air_mach_two
+  inputs:
+    g: 7/5
+    M: 2
+  expected: 64/121
+
+### rayleigh_pressure_ratio
+
+<!-- family: duct; symbols: g, M; expr: (g+1)/(1+g*M**2); numeric: yes -->
+
+- name: sonic
+  inputs:
+    g: 7/5
+    M: 1
+  expected: 1
+
+- name: air_mach_two
+  inputs:
+    g: 7/5
+    M: 2
+  expected: 4/11
+
+### rayleigh_density_ratio
+
+<!-- family: duct; symbols: g, M; expr: (1+g*M**2)/((g+1)*M**2); numeric: yes -->
+
+- name: sonic
+  inputs:
+    g: 7/5
+    M: 1
+  expected: 1
+
+- name: air_mach_two
+  inputs:
+    g: 7/5
+    M: 2
+  expected: 11/16
+
+### rayleigh_stagnation_pressure_ratio
+
+<!-- family: duct; symbols: g, M; expr: ((g+1)/(1+g*M**2))*((2+(g-1)*M**2)/(g+1))**(g/(g-1)); numeric: yes -->
+
+- name: sonic
+  inputs:
+    g: 7/5
+    M: 1
+  expected: 1
+
+- name: air_mach_two
+  inputs:
+    g: 7/5
+    M: 2
+  expected: (4/11)*(3/2)**(7/2)
+
+### rayleigh_velocity_ratio
+
+<!-- family: duct; symbols: g, M; expr: (g+1)*M**2/(1+g*M**2); numeric: yes -->
+
+- name: sonic
+  inputs:
+    g: 7/5
+    M: 1
+  expected: 1
+
+- name: air_mach_two
+  inputs:
+    g: 7/5
+    M: 2
+  expected: 16/11
+
 ## Atmosphere
 
 #### atmosphere
@@ -4553,6 +4745,178 @@ Then run `python check_formulas.py`.
     lam: 0.1
   expected: 637420
 
+### lambert_chord
+
+<!-- family: flight; symbols: x1, y1, z1, x2, y2, z2; expr: ((x2-x1)**2+(y2-y1)**2+(z2-z1)**2)**0.5; numeric: yes -->
+
+- name: unit_axes
+  inputs:
+    x1: 1
+    y1: 0
+    z1: 0
+    x2: 0
+    y2: 1
+    z2: 0
+  expected: 2**0.5
+
+### lambert_transfer_cosine
+
+<!-- family: flight; symbols: x1, y1, z1, x2, y2, z2, r1, r2; expr: (x1*x2+y1*y2+z1*z2)/(r1*r2); numeric: yes -->
+
+- name: perpendicular
+  inputs:
+    x1: 1
+    y1: 0
+    z1: 0
+    x2: 0
+    y2: 1
+    z2: 0
+    r1: 1
+    r2: 1
+  expected: 0
+
+### lambert_semiperimeter
+
+<!-- family: flight; symbols: r1, r2, c; expr: (r1+r2+c)/2; numeric: yes -->
+
+- name: unit_chord
+  inputs:
+    r1: 1
+    r2: 1
+    c: 2**0.5
+  expected: 1+2**0.5/2
+
+### lambert_geometric_parameter
+
+<!-- family: flight; symbols: dth, r1, r2; expr: sin(dth)*((r1*r2)/(1-cos(dth)))**0.5; numeric: yes -->
+
+- name: quarter_turn
+  inputs:
+    dth: pi/2
+    r1: 1
+    r2: 1
+  expected: 1
+
+### stumpff_c_elliptic
+
+<!-- family: flight; symbols: z; expr: (1-cos(z**0.5))/z; numeric: yes -->
+
+- name: half_turn
+  inputs:
+    z: pi**2
+  expected: 2/pi**2
+
+### stumpff_s_elliptic
+
+<!-- family: flight; symbols: z; expr: (z**0.5-sin(z**0.5))/z**1.5; numeric: yes -->
+
+- name: half_turn
+  inputs:
+    z: pi**2
+  expected: 1/pi**2
+
+### stumpff_c_hyperbolic
+
+<!-- family: flight; symbols: z; expr: (((exp((-z)**0.5)+exp(-((-z)**0.5)))/2)-1)/(-z); numeric: yes -->
+
+- name: unit
+  inputs:
+    z: -1
+  expected: (exp(1)+exp(-1))/2-1
+
+### stumpff_s_hyperbolic
+
+<!-- family: flight; symbols: z; expr: (((exp((-z)**0.5)-exp(-((-z)**0.5)))/2)-(-z)**0.5)/((-z)**1.5); numeric: yes -->
+
+- name: unit
+  inputs:
+    z: -1
+  expected: (exp(1)-exp(-1))/2-1
+
+### lambert_y_parameter
+
+<!-- family: flight; symbols: r1, r2, A, z, S, C; expr: r1+r2+A*(z*S-1)/C**0.5; numeric: yes -->
+
+- name: cancels
+  inputs:
+    r1: 1
+    r2: 1
+    A: 1
+    z: pi**2
+    S: 1/pi**2
+    C: 2/pi**2
+  expected: 2
+
+### lambert_time_of_flight
+
+<!-- family: flight; symbols: y, C, S, A, mu; expr: ((y/C)**1.5*S+A*y**0.5)/mu**0.5; numeric: yes -->
+
+- name: unit_mu
+  inputs:
+    y: 2
+    C: 2/pi**2
+    S: 1/pi**2
+    A: 1
+    mu: 1
+  expected: pi+2**0.5
+
+### lambert_tof_residual
+
+<!-- family: flight; symbols: y, C, S, A, mu, tof; expr: ((y/C)**1.5*S+A*y**0.5)/mu**0.5-tof; numeric: yes -->
+
+- name: matched
+  inputs:
+    y: 2
+    C: 2/pi**2
+    S: 1/pi**2
+    A: 1
+    mu: 1
+    tof: pi+2**0.5
+  expected: 0
+
+### lagrange_f
+
+<!-- family: flight; symbols: y, r1; expr: 1-y/r1; numeric: yes -->
+
+- name: twice_radius
+  inputs:
+    y: 2
+    r1: 1
+  expected: -1
+
+### lagrange_g
+
+<!-- family: flight; symbols: A, y, mu; expr: A*(y/mu)**0.5; numeric: yes -->
+
+- name: unit
+  inputs:
+    A: 1
+    y: 2
+    mu: 1
+  expected: 2**0.5
+
+### lagrange_gdot
+
+<!-- family: flight; symbols: y, r2; expr: 1-y/r2; numeric: yes -->
+
+- name: twice_radius
+  inputs:
+    y: 2
+    r2: 1
+  expected: -1
+
+### lambert_velocity_from_lagrange
+
+<!-- family: flight; symbols: r2c, f, r1c, g; expr: (r2c-f*r1c)/g; numeric: yes -->
+
+- name: unit
+  inputs:
+    r2c: 0
+    f: -1
+    r1c: 1
+    g: 2**0.5
+  expected: 2**(-0.5)
+
 ## Aerodynamics
 
 #### aerodynamics
@@ -4787,6 +5151,51 @@ Then run `python check_formulas.py`.
     tau: 10
     q_inf: 5000
   expected: 1/500
+
+### blasius_local_skin_friction
+
+<!-- family: aerodynamics; symbols: Re; expr: 0.664/Re**0.5; numeric: yes -->
+
+- name: ten_thousand
+  inputs:
+    Re: 10000
+  expected: 0.664/100
+
+### blasius_plate_friction
+
+<!-- family: aerodynamics; symbols: Re; expr: 1.328/Re**0.5; numeric: yes -->
+
+- name: ten_thousand
+  inputs:
+    Re: 10000
+  expected: 1.328/100
+
+### blasius_thickness_ratio
+
+<!-- family: aerodynamics; symbols: Re; expr: 5/Re**0.5; numeric: yes -->
+
+- name: one_hundred
+  inputs:
+    Re: 100
+  expected: 1/2
+
+### turbulent_plate_friction_seventh
+
+<!-- family: aerodynamics; symbols: Re; expr: 0.074/Re**0.2; numeric: yes -->
+
+- name: one_hundred_thousand
+  inputs:
+    Re: 100000
+  expected: 0.074/10
+
+### turbulent_local_skin_friction_seventh
+
+<!-- family: aerodynamics; symbols: Re; expr: 0.0592/Re**0.2; numeric: yes -->
+
+- name: one_hundred_thousand
+  inputs:
+    Re: 100000
+  expected: 0.0592/10
 
 ### section_normal_coefficient
 
@@ -8958,3 +9367,650 @@ Then run `python check_formulas.py`.
     N: 100
     A: 0.02
   expected: 100
+
+### bode_magnitude_db
+
+<!-- family: control; symbols: re, im; expr: 20*log((re**2+im**2)**0.5)/log(10); numeric: yes -->
+
+- name: unit
+  inputs:
+    re: 1
+    im: 0
+  expected: 0
+
+- name: decade
+  inputs:
+    re: 10
+    im: 0
+  expected: 20
+
+### bode_phase_deg
+
+<!-- family: control; symbols: im, re, pi; expr: 2*atan(im/((re**2+im**2)**0.5+re))*180/pi; numeric: yes -->
+
+- name: forty_five
+  inputs:
+    im: 1
+    re: 1
+    pi: pi
+  expected: 45
+
+### phase_margin_deg
+
+<!-- family: control; symbols: phase; expr: 180+phase; numeric: yes -->
+
+- name: typical
+  inputs:
+    phase: -135
+  expected: 45
+
+### gain_margin_db
+
+<!-- family: control; symbols: mag; expr: -20*log(mag)/log(10); numeric: yes -->
+
+- name: tenth
+  inputs:
+    mag: 1/10
+  expected: 20
+
+### series_pid_real
+
+<!-- family: control; symbols: kp; expr: kp; numeric: yes -->
+
+- name: two
+  inputs:
+    kp: 2
+  expected: 2
+
+### series_pid_imag
+
+<!-- family: control; symbols: w, kd, ki; expr: w*kd-ki/w; numeric: yes -->
+
+- name: mixed
+  inputs:
+    w: 2
+    kd: 4
+    ki: 3
+  expected: 13/2
+
+### dcm_321_c11
+
+<!-- family: control; symbols: th, ps; expr: cos(th)*cos(ps); numeric: yes -->
+
+- name: level
+  inputs:
+    th: 0
+    ps: 0
+  expected: 1
+
+### dcm_321_c12
+
+<!-- family: control; symbols: th, ps; expr: cos(th)*sin(ps); numeric: yes -->
+
+- name: yaw_right
+  inputs:
+    th: 0
+    ps: pi/2
+  expected: 1
+
+### dcm_321_c13
+
+<!-- family: control; symbols: th; expr: -sin(th); numeric: yes -->
+
+- name: level
+  inputs:
+    th: 0
+  expected: 0
+
+### dcm_321_c21
+
+<!-- family: control; symbols: ph, th, ps; expr: sin(ph)*sin(th)*cos(ps)-cos(ph)*sin(ps); numeric: yes -->
+
+- name: yaw_right
+  inputs:
+    ph: 0
+    th: 0
+    ps: pi/2
+  expected: -1
+
+### dcm_321_c22
+
+<!-- family: control; symbols: ph, th, ps; expr: sin(ph)*sin(th)*sin(ps)+cos(ph)*cos(ps); numeric: yes -->
+
+- name: level
+  inputs:
+    ph: 0
+    th: 0
+    ps: 0
+  expected: 1
+
+### dcm_321_c23
+
+<!-- family: control; symbols: ph, th; expr: sin(ph)*cos(th); numeric: yes -->
+
+- name: level
+  inputs:
+    ph: 0
+    th: 0
+  expected: 0
+
+### dcm_321_c31
+
+<!-- family: control; symbols: ph, th, ps; expr: cos(ph)*sin(th)*cos(ps)+sin(ph)*sin(ps); numeric: yes -->
+
+- name: level
+  inputs:
+    ph: 0
+    th: 0
+    ps: 0
+  expected: 0
+
+### dcm_321_c32
+
+<!-- family: control; symbols: ph, th, ps; expr: cos(ph)*sin(th)*sin(ps)-sin(ph)*cos(ps); numeric: yes -->
+
+- name: level
+  inputs:
+    ph: 0
+    th: 0
+    ps: 0
+  expected: 0
+
+### dcm_321_c33
+
+<!-- family: control; symbols: ph, th; expr: cos(ph)*cos(th); numeric: yes -->
+
+- name: level
+  inputs:
+    ph: 0
+    th: 0
+  expected: 1
+
+### quaternion_to_dcm_c11
+
+<!-- family: control; symbols: q0, q1, q2, q3; expr: q0**2+q1**2-q2**2-q3**2; numeric: yes -->
+
+- name: identity
+  inputs:
+    q0: 1
+    q1: 0
+    q2: 0
+    q3: 0
+  expected: 1
+
+### quaternion_to_dcm_c12
+
+<!-- family: control; symbols: q0, q1, q2, q3; expr: 2*(q1*q2+q0*q3); numeric: yes -->
+
+- name: yaw_right
+  inputs:
+    q0: 2**(-0.5)
+    q1: 0
+    q2: 0
+    q3: 2**(-0.5)
+  expected: 1
+
+### quaternion_to_dcm_c13
+
+<!-- family: control; symbols: q0, q1, q2, q3; expr: 2*(q1*q3-q0*q2); numeric: yes -->
+
+- name: identity
+  inputs:
+    q0: 1
+    q1: 0
+    q2: 0
+    q3: 0
+  expected: 0
+
+### quaternion_to_dcm_c21
+
+<!-- family: control; symbols: q0, q1, q2, q3; expr: 2*(q1*q2-q0*q3); numeric: yes -->
+
+- name: yaw_right
+  inputs:
+    q0: 2**(-0.5)
+    q1: 0
+    q2: 0
+    q3: 2**(-0.5)
+  expected: -1
+
+### quaternion_to_dcm_c22
+
+<!-- family: control; symbols: q0, q1, q2, q3; expr: q0**2-q1**2+q2**2-q3**2; numeric: yes -->
+
+- name: identity
+  inputs:
+    q0: 1
+    q1: 0
+    q2: 0
+    q3: 0
+  expected: 1
+
+### quaternion_to_dcm_c23
+
+<!-- family: control; symbols: q0, q1, q2, q3; expr: 2*(q2*q3+q0*q1); numeric: yes -->
+
+- name: identity
+  inputs:
+    q0: 1
+    q1: 0
+    q2: 0
+    q3: 0
+  expected: 0
+
+### quaternion_to_dcm_c31
+
+<!-- family: control; symbols: q0, q1, q2, q3; expr: 2*(q1*q3+q0*q2); numeric: yes -->
+
+- name: identity
+  inputs:
+    q0: 1
+    q1: 0
+    q2: 0
+    q3: 0
+  expected: 0
+
+### quaternion_to_dcm_c32
+
+<!-- family: control; symbols: q0, q1, q2, q3; expr: 2*(q2*q3-q0*q1); numeric: yes -->
+
+- name: identity
+  inputs:
+    q0: 1
+    q1: 0
+    q2: 0
+    q3: 0
+  expected: 0
+
+### quaternion_to_dcm_c33
+
+<!-- family: control; symbols: q0, q1, q2, q3; expr: q0**2-q1**2-q2**2+q3**2; numeric: yes -->
+
+- name: identity
+  inputs:
+    q0: 1
+    q1: 0
+    q2: 0
+    q3: 0
+  expected: 1
+
+### quaternion_rate_0
+
+<!-- family: control; symbols: wx, wy, wz, q1, q2, q3; expr: 0.5*(-wx*q1-wy*q2-wz*q3); numeric: yes -->
+
+- name: identity_roll
+  inputs:
+    wx: 2
+    wy: 0
+    wz: 0
+    q1: 0
+    q2: 0
+    q3: 0
+  expected: 0
+
+### quaternion_rate_1
+
+<!-- family: control; symbols: wx, wy, wz, q0, q2, q3; expr: 0.5*(wx*q0+wz*q2-wy*q3); numeric: yes -->
+
+- name: identity_roll
+  inputs:
+    wx: 2
+    wy: 0
+    wz: 0
+    q0: 1
+    q2: 0
+    q3: 0
+  expected: 1
+
+### quaternion_rate_2
+
+<!-- family: control; symbols: wx, wy, wz, q0, q1, q3; expr: 0.5*(wy*q0-wz*q1+wx*q3); numeric: yes -->
+
+- name: identity_roll
+  inputs:
+    wx: 2
+    wy: 0
+    wz: 0
+    q0: 1
+    q1: 0
+    q3: 0
+  expected: 0
+
+### quaternion_rate_3
+
+<!-- family: control; symbols: wx, wy, wz, q0, q1, q2; expr: 0.5*(wz*q0+wy*q1-wx*q2); numeric: yes -->
+
+- name: identity_roll
+  inputs:
+    wx: 2
+    wy: 0
+    wz: 0
+    q0: 1
+    q1: 0
+    q2: 0
+  expected: 0
+
+### euler_rate_roll
+
+<!-- family: control; symbols: wx, wy, wz, ph, th; expr: wx+sin(ph)*tan(th)*wy+cos(ph)*tan(th)*wz; numeric: yes -->
+
+- name: level
+  inputs:
+    wx: 1
+    wy: 2
+    wz: 3
+    ph: 0
+    th: 0
+  expected: 1
+
+### euler_rate_pitch
+
+<!-- family: control; symbols: wy, wz, ph; expr: cos(ph)*wy-sin(ph)*wz; numeric: yes -->
+
+- name: level
+  inputs:
+    wy: 2
+    wz: 3
+    ph: 0
+  expected: 2
+
+### euler_rate_yaw
+
+<!-- family: control; symbols: wy, wz, ph, th; expr: sin(ph)*wy/cos(th)+cos(ph)*wz/cos(th); numeric: yes -->
+
+- name: level
+  inputs:
+    wy: 2
+    wz: 3
+    ph: 0
+    th: 0
+  expected: 3
+
+### euler_pitch_from_dcm
+
+<!-- family: control; symbols: c13; expr: asin(-c13); numeric: yes -->
+
+- name: level
+  inputs:
+    c13: 0
+  expected: 0
+
+### euler_roll_from_dcm
+
+<!-- family: control; symbols: c23, c33; expr: atan(c23/c33); numeric: yes -->
+
+- name: level
+  inputs:
+    c23: 0
+    c33: 1
+  expected: 0
+
+### euler_yaw_from_dcm
+
+<!-- family: control; symbols: c12, c11; expr: atan(c12/c11); numeric: yes -->
+
+- name: yaw_right
+  inputs:
+    c12: 1
+    c11: 1
+  expected: pi/4
+
+### quaternion_scalar_from_dcm
+
+<!-- family: control; symbols: c11, c22, c33; expr: 0.5*(1+c11+c22+c33)**0.5; numeric: yes -->
+
+- name: identity
+  inputs:
+    c11: 1
+    c22: 1
+    c33: 1
+  expected: 1
+
+### quaternion_q1_from_dcm
+
+<!-- family: control; symbols: c23, c32, q0; expr: (c23-c32)/(4*q0); numeric: yes -->
+
+- name: identity
+  inputs:
+    c23: 0
+    c32: 0
+    q0: 1
+  expected: 0
+
+### quaternion_q2_from_dcm
+
+<!-- family: control; symbols: c31, c13, q0; expr: (c31-c13)/(4*q0); numeric: yes -->
+
+- name: identity
+  inputs:
+    c31: 0
+    c13: 0
+    q0: 1
+  expected: 0
+
+### quaternion_q3_from_dcm
+
+<!-- family: control; symbols: c12, c21, q0; expr: (c12-c21)/(4*q0); numeric: yes -->
+
+- name: yaw_right
+  inputs:
+    c12: 1
+    c21: -1
+    q0: 2**(-0.5)
+  expected: 2**(-0.5)
+
+## Structures
+
+### principal_stress_max
+
+- name: bending_plus_shear
+  inputs:
+    sx: 100
+    sy: 0
+    tau: 50
+  expected: 50 + (50**2 + 50**2)**0.5
+
+### principal_stress_min
+
+- name: bending_plus_shear
+  inputs:
+    sx: 100
+    sy: 0
+    tau: 50
+  expected: 50 - (50**2 + 50**2)**0.5
+
+### mohr_center
+
+- name: uniaxial
+  inputs:
+    sx: 100
+    sy: 0
+  expected: 50
+
+### mohr_radius
+
+- name: bending_plus_shear
+  inputs:
+    sx: 100
+    sy: 0
+    tau: 50
+  expected: (50**2 + 50**2)**0.5
+
+### max_shear_from_mohr
+
+- name: bending_plus_shear
+  inputs:
+    sx: 100
+    sy: 0
+    tau: 50
+  expected: (50**2 + 50**2)**0.5
+
+### goodman_factor
+
+- name: quarter_mean
+  inputs:
+    sa: 100
+    se: 200
+    sm: 100
+    sut: 400
+  expected: 1/(0.5 + 0.25)
+
+### soderberg_factor
+
+- name: yield_intercept
+  inputs:
+    sa: 100
+    se: 200
+    sm: 100
+    sy: 300
+  expected: 1/(0.5 + 100/300)
+
+### goodman_allowable_alternating
+
+- name: quarter_mean
+  inputs:
+    se: 200
+    sm: 100
+    sut: 400
+  expected: 150
+
+## Aerodynamics
+
+### vertical_tail_volume
+
+- name: sample
+  inputs:
+    sv: 2
+    lv: 5
+    S: 20
+    b: 10
+  expected: 0.05
+
+### cn_beta_vertical_tail
+
+- name: sample
+  inputs:
+    av: 2
+    Vv: 0.05
+    eta: 1
+  expected: 0.1
+
+### cl_beta_geometric_dihedral
+
+- name: rectangular
+  inputs:
+    aw: 4
+    gamma: 0.1
+    lam: 1
+  expected: -0.1
+
+### level_flight_lift_coefficient
+
+- name: cruise
+  inputs:
+    W: 1000
+    q: 500
+    S: 10
+  expected: 0.2
+
+### cm_alpha_from_static_margin
+
+- name: ten_percent
+  inputs:
+    a: 5
+    kn: 0.1
+  expected: -0.5
+
+### trim_angle_of_attack
+
+- name: cruise
+  inputs:
+    CL: 0.2
+    a: 5
+  expected: 0.04
+
+### trim_elevator
+
+- name: sample
+  inputs:
+    cm0: 0.05
+    cma: -0.5
+    alpha: 0.04
+    cmde: -0.8
+  expected: 0.0375
+
+### force_scale_dynamic_pressure
+
+- name: double_q
+  inputs:
+    q2: 2
+    S2: 3
+    q1: 1
+    S1: 2
+  expected: 3
+
+### moment_scale_dynamic_pressure
+
+- name: chord_ratio
+  inputs:
+    q2: 2
+    S2: 3
+    c2: 4
+    q1: 1
+    S1: 2
+    c1: 2
+  expected: 6
+
+### relative_mismatch
+
+- name: ten_percent
+  inputs:
+    a: 1.1
+    b: 1
+  expected: 0.1
+
+## Rocket propulsion
+
+### planar_rotate_x
+
+- name: quarter_turn
+  inputs:
+    vx: 3
+    vy: 4
+    ang: pi/2
+  expected: -4
+
+### planar_rotate_y
+
+- name: quarter_turn
+  inputs:
+    vx: 3
+    vy: 4
+    ang: pi/2
+  expected: 3
+
+### planar_speed
+
+- name: three_four
+  inputs:
+    vx: 3
+    vy: 4
+  expected: 5
+
+### vector_difference_speed
+
+- name: unit_step
+  inputs:
+    vx2: 1
+    vy2: 0
+    vx1: 0
+    vy1: 0
+  expected: 1
+
+### flyby_kinetic_change
+
+- name: faster
+  inputs:
+    vout: 3
+    vin: 1
+  expected: 4

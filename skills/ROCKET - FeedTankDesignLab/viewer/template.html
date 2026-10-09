@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>__TITLE__</title>
+<style>
+  :root { color-scheme: light; --ink: #1b2631; --muted: #34495e; --line: #d5d8dc; --paper: #f7f9fb; --card: #ffffff; --ox: #1a5276; --fuel: #9a7d0a; --bad: #922b21; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: var(--paper); color: var(--ink); font-family: "Segoe UI", Helvetica, Arial, sans-serif; }
+  #app { min-height: 100%; display: grid; grid-template-columns: 380px 1fr; }
+  aside { padding: 14px 14px 24px; border-right: 1px solid var(--line); background: var(--card); overflow: auto; }
+  main { min-width: 0; display: flex; flex-direction: column; padding: 12px 16px 20px; gap: 10px; }
+  h1 { margin: 0 0 4px; font-size: 20px; font-weight: 560; }
+  h2 { margin: 14px 0 6px; font-size: 13px; font-weight: 650; }
+  p.note { margin: 0 0 8px; color: var(--muted); font-size: 12px; line-height: 1.4; }
+  label { display: grid; grid-template-columns: 1fr 108px; gap: 6px; align-items: center; margin: 0 0 6px; font-size: 12px; }
+  .choice { display: flex; gap: 14px; font-size: 12px; margin: 0 0 8px; }
+  .choice label { display: flex; align-items: center; gap: 6px; margin: 0; }
+  input[type="number"], select, textarea { width: 100%; font: inherit; color: inherit; background: var(--paper); border: 1px solid var(--line); padding: 3px 6px; }
+  fieldset { border: 1px solid var(--line); margin: 0 0 10px; padding: 8px 8px 2px; }
+  legend { font-size: 12px; font-weight: 650; padding: 0 4px; }
+  #pid, #history { width: 100%; background: var(--paper); border: 1px solid var(--line); }
+  #pid { height: 500px; display: block; }
+  #history { height: 280px; }
+  body.mode-pressure #history { display: block; }
+  body.mode-electric #history { display: none; }
+  #status { margin: 0; font-size: 13px; line-height: 1.45; }
+  #readout { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 16px; margin: 0; }
+  #readout h3 { margin: 0 0 4px; font-size: 13px; }
+  #readout p { margin: 0 0 3px; font-size: 13px; }
+  .flag { color: var(--bad); font-weight: 650; }
+  textarea { min-height: 220px; font-family: Consolas, "Courier New", monospace; font-size: 11px; }
+  .pump-only, .pressure-only, .ratio-only, .branch-only, .cylinder-only { }
+  body.mode-electric .pressure-only, body.mode-pressure .pump-only,
+  body.flow-ratio .branch-only, body.flow-branches .ratio-only,
+  body.shape-sphere .cylinder-only { display: none; }
+  @media (max-width: 980px) {
+    #app { grid-template-columns: 1fr; }
+    aside { border-right: 0; border-bottom: 1px solid var(--line); }
+    #readout { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body class="mode-pressure flow-ratio shape-sphere">
+<div id="app">
+  <aside>
+    <h1>Feed and tanks</h1>
+    <p class="note">Oxidizer and fuel side by side. Pressure-fed tanks blow down from the ullage you set. Electric-pump mode hides blowdown and sizes each pump from supply pressure minus inlet pressure.</p>
+    <h2>Architecture</h2>
+    <div class="choice">
+      <label><input type="radio" name="architecture" value="pressure" checked> Pressure-fed</label>
+      <label><input type="radio" name="architecture" value="electric"> Electric pump</label>
+    </div>
+    <h2>Flow</h2>
+    <div class="choice">
+      <label><input type="radio" name="flowMode" value="ratio" checked> Total and mixture ratio</label>
+      <label><input type="radio" name="flowMode" value="branches"> Branch flows</label>
+    </div>
+    <label class="ratio-only">Total flow, kg/s <input id="mdot" type="number" min="0.001" step="any"></label>
+    <label class="ratio-only">Mixture ratio <input id="ratio" type="number" min="0.01" step="any"></label>
+    <label>Chamber pressure, Pa <input id="pc" type="number" min="1" step="any"></label>
+    <label>Line drop, Pa <input id="dp-line" type="number" min="0" step="any"></label>
+    <label>Height, m <input id="height" type="number" step="any"></label>
+    <label>Burn time, s <input id="tb" type="number" min="0.01" step="any"></label>
+    <label>Residuals <input id="residuals" type="number" min="0" max="0.99" step="any"></label>
+    <label>Allowable stress, Pa <input id="allowable" type="number" min="1" step="any"></label>
+    <label>Material density, kg/m³ <input id="rho-mat" type="number" min="1" step="any"></label>
+    <label>Tank shape
+      <select id="shape">
+        <option value="sphere">sphere</option>
+        <option value="cylinder">cylinder</option>
+      </select>
+    </label>
+    <label class="cylinder-only">Cylinder radius, m <input id="radius" type="number" min="0.01" step="any"></label>
+    <fieldset data-branch="ox">
+      <legend>Oxidizer</legend>
+      <label class="branch-only">Mass flow, kg/s <input data-key="mdot" type="number" min="0.001" step="any"></label>
+      <label>Density, kg/m³ <input data-key="rho" type="number" min="1" step="any"></label>
+      <label>Injector drop, Pa <input data-key="dpInj" type="number" min="1" step="any"></label>
+      <label>Discharge coefficient <input data-key="cd" type="number" min="0.01" max="1" step="any"></label>
+      <label>Orifice count <input data-key="count" type="number" min="1" step="1"></label>
+      <label class="pressure-only">Initial pressure, Pa <input data-key="p0" type="number" min="1" step="any"></label>
+      <label class="pressure-only">Initial ullage, m³ <input data-key="v0" type="number" min="0.0001" step="any"></label>
+      <label class="pressure-only">Blowdown exponent <input data-key="n" type="number" min="0.01" step="any"></label>
+      <label class="pump-only">Pump inlet, Pa <input data-key="pin" type="number" min="1" step="any"></label>
+      <label class="pump-only">Pump efficiency <input data-key="eta" type="number" min="0.01" max="1" step="any"></label>
+      <label class="pump-only">Motor efficiency <input data-key="etaDrive" type="number" min="0.01" max="1" step="any"></label>
+      <label class="pump-only">Tank MEOP, Pa <input data-key="meop" type="number" min="1" step="any"></label>
+    </fieldset>
+    <fieldset data-branch="fuel">
+      <legend>Fuel</legend>
+      <label class="branch-only">Mass flow, kg/s <input data-key="mdot" type="number" min="0.001" step="any"></label>
+      <label>Density, kg/m³ <input data-key="rho" type="number" min="1" step="any"></label>
+      <label>Injector drop, Pa <input data-key="dpInj" type="number" min="1" step="any"></label>
+      <label>Discharge coefficient <input data-key="cd" type="number" min="0.01" max="1" step="any"></label>
+      <label>Orifice count <input data-key="count" type="number" min="1" step="1"></label>
+      <label class="pressure-only">Initial pressure, Pa <input data-key="p0" type="number" min="1" step="any"></label>
+      <label class="pressure-only">Initial ullage, m³ <input data-key="v0" type="number" min="0.0001" step="any"></label>
+      <label class="pressure-only">Blowdown exponent <input data-key="n" type="number" min="0.01" step="any"></label>
+      <label class="pump-only">Pump inlet, Pa <input data-key="pin" type="number" min="1" step="any"></label>
+      <label class="pump-only">Pump efficiency <input data-key="eta" type="number" min="0.01" max="1" step="any"></label>
+      <label class="pump-only">Motor efficiency <input data-key="etaDrive" type="number" min="0.01" max="1" step="any"></label>
+      <label class="pump-only">Tank MEOP, Pa <input data-key="meop" type="number" min="1" step="any"></label>
+    </fieldset>
+    <h2>Astraeus</h2>
+    <p class="note">Copy these parameters into Astraeus.</p>
+    <textarea id="parameters" readonly></textarea>
+  </aside>
+  <main>
+    <canvas id="pid"></canvas>
+    <canvas id="history" class="pressure-only"></canvas>
+    <p id="status"></p>
+    <div id="readout"></div>
+  </main>
+</div>
+<script>
+var SEED = __SEED_JSON__;
+__LAB_JS__
+Lab.boot(SEED);
+</script>
+</body>
+</html>

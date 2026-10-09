@@ -35,7 +35,7 @@ Max shear stress is `circular_shaft_shear` at the outer fiber, \(\tau_{\max}=T R
 4. Pass both `--length` and `--G` only when the user wants angle of twist. Do not pass one without the other.
 5. Pass `--allowable` only when the user gave an allowable shear stress for margin of safety.
 6. Pass `--out` only when the user wants the PNG of max shear versus torque for the fixed section. Do not invent a plot path when they did not ask for a figure.
-7. Do not use this skill for non-circular sections, open thin-wall warping, plastic torsion, or combined bending-plus-torsion Mohr unless a later skill covers that.
+7. Do not use this skill for non-circular sections, open thin-wall warping, or plastic torsion. Combined bending-plus-torsion principals belong to `STRUCT - CombinedStressMohr`.
 
 ## Flags
 

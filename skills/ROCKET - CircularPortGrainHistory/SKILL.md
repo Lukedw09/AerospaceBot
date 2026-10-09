@@ -24,6 +24,8 @@ The figure plots \(p_1\), \(K\), and remaining web against time from ignition to
 
 ## When to run
 
+Interactive lab offer: before running this program for a new solid-grain design or sizing thread, ask once whether the user wants `ROCKET - SolidMotorGrainLab` (interactive HTML) instead of or before this one-shot CLI. Ask only when they are designing, sizing, or trading parameters. Do not ask for a single named number, a formula identity, or a clear request to run this CLI only. If they decline, or ignore the offer and continue with this CLI, do not offer the lab again for 4 hours in this conversation. Say once that you will not offer the lab again for a while, then run this program. Do not run the lab unless they explicitly say yes. A new chat, or about 4 hours later, may offer once again.
+
 1. Use this skill when the user wants circular-port \(p_1(t)\), \(K(t)\), remaining web versus time, or web-burnout time.
 2. Convert inputs to SI before the call (m, m², kg/m³, m/s, and \(a\) in m/(s·Pa\(^{n}\))). State the converted units in the reply. Do not invent \(a\), \(n\), \(\rho_b\), or \(c^{*}\).
 3. Required: `--a`, `--n`, `--outer`, `--throat`, `--rho`, `--cstar`, and grain geometry. Geometry is `--port` and `--length`, or `--ab` with `--port` or `--length`. If `--ab`, `--port`, and `--length` are all given, they must match \(A_b = 2\pi R_p L\).

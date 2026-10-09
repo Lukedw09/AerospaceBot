@@ -39,6 +39,8 @@ Chamber pressure and ambient pressure are pascals. Convert pc and pa to Pa befor
 
 ## When to run
 
+Interactive lab offer: before running this program for a new engine, nozzle, or chamber design or sizing thread, ask once whether the user wants `ROCKET - NozzleChamberDesignLab` (interactive 2D HTML) instead of or before this one-shot CLI. Ask only when they are designing, sizing, or trading parameters. Do not ask for a single named number, a formula identity, or a clear request to run this CLI only. If they decline, or ignore the offer and continue with this CLI, do not offer the lab again for 4 hours in this conversation. Say once that you will not offer the lab again for a while, then run this program. Do not run the lab unless they explicitly say yes. A new chat, or about 4 hours later, may offer once again.
+
 1. Point: the user gives a pair, chamber pressure, area ratio, ambient pressure, and mixture ratio. Missing `r` is an error, not a sweep. A point request does not write a PNG.
 2. `--pair` is one `oxName/fuelName` string per propellant combination (example `LOX/RP1`). On MCP, `pair` is an array of those strings: pass `["LOX/RP1"]` for one pair, not oxidizer and fuel as separate list items. `["LOX","RP1"]` is also accepted and joined to `LOX/RP1`. Repeat the array element (or CLI `--pair`) only to overlay several pairs on a plot.
 3. Plot: the user asks for one quantity against another. The name before `vs` is the vertical axis. The name after `vs` is the horizontal axis. Exactly one axis must be mixture ratio, pc, eps, or pa.

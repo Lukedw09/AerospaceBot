@@ -20,6 +20,7 @@ Assumptions (also printed): same path model as `ROCKET - BasicTrajectoryLossesFr
 3. Pass `--gamma` or `--kick`, not both. Angles are radians.
 4. Pass `--cd` and `--area`, or `--drag`, when the user gives drag. Pass `--jettison mass=<kg>,alt=<m>` or `mass=<kg>,time=<s>` for a fairing drop.
 5. Pass `--payload` when the useful payload is known. It stays on the stack after the last inert drop.
+6. Interactive lab offer: before running this program for a new stage-split, mass-budget, LEO delta-v, ascent, or max-q design or sizing thread, ask once whether the user wants `ROCKET - StageAscentDesignLab` (interactive 2D HTML) instead of or before this one-shot CLI. Ask only when they are designing, sizing, or trading parameters. Do not ask for a single named number, a formula identity, or a clear request to run this CLI only. If they decline, or ignore the offer and continue with this CLI, do not offer the lab again for 4 hours in this conversation. Say once that you will not offer the lab again for a while, then run this program. Do not run the lab unless they explicitly say yes. A new chat, or about 4 hours later, may offer once again.
 
 ## Flags
 

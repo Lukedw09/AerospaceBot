@@ -16,6 +16,8 @@ Burning-area ratio is \(K = A_b/A_t\). Equilibrium chamber pressure is \(p_1 = (
 
 ## When to run
 
+Interactive lab offer: before running this program for a new solid-grain design or sizing thread, ask once whether the user wants `ROCKET - SolidMotorGrainLab` (interactive HTML) instead of or before this one-shot CLI. Ask only when they are designing, sizing, or trading parameters. Do not ask for a single named number, a formula identity, or a clear request to run this CLI only. If they decline, or ignore the offer and continue with this CLI, do not offer the lab again for 4 hours in this conversation. Say once that you will not offer the lab again for a while, then run this program. Do not run the lab unless they explicitly say yes. A new chat, or about 4 hours later, may offer once again.
+
 1. Use this skill when the user asks for solid-motor \(K\), equilibrium chamber pressure, burn rate, or propellant mass flow from grain and throat geometry with Saint Robert burn-rate inputs.
 2. Convert all inputs to SI before the call (m², kg/m³, m/s, and \(a\) in m/(s·Pa\(^{n}\))). State the converted units in the reply. Do not invent values the user did not give.
 3. Burn-rate coefficient \(a\), exponent \(n\), burning area \(A_b\), throat area \(A_t\), propellant density \(\rho_b\), and characteristic velocity \(c^{*}\) are all required. If any one is missing, say so and stop. Do not invent \(a\), \(n\), \(\rho_b\), or \(c^{*}\).

@@ -49,3 +49,5 @@ Every successful run writes a PNG of the opening 3D view and a self-contained HT
 3. Report `i_rad`, `i_min_rad`, `az_rad`, `az_alt_rad`, `v_rot_m_s`, and `v_rot_assist_m_s`.
 4. `v_rot_assist_m_s` is the credit passed to `ROCKET - LeoDeltaVBudget`.
 5. If latitude or both azimuth and inclination are missing, say so. Do not fill them in.
+
+Interactive lab offer: before running this program for a new Earth-orbit transfer, station-keeping, rendezvous, or ops design or sizing thread, ask once whether the user wants `ASTRO - OrbitDesignLab` (interactive HTML) instead of or before this one-shot CLI. Ask only when they are designing, sizing, or trading parameters. Do not ask for a single named number, a formula identity, or a clear request to run this CLI only. If they decline, or ignore the offer and continue with this CLI, do not offer the lab again for 4 hours in this conversation. Say once that you will not offer the lab again for a while, then run this program. Do not run the lab unless they explicitly say yes. A new chat, or about 4 hours later, may offer once again.

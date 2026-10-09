@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>__TITLE__</title>
+<style>
+  :root { color-scheme: light; --ink: #1b2631; --muted: #34495e; --line: #d5d8dc; --paper: #eef3f7; --card: #ffffff; --accent: #1a5276; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: var(--paper); color: var(--ink); font-family: "Segoe UI", Helvetica, Arial, sans-serif; }
+  #app { min-height: 100%; display: grid; grid-template-columns: 340px 1fr; }
+  aside { padding: 12px 14px 28px; border-right: 1px solid var(--line); background: var(--card); overflow: auto; max-height: 100vh; }
+  main { min-width: 0; display: flex; flex-direction: column; padding: 12px 16px 18px; gap: 8px; }
+  h1 { margin: 0 0 4px; font-size: 20px; font-weight: 560; }
+  h2 { margin: 12px 0 6px; font-size: 13px; }
+  p.note { margin: 0 0 8px; color: var(--muted); font-size: 12px; line-height: 1.4; }
+  label { display: grid; grid-template-columns: 1fr 108px; gap: 6px; align-items: center; margin: 0 0 6px; font-size: 12px; }
+  input, select, textarea { width: 100%; font: inherit; color: inherit; background: var(--paper); border: 1px solid var(--line); padding: 3px 6px; }
+  #tabs { display: flex; flex-wrap: wrap; gap: 4px; margin: 8px 0; }
+  #tabs button { font: inherit; font-size: 12px; border: 1px solid var(--line); background: var(--paper); color: var(--ink); padding: 3px 7px; cursor: pointer; }
+  #tabs button.on { background: var(--accent); color: white; border-color: var(--accent); }
+  #stage { flex: 1; min-height: 380px; display: grid; grid-template-columns: 1.3fr 0.9fr; gap: 8px; }
+  #globe, #map-wrap { min-height: 320px; background: var(--card); border: 1px solid var(--line); position: relative; }
+  #globe { min-height: 380px; }
+  #globe canvas { width: 100%; height: 100%; display: block; }
+  #legend { position: absolute; left: 10px; bottom: 10px; z-index: 2; margin: 0; padding: 8px 10px; list-style: none; background: rgba(255,255,255,0.92); border: 1px solid var(--line); font-size: 12px; max-width: 260px; }
+  #legend li { display: flex; align-items: center; gap: 6px; margin: 2px 0; }
+  #swatch { width: 14px; height: 3px; display: inline-block; }
+  #map { width: 100%; height: 100%; display: block; }
+  #map-wrap[hidden] { display: none; }
+  .bar { display: flex; gap: 8px; align-items: center; }
+  .bar button { font: inherit; font-size: 12px; padding: 4px 8px; border: 1px solid var(--line); background: white; cursor: pointer; }
+  #status { margin: 0; font-size: 13px; }
+  #readout { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 4px 12px; margin: 0; }
+  #readout dt { color: var(--muted); font-size: 11px; }
+  #readout dd { margin: 0; font-size: 14px; }
+  textarea { min-height: 120px; font-family: Consolas, "Courier New", monospace; font-size: 12px; }
+  .checks { display: flex; flex-wrap: wrap; gap: 8px 12px; font-size: 12px; margin-bottom: 8px; }
+  .checks label { display: flex; grid-template-columns: none; width: auto; }
+  @media (max-width: 980px) {
+    #app { grid-template-columns: 1fr; }
+    aside { max-height: none; border-right: 0; border-bottom: 1px solid var(--line); }
+    #stage { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <aside>
+    <h1>__TITLE__</h1>
+    <p class="note">Hohmann and bielliptic on one globe. Other Earth-orbit tools sit on the same page and feed a vacuum delta-v budget.</p>
+    <div id="tabs">
+      <button type="button" data-mode="transfer" class="on">Transfer</button>
+      <button type="button" data-mode="plane">Plane change</button>
+      <button type="button" data-mode="geo">GEO SK</button>
+      <button type="button" data-mode="cw">Relative motion</button>
+      <button type="button" data-mode="phasing">Phasing</button>
+      <button type="button" data-mode="lambert">Lambert</button>
+      <button type="button" data-mode="raise">LEO raise</button>
+      <button type="button" data-mode="insertion">Insertion</button>
+      <button type="button" data-mode="elements">Elements</button>
+      <button type="button" data-mode="ground">Ground track</button>
+      <button type="button" data-mode="coverage">Coverage</button>
+      <button type="button" data-mode="j2">J2</button>
+      <button type="button" data-mode="launch">Launch</button>
+    </div>
+    <div data-panel="transfer">
+      <p class="note">Heights are above the surface.</p>
+      <label>depart height [km]<input id="r1" type="number" step="1"></label>
+      <label>arrive height [km]<input id="r2" type="number" step="1"></label>
+      <label>bielliptic height [km]<input id="rb" type="number" step="1"></label>
+      <label>Strategy<select id="strategy"><option value="auto">auto</option><option value="hohmann">hohmann</option><option value="bielliptic">bielliptic</option></select></label>
+    </div>
+    <div data-panel="plane" hidden>
+      <p class="note">Impulse that tilts a circular orbit at the node.</p>
+      <label>height [km]<input id="plane-a" type="number" step="1"></label>
+      <label>i [deg]<input id="plane-i" type="number" step="0.1"></label>
+      <label>Δi [deg]<input id="plane-di" type="number" step="0.1"></label>
+    </div>
+    <div data-panel="geo" hidden>
+      <label>Δi / year [deg]<input id="geo-di" type="number" step="0.01"></label>
+      <label>e / year<input id="geo-e" type="number" step="0.00001"></label>
+      <label>N–S burns<input id="geo-burns" type="number" step="1"></label>
+      <label>Years<input id="geo-years" type="number" step="0.1"></label>
+    </div>
+    <div data-panel="cw" hidden>
+      <p class="note">Clohessy–Wiltshire motion of a deputy spacecraft relative to a chief on a circular orbit. x is along-track and z is radial. The path on the globe is magnified.</p>
+      <label>chief height [km]<input id="cw-a" type="number" step="1"></label>
+      <label>x [m]<input id="cw-x" type="number" step="1"></label>
+      <label>z [m]<input id="cw-z" type="number" step="1"></label>
+      <label>ẋ [m/s]<input id="cw-xd" type="number" step="0.01"></label>
+      <label>ż [m/s]<input id="cw-zd" type="number" step="0.01"></label>
+      <label>t [s]<input id="cw-time" type="number" step="1"></label>
+      <label>Piece<select id="cw-piece"><option value="cw_null">null</option><option value="cw_hold">hold</option></select></label>
+    </div>
+    <div data-panel="phasing" hidden>
+      <p class="note">Phasing meets a target that shares this circular orbit. The chaser spends the given revolutions on a higher or lower ellipse to close the phase angle, then burns back. Lead chooses who starts ahead.</p>
+      <label>height [km]<input id="phase-r" type="number" step="1"></label>
+      <label>Phase [deg]<input id="phase" type="number" step="0.1"></label>
+      <label>Lead<select id="phase-lead"><option value="target">target</option><option value="chaser">chaser</option></select></label>
+      <label>Revs<input id="phase-revs" type="number" step="1"></label>
+    </div>
+    <div data-panel="lambert" hidden>
+      <p class="note">Heights are above the surface. Long is the arc past 180°. If that flight time would hit the planet, the lab lengthens it until the transfer stays outside.</p>
+      <label>depart height [km]<input id="lam-h1" type="number" step="1"></label>
+      <label>arrive height [km]<input id="lam-h2" type="number" step="1"></label>
+      <label>angle [deg]<input id="lam-ang" type="number" step="1"></label>
+      <label>TOF [s]<input id="lam-tof" type="number" step="1"></label>
+      <label>Way<select id="lam-way"><option value="short">short</option><option value="long">long</option></select></label>
+    </div>
+    <div data-panel="raise" hidden>
+      <p class="note">Impulsive Hohmann plus a plane change at the slower orbit. Not the finite-thrust gravity-loss integral.</p>
+      <label>depart height [km]<input id="raise-r1" type="number" step="1"></label>
+      <label>arrive height [km]<input id="raise-r2" type="number" step="1"></label>
+      <label>Δi [deg]<input id="raise-di" type="number" step="0.1"></label>
+    </div>
+    <div data-panel="insertion" hidden>
+      <label>height [km]<input id="ins-r" type="number" step="1"></label>
+      <label>V [m/s]<input id="ins-v" type="number" step="1"></label>
+      <label>γ [deg]<input id="ins-gamma" type="number" step="0.1"></label>
+    </div>
+    <div data-panel="elements" hidden>
+      <label>SMA height [km]<input id="el-a" type="number" step="1"></label>
+      <label>e<input id="el-e" type="number" step="0.001"></label>
+      <label>i [deg]<input id="el-i" type="number" step="0.1"></label>
+      <label>β [deg]<input id="el-beta" type="number" step="0.1"></label>
+    </div>
+    <div data-panel="ground" hidden>
+      <label>SMA height [km]<input id="gt-a" type="number" step="1"></label>
+      <label>e<input id="gt-e" type="number" step="0.001"></label>
+      <label>i [deg]<input id="gt-i" type="number" step="0.1"></label>
+      <label>orbits<input id="gt-orbits" type="number" step="1"></label>
+    </div>
+    <div data-panel="coverage" hidden>
+      <p class="note">The map traces a wide swath along the ground track. Revisit is still the equatorial count.</p>
+      <label>height [km]<input id="cov-alt" type="number" step="1"></label>
+      <label>ε min [deg]<input id="cov-elev" type="number" step="0.1"></label>
+      <label>i [deg]<input id="cov-i" type="number" step="0.1"></label>
+      <label>orbits<input id="cov-orbits" type="number" step="1" min="1"></label>
+    </div>
+    <div data-panel="j2" hidden>
+      <p class="note">Secular drift of the node and the apsides. The globe shows the orbit now and after that drift.</p>
+      <label>SMA height [km]<input id="j2-a" type="number" step="1"></label>
+      <label>e<input id="j2-e" type="number" step="0.001"></label>
+      <label>i [deg]<input id="j2-i" type="number" step="0.1"></label>
+    </div>
+    <div data-panel="launch" hidden>
+      <p class="note">The satellite waits on the pad, then flies the orbit fixed by this latitude, azimuth, and height.</p>
+      <label>lat [deg]<input id="launch-lat" type="number" step="0.1"></label>
+      <label>az [deg]<input id="launch-az" type="number" step="0.1"></label>
+      <label>height [km]<input id="launch-alt" type="number" step="1"></label>
+    </div>
+    <h2>Vacuum budget</h2>
+    <div class="checks">
+      <label><input id="bud-hohmann" type="checkbox"> Hohmann</label>
+      <label><input id="bud-bielliptic" type="checkbox"> Bielliptic</label>
+      <label><input id="bud-plane" type="checkbox"> Plane change</label>
+      <label><input id="bud-geo" type="checkbox"> GEO</label>
+      <label><input id="bud-phasing" type="checkbox"> Phasing</label>
+      <label><input id="bud-lambert" type="checkbox"> Lambert</label>
+      <label><input id="bud-cw" type="checkbox"> Relative motion</label>
+      <label><input id="bud-raise" type="checkbox"> Raise</label>
+      <label><input id="bud-insertion" type="checkbox"> Insertion</label>
+    </div>
+    <label>dry [kg]<input id="dry" type="number" step="1"></label>
+    <label>Isp [s]<input id="isp" type="number" step="1"></label>
+    <label>growth<input id="growth" type="number" step="0.01"></label>
+  </aside>
+  <main>
+    <div class="bar">
+      <button id="play" type="button">Pause</button>
+      <button id="reset-cam" type="button">Reset camera</button>
+      <button id="trace" type="button">Play trace</button>
+      <span id="leg"></span>
+    </div>
+    <div id="stage">
+      <div id="globe"><ul id="legend"></ul></div>
+      <div id="map-wrap" hidden><canvas id="map" width="640" height="360"></canvas></div>
+    </div>
+    <p id="status"></p>
+    <dl id="readout"></dl>
+    <h2>Export</h2>
+    <textarea id="export" readonly></textarea>
+  </main>
+</div>
+<script type="application/json" id="seed-json">__SEED_JSON__</script>
+<script type="application/json" id="pack-json">__PACK_JSON__</script>
+<script>
+__THREE_SOURCE__
+</script>
+<script>
+__LAB_JS__
+</script>
+</body>
+</html>

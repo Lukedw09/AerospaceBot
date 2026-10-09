@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>__TITLE__</title>
+<style>
+  :root { color-scheme: light; --ink: #1b2631; --muted: #34495e; --line: #d5d8dc; --paper: #f7f9fb; --card: #ffffff; --accent: #1a5276; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: var(--paper); color: var(--ink); font-family: "Segoe UI", Helvetica, Arial, sans-serif; }
+  #app { min-height: 100%; display: grid; grid-template-columns: 340px 1fr; }
+  aside { padding: 14px 14px 24px; border-right: 1px solid var(--line); background: var(--card); overflow: auto; }
+  main { min-width: 0; display: flex; flex-direction: column; padding: 12px 16px 20px; gap: 10px; }
+  h1 { margin: 0 0 4px; font-size: 20px; font-weight: 560; }
+  h2 { margin: 14px 0 6px; font-size: 13px; font-weight: 650; letter-spacing: 0.02em; }
+  p.note { margin: 0 0 8px; color: var(--muted); font-size: 12px; line-height: 1.4; }
+  label { display: grid; grid-template-columns: 1fr 92px; gap: 6px; align-items: center; margin: 0 0 2px; font-size: 12px; }
+  label.stack { grid-template-columns: 1fr; }
+  input[type="number"], input[type="text"], select, textarea { width: 100%; font: inherit; color: inherit; background: var(--paper); border: 1px solid var(--line); padding: 3px 6px; }
+  input[type="range"] { width: 100%; margin: 0 0 8px; }
+  input:disabled, select:disabled { opacity: 0.55; }
+  #shape, #curves { width: 100%; background: var(--paper); border: 1px solid var(--line); display: block; }
+  #shape { height: 320px; }
+  #curves { height: 320px; }
+  #status { margin: 0; font-size: 13px; line-height: 1.4; }
+  #readout { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 6px 14px; margin: 0; }
+  #readout div { margin: 0; }
+  #readout dt { color: var(--muted); font-size: 11px; }
+  #readout dd { margin: 0; font-size: 14px; }
+  textarea { min-height: 180px; font-family: Consolas, "Courier New", monospace; font-size: 11px; }
+  @media (max-width: 860px) {
+    #app { grid-template-columns: 1fr; }
+    aside { border-right: 0; border-bottom: 1px solid var(--line); }
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <aside>
+    <h1>Wing and airfoil</h1>
+    <p class="note">Report 824 charts for 0012, 2412, 2415, and 4412. Any other four-digit section uses thin-airfoil lift. Sweep multiplies the section slope by cos(Λ) before the lifting-line slope.</p>
+    <h2>Section</h2>
+    <label>NACA <input id="naca" type="text" value="2412" spellcheck="false"></label>
+    <label>Reynolds number <input id="re" type="number" min="1" step="any"></label>
+    <input id="re-range" type="range" min="6" max="7" step="0.001" value="6.75">
+    <p class="note" id="re-note">Chart Reynolds numbers</p>
+    <h2>Planform</h2>
+    <label>Span, m <input id="span" type="number" min="0.1" step="any"></label>
+    <input id="span-range" type="range" min="2" max="40" step="0.1">
+    <label>Root chord, m <input id="root" type="number" min="0.01" step="any"></label>
+    <input id="root-range" type="range" min="0.2" max="8" step="0.05">
+    <label>Tip chord, m <input id="tip" type="number" min="0" step="any"></label>
+    <input id="tip-range" type="range" min="0" max="8" step="0.05">
+    <label>Sweep, deg <input id="sweep" type="number" step="any"></label>
+    <input id="sweep-range" type="range" min="-45" max="60" step="0.5">
+    <label class="stack">Sweep line
+      <select id="sweep-at">
+        <option value="">quarter chord if sweep is set</option>
+        <option value="0">leading edge</option>
+        <option value="0.25">quarter chord</option>
+        <option value="1">trailing edge</option>
+      </select>
+    </label>
+    <label>Span efficiency <input id="eff" type="number" min="0.01" max="1" step="any"></label>
+    <input id="eff-range" type="range" min="0.2" max="1" step="0.01">
+    <h2>Thin-airfoil only</h2>
+    <p class="note" id="theory-note">Used when the designation has no Report 824 chart.</p>
+    <label>Zero-lift drag <input id="cd0" type="number" min="0" step="any"></label>
+    <input id="cd0-range" type="range" min="0" max="0.05" step="0.0005">
+    <label>Section CLmax <input id="clmax" type="number" min="0.05" step="any"></label>
+    <input id="clmax-range" type="range" min="0.4" max="2.2" step="0.02">
+    <h2>Marked point</h2>
+    <label>Angle of attack, deg <input id="alpha" type="number" step="any"></label>
+    <input id="alpha-range" type="range" min="-8" max="22" step="0.1">
+    <h2>Export</h2>
+    <textarea id="export" readonly></textarea>
+  </aside>
+  <main>
+    <canvas id="shape"></canvas>
+    <canvas id="curves"></canvas>
+    <p id="status"></p>
+    <dl id="readout"></dl>
+  </main>
+</div>
+<script>
+var SEED = __SEED_JSON__;
+var PACK = __POLAR_PACK__;
+__LAB_JS__
+Lab.boot(SEED, PACK);
+</script>
+</body>
+</html>

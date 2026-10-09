@@ -37,8 +37,8 @@ ASSUMPTIONS = (
     "shear modulus are both given; "
     "optional margin_of_safety MS = allowable/tau_max - 1 with max shear "
     "as the design stress; "
-    "non-circular sections, open thin-wall warping, plastic torsion, and "
-    "combined bending-plus-torsion are omitted"
+    "non-circular sections, open thin-wall warping, and plastic torsion "
+    "are omitted; combined bending-plus-torsion is STRUCT - CombinedStressMohr"
 )
 
 

@@ -35,6 +35,7 @@ The entropy jump is `normal_shock_entropy_over_r`, \(\Delta s/R = -\ln(p_{t2}/p_
 2. Mach number is dimensionless. Do not invent \(M_1\) or \(\gamma\).
 3. One upstream Mach number is one run. Do not sweep.
 4. If the Mach number is below 1, say so and stop. If the user asks for an oblique shock or a cone, use `AERO - PrandtlMeyerAndShocks` or `AERO - ConicalShock` instead.
+5. Interactive lab offer: before running this program for a new normal-shock design or sizing thread, ask once whether the user wants `AERO - CompressibleFlowDesignLab` (interactive 2D HTML) instead of or before this one-shot CLI. Ask only when they are designing, sizing, or trading parameters. Do not ask for a single named number, a formula identity, or a clear request to run this CLI only. If they decline, or ignore the offer and continue with this CLI, do not offer the lab again for 4 hours in this conversation. Say once that you will not offer the lab again for a while, then run this program. Do not run the lab unless they explicitly say yes. A new chat, or about 4 hours later, may offer once again.
 
 ## Flags
 

@@ -37,6 +37,7 @@ Sweep is the angle from the spanwise axis toward the rear. Positive sweep puts t
 2. Convert lengths to metres and the sweep to radians before the call. State the converted units in the reply. Do not invent a span, a chord, or a sweep.
 3. A pointed tip is `--tip 0`. A tip chord larger than the root is allowed.
 4. Pass `--sweep-at 0` only when the user says the sweep is the leading edge. Pass `--sweep-at 1` only when they say it is the trailing edge. Pass `--sweep-at 0.25` when they say quarter chord. Do not convert one sweep into another before the call.
+5. Interactive lab offer: before running this program for a new airfoil, wing-geometry, or finite-wing lift-curve design or sizing thread, ask once whether the user wants `AERO - WingAirfoilDesignLab` (interactive 2D HTML) instead of or before this one-shot CLI. Ask only when they are designing, sizing, or trading parameters. Do not ask for a single named number, a formula identity, or a clear request to run this CLI only. If they decline, or ignore the offer and continue with this CLI, do not offer the lab again for 4 hours in this conversation. Say once that you will not offer the lab again for a while, then run this program. Do not run the lab unless they explicitly say yes. A new chat, or about 4 hours later, may offer once again.
 
 ## Flags
 

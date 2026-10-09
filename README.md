@@ -6,11 +6,13 @@ Cursor agent skills for aerospace engineering: checked formulas and small physic
 
 | Skill | Purpose |
 | --- | --- |
-| [`FormulaCatalouge`](skills/FormulaCatalouge) | Select and use verified aerospace formulas (compressible flow, atmosphere including 1976 density above 86 km, rocket propulsion including in-space propellant, electric-propulsion burn time and power, phasing, and Clohessy–Wiltshire motion, aerodynamics including ideal Brayton turbojet and ramjet, design-point inlet recovery, non-ideal turbojet, afterburner, separate-stream turbofan, airflow sizing, drag delta-v, and phugoid and short-period periods, structures including Euler column buckling and thin-wall membrane stress, mass properties, aerothermodynamics including Allen–Eggers peak load, equilibrium glide, planar lifting entry, lumped thermal capacitance, and spacecraft radiative balance, spacecraft power including battery energy budget and duty-cycled load, space communications including pass data volume and rain attenuation, dynamics and control including second-order response, true proportional navigation, disturbance torques, base-excitation transmissibility, reaction-wheel inertia, magnetic moment, and Miles rms acceleration, orbital phase angle, synodic period, inclined excess speed, pressurant blowdown, propellant slosh, simply supported plate buckling, Doppler shift, Dutch-roll frequency, geostationary east–west removal, and elevation-mask swath). Only formulas listed in `checks/check.md` are allowed. |
+| [`FormulaCatalouge`](skills/FormulaCatalouge) | Select and use verified aerospace formulas (compressible flow including Fanno and Rayleigh ducts, atmosphere including 1976 density above 86 km, rocket propulsion including a single-revolution Lambert transfer, in-space propellant, electric-propulsion burn time and power, phasing, and Clohessy–Wiltshire motion, aerodynamics including flat-plate skin friction, thin-airfoil section lift, ideal Brayton turbojet and ramjet, design-point inlet recovery, non-ideal turbojet, afterburner, separate-stream turbofan, airflow sizing, drag delta-v, and phugoid and short-period periods, structures including Euler column buckling and thin-wall membrane stress, mass properties, aerothermodynamics including Allen–Eggers peak load, equilibrium glide, planar lifting entry, lumped thermal capacitance, and spacecraft radiative balance, spacecraft power including battery energy budget and duty-cycled load, space communications including pass data volume and rain attenuation, dynamics and control including second-order response, Bode gain and phase margins, 3-2-1 attitude kinematics, true proportional navigation, disturbance torques, base-excitation transmissibility, reaction-wheel inertia, magnetic moment, and Miles rms acceleration, orbital phase angle, synodic period, inclined excess speed, pressurant blowdown, propellant slosh, simply supported plate buckling, Doppler shift, Dutch-roll frequency, geostationary east–west removal, and elevation-mask swath). Only formulas listed in `checks/check.md` are allowed. |
 | [`GNC - SecondOrderResponse`](skills/GNC%20-%20SecondOrderResponse) | Run `second_order_response.py` for linear second-order unit-step metrics: damped frequency, overshoot, peak time, 10%–90% rise time, settling time, and under/critical/over-damped class from \(\omega_n\) and \(\zeta\), or from mass, stiffness, and viscous damping. Optional settling band (default 2%). Optional PNG of the unit-step response. |
+| [`GNC - ClassicalControlMargins`](skills/GNC%20-%20ClassicalControlMargins) | Run `classical_control_margins.py` for the gain crossover, phase margin, phase crossover, and gain margin of a polynomial loop transfer. Optional series PID. Writes a Bode PNG. Root-locus geometry is not included. Step metrics stay on SecondOrderResponse. |
 | [`GNC - ProportionalNavigation`](skills/GNC%20-%20ProportionalNavigation) | Run `proportional_navigation.py` for planar true proportional navigation: instantaneous commanded acceleration \(a_c=N' V_c\dot{\lambda}\) from navigation constant, closing speed, and LOS rate, or a constant-speed planar engagement with PN steering (intercept time or miss distance). Optional engagement-plane PNG. The family name is GNC, beside SecondOrderResponse. |
 | [`ADCS - EnvironmentalTorques`](skills/ADCS%20-%20EnvironmentalTorques) | Run `environmental_torques.py` for gravity-gradient, aerodynamic, solar-pressure, and residual magnetic torque. Density comes from altitude; `--rho` is an override. Optional PNG of the torque magnitudes. |
 | [`ADCS - SlewMomentum`](skills/ADCS%20-%20SlewMomentum) | Run `slew_momentum.py` in one mode per call: rest-to-rest slew torque and angular impulse, or disturbance momentum \(H=T\tau\). The two modes are separate runs. Optional PNG. |
+| [`ADCS - AttitudeKinematics`](skills/ADCS%20-%20AttitudeKinematics) | Run `attitude_kinematics.py` for one 3-2-1 conversion per call: Euler angles to a direction-cosine matrix, the inverse, a scalar-first quaternion, or body rates into Euler rates or quaternion rates. Writes a PNG of the body axes in the reference frame. Kinematics only. |
 | [`ADCS - ReactionWheelSizing`](skills/ADCS%20-%20ReactionWheelSizing) | Run `reaction_wheel_sizing.py` for the single-axis wheel inertia \(I_w=H/\omega_{\max}\) that stores a stated momentum at a maximum wheel speed, plus optional momentum and torque margins. \(H\) and \(\tau\) come from separate SlewMomentum runs. Optional PNG of inertia versus wheel speed. |
 | [`ADCS - MagneticTorquerSizing`](skills/ADCS%20-%20MagneticTorquerSizing) | Run `magnetic_torquer_sizing.py` for the dipole \(m=T/(B\sin\psi)\) that produces a stated torque in a stated field, plus optional coil current and margins. The field is an input. Optional PNG of dipole versus field. |
 | [`VIBR - CantileverNaturalFrequency`](skills/VIBR%20-%20CantileverNaturalFrequency) | Run `cantilever_natural_frequency.py` for the undamped fundamental bending natural frequency of a uniform Euler–Bernoulli cantilever (fixed–free) from Young’s modulus, second moment of area, length, and mass per length or total beam mass. Optional PNG of frequency versus length. First bending mode only; no tip mass, damping, or forced response. |
@@ -33,6 +35,7 @@ Cursor agent skills for aerospace engineering: checked formulas and small physic
 | [`ROCKET - TankStructureMass`](skills/ROCKET%20-%20TankStructureMass) | Run `tank_structure_mass.py` for tank shell mass, optional structure mass, residual propellant, and total inert from propellant volume, MEOP, material allowables, and residuals fraction. Prints `mp` and `inert` for PayloadtoDeltaV. |
 | [`ROCKET - ExpansionMatchEarth`](skills/ROCKET%20-%20ExpansionMatchEarth) | Run `expansion_match.py` for the altitude-matched nozzle expansion ratio on the 1976 U.S. Standard Atmosphere. Area ratio and ideal \(C_F\) come from Area-Mach. |
 | [`ROCKET - KickStageNozzle`](skills/ROCKET%20-%20KickStageNozzle) | Run `kick_stage_nozzle.py` for vacuum / above-86 km kick-stage nozzle synthesis: design \(\epsilon\) or \(p_e\), vacuum \(C_F\), conical or length-fraction length, optional shell mass, and Summerfield separation margin against a supplied ambient. The 1976 hydrostatic table is not used for \(p_a\). Optional PNG of vacuum \(C_F\) and length versus \(\epsilon\). |
+| [`ROCKET - NozzleChamberDesignLab`](skills/ROCKET%20-%20NozzleChamberDesignLab) | Run `nozzle_chamber_lab.py` only when the user explicitly asks for the interactive nozzle and chamber page. Writes a PNG and a self-contained 2D HTML lab: frozen CEA gas properties, ambient pressure, and live chamber and conical length-fraction geometry. Not a Rao bell, and not a replacement for the one-shot CLI chain. |
 | [`ROCKET - KickStageFeasibility`](skills/ROCKET%20-%20KickStageFeasibility) | Run `kick_stage_feasibility.py` for in-space kick-stage T/W and burn-time feasibility: continuous burn duration, restart count, per-coast duration limit, ACS propellant coast budget (sum of coasts), and equal-split ignition T/W bounds. Writes a PNG of T/W versus burn time per arc. |
 | [`ROCKET - PayloadtoDeltaV`](skills/ROCKET%20-%20PayloadtoDeltaV) | Run `payload_to_deltav.py` for useful payload from ideal delta-v, or ideal delta-v from useful payload, for one or more stages. A missing delta-v and payload writes a payload-versus-delta-v PNG. |
 | [`ROCKET - LossStack`](skills/ROCKET%20-%20LossStack) | Run `loss_stack.py` for actual thrust, specific impulse, thrust coefficient, c*, and mass flow from ideal \(C_F\), ideal \(c^{*}\), and named efficiencies. With throat area and chamber pressure it also prints the lossless thrust and mass flow. Omitted efficiencies stay 1. |
@@ -43,6 +46,7 @@ Cursor agent skills for aerospace engineering: checked formulas and small physic
 | [`ROCKET - StagePropellantSplit`](skills/ROCKET%20-%20StagePropellantSplit) | Run `stage_propellant_split.py` to allocate propellant and inert across stages for an ideal delta-v at a payload or a gross liftoff mass (`equal_dv`, `equal_mr`, or `max_payload`). Writes a PNG of the split. |
 | [`ROCKET - MultiStageAscent`](skills/ROCKET%20-%20MultiStageAscent) | Run `multi_stage_ascent.py` for a powered ascent with staging mass drops and an optional fairing jettison. A one-stage constant-angle case with no quadratic drag matches BasicTrajectoryLosses. Writes a trajectory CSV, a PNG of the vehicle on the pad, and an HTML simulation of the flight from the ground to burnout. |
 | [`ROCKET - MaxQAndAeroLoad`](skills/ROCKET%20-%20MaxQAndAeroLoad) | Run `max_q_and_aero_load.py` for peak dynamic pressure and an optional angle-of-attack times \(q\) from an ascent CSV. Writes a PNG and an HTML chart of \(q\) versus time. |
+| [`ROCKET - StageAscentDesignLab`](skills/ROCKET%20-%20StageAscentDesignLab) | Run `stage_ascent_lab.py` only when the user explicitly asks for the interactive stage-ascent page. Writes a PNG and a self-contained HTML lab: LEO delta-v, stage split, optional inert replacement, ascent, and peak dynamic pressure. Not a replacement for the one-shot CLI chain. |
 | [`ROCKET - ElectricPropulsionDeltaV`](skills/ROCKET%20-%20ElectricPropulsionDeltaV) | Run `electric_propulsion_delta_v.py` for vacuum propellant and wet mass, thrusting and calendar burn time, input electrical power, and specific power from dry mass, thrust, delta-v, and specific impulse or exhaust speed. Optional efficiency and duty cycle. Optional PNG of propellant versus delta-v. |
 | [`ROCKET - RocketHallThrusterSizing`](skills/ROCKET%20-%20RocketHallThrusterSizing) | Run `rocket_hall_thruster_sizing.py` for Hall-thruster exhaust speed, thrust, mass flow, input power, and ideal singly charged beam current. Exactly one of thrust or power. Optional PNG of beam current versus thrust. |
 | [`ROCKET - PressurantBlowdown`](skills/ROCKET%20-%20PressurantBlowdown) | Run `pressurant_blowdown.py` for polytropic ullage pressure after a stated liquid volume leaves, with optional fixed-charge pressurant mass and a pressure-floor flag. Optional PNG of pressure versus expelled volume. Not a regulator or a tank mass. |
@@ -52,13 +56,16 @@ Cursor agent skills for aerospace engineering: checked formulas and small physic
 | [`ROCKET - InjectorOrificeFlow`](skills/ROCKET%20-%20InjectorOrificeFlow) | Run `injector_orifice_flow.py` for orifice area, geometric-area jet speed, injection pressure drop, and optional circular diameter from mass flow, density, and discharge coefficient. Optional PNG of diameter versus count. |
 | [`ROCKET - FeedSystemPressureBudget`](skills/ROCKET%20-%20FeedSystemPressureBudget) | Run `feed_system_pressure_budget.py` for manifold pressure, named line drops, hydrostatic head, supply pressure, and a pressure-fed `meop_Pa`. No PNG. |
 | [`ROCKET - PumpHydraulicPower`](skills/ROCKET%20-%20PumpHydraulicPower) | Run `pump_hydraulic_power.py` for pump volume flow, hydraulic power, and shaft power. Optional drive power. Optional PNG of shaft power versus pressure rise. Skip for a pressure-fed engine. |
+| [`ROCKET - FeedTankDesignLab`](skills/ROCKET%20-%20FeedTankDesignLab) | Run `feed_tank_lab.py` only when the user explicitly asks for the interactive feed and tank page. Writes a PNG and a self-contained 2D HTML lab: oxidizer and fuel side by side, pressure-fed blowdown or an electric pump, injector orifices, and thin-wall tank membrane stress. Not a turbine cycle, and not a replacement for the one-shot CLI chain. |
 | [`ROCKET - ThroatGasSideHeatFlux`](skills/ROCKET%20-%20ThroatGasSideHeatFlux) | Run `throat_gas_side_heat_flux.py` for the Bartz gas-side coefficient and heat flux at the throat. Gas properties are inputs or the SP-125 \(\gamma\), \(M\) fit. Not Sutton–Graves. Optional PNG of flux versus chamber pressure. |
 | [`ROCKET - RegenerativeCoolantHeatPickUp`](skills/ROCKET%20-%20RegenerativeCoolantHeatPickUp) | Run `regenerative_coolant_heat_pickup.py` for coolant outlet temperature from mass flow, specific heat, and absorbed heat. Optional bulk-temperature limit. Optional PNG of outlet temperature versus mass flow. |
 | [`STRUCT - BeamBendingStress`](skills/STRUCT%20-%20BeamBendingStress) | Run `beam_bending_stress.py` for pure elastic bending stress of a beam, spar, longeron, or boom from bending moment and either section modulus or second moment of area with extreme-fiber distance. Optional allowable stress prints margin of safety. Optional PNG of stress versus moment for the fixed section. |
+| [`STRUCT - CombinedStressMohr`](skills/STRUCT%20-%20CombinedStressMohr) | Run `combined_stress_mohr.py` for plane-stress principals and the Mohr circle when bending and torsion act together, or when \(\sigma_x\) and \(\tau_{xy}\) are already known. Optional allowable normal stress prints margin of safety. Writes a PNG of the Mohr circle. |
 | [`STRUCT - EulerColumnBuckling`](skills/STRUCT%20-%20EulerColumnBuckling) | Run `euler_column_buckling.py` for the elastic Euler critical buckling load of a concentrically loaded prismatic column from Young’s modulus, second moment of area, unsupported length, and end-fix factor \(K\) (pinned–pinned default). Optional area prints critical stress and slenderness; optional compressive yield reports whether Euler is valid or the section would yield first. Optional PNG of critical load versus length for the fixed section. |
 | [`STRUCT - ThinWallPressureVessel`](skills/STRUCT%20-%20ThinWallPressureVessel) | Run `thin_wall_pressure_vessel.py` for thin-wall hoop and longitudinal stress of a closed cylinder, or membrane stress of a sphere. An allowable stress sizes the zero-margin wall or prints margin of safety. Optional PNG of stress versus radius. Distinct from the motor-case hoop program and from tank mass. |
 | [`STRUCT - PanelBuckling`](skills/STRUCT%20-%20PanelBuckling) | Run `panel_buckling.py` for the elastic critical compressive stress of a rectangular plate with four simply supported edges. A missing length uses \(k=4\). An applied stress prints margin of safety. Optional PNG of critical stress versus \(b/t\). |
 | [`STRUCT - FractureCriticalCrack`](skills/STRUCT%20-%20FractureCriticalCrack) | Run `fracture_critical_crack.py` for the critical half-length of a through crack in a wide plate from \(K_{Ic}\), stress, and geometry factor \(Y\). An actual half-length prints margin of safety. Optional PNG of critical length versus stress. |
+| [`STRUCT - FatigueGoodman`](skills/STRUCT%20-%20FatigueGoodman) | Run `fatigue_goodman.py` for an infinite-life Goodman or Soderberg check of one alternating and mean stress. Prints the factor of safety and the allowable alternating stress. Writes a PNG of the constant-life line. Not a Miner sum and not crack growth. |
 | [`THERM - SonicStagnationHeatFlux`](skills/THERM%20-%20SonicStagnationHeatFlux) | Run `sonic_stagnation_heat_flux.py` for Sutton–Graves stagnation-point convective heat flux and freestream dynamic pressure from speed, nose radius, and freestream density or 1976 altitude. Optional wall temperature uses the heat-transfer coefficient form; optional emissivity prints radiative-equilibrium wall temperature. Writes a PNG of flux versus speed at fixed density and nose radius. Does not model dissociation beyond the Sutton–Graves air coefficient. |
 | [`THERM - BallisticEntryPeakLoad`](skills/THERM%20-%20BallisticEntryPeakLoad) | Run `ballistic_entry_peak_load.py` for Allen–Eggers nonlifting ballistic-entry peak deceleration and the altitude of that peak in an exponential atmosphere from ballistic coefficient (or mass, \(C_D\), and area), entry speed, and entry flight-path angle. Default Earth fit from NACA TN 4047. Optional PNG of peak load versus entry angle. Companion to stagnation heat flux; not a full trajectory. |
 | [`THERM - EquilibriumGlideEntry`](skills/THERM%20-%20EquilibriumGlideEntry) | Run `equilibrium_glide_entry.py` for equilibrium-glide peak horizontal deceleration and the characteristic heat-flux scale from entry speed, lift-to-drag ratio, and ballistic coefficient. Default atmosphere matches the ballistic Earth fit. Optional PNG of peak load versus lift-to-drag ratio. Not a 3-degree-of-freedom trajectory. |
@@ -67,14 +74,18 @@ Cursor agent skills for aerospace engineering: checked formulas and small physic
 | [`THERM - SpacecraftRadiativeBalance`](skills/THERM%20-%20SpacecraftRadiativeBalance) | Run `spacecraft_radiative_balance.py` for single-node equilibrium temperature or the radiator area that holds a temperature, from absorbed solar, albedo, and planet infrared. Optional PNG of temperature versus radiator area. Not entry heating. |
 | [`ROCKET - SolidMotorParameters`](skills/ROCKET%20-%20SolidMotorParameters) | Run `solid_motor_parameters.py` for burning-area ratio, equilibrium chamber pressure, burn rate, and solid-propellant mass flow from Saint Robert burn-rate inputs, grain and throat areas, density, and \(c^{*}\). |
 | [`ROCKET - CircularPortGrainHistory`](skills/ROCKET%20-%20CircularPortGrainHistory) | Run `circular_port_grain_history.py` for chamber pressure, burning-area ratio, and remaining web versus time of an internal-burning circular grain with inhibited ends. Writes a PNG of the three histories. |
+| [`ROCKET - SolidMotorGrainLab`](skills/ROCKET%20-%20SolidMotorGrainLab) | Run `solid_motor_grain_lab.py` only when the user explicitly asks for the interactive grain page. Writes a PNG and a self-contained HTML lab: circular-port history, Saint Robert equilibrium, lateral and longitudinal sections, and case margin. Not a replacement for the one-shot CLI chain. |
 | [`ASTRO - MultiBurnLeoRaise`](skills/ASTRO%20-%20MultiBurnLeoRaise) | Run `multi_burn_leo_raise.py` for a finite-thrust multi-burn raise from parking LEO to a higher circular LEO, with gravity loss, steered delta-v, burn arcs, time of flight, and an optional inclination change. Writes a PNG; optional `--html` writes a self-contained 3D viewer. |
 | [`ASTRO - HohmannTransfer`](skills/ASTRO%20-%20HohmannTransfer) | Run `hohmann_transfer.py` for circular speed, escape speed, specific energy, impulsive delta-v, coast time, and \(|r_2|/|r_1|\) between two circular orbits. Writes a PNG of the transfer looking down the orbit normal. Optional `--html` writes a self-contained 3D viewer with the two burns. Recommends a bi-elliptic transfer when that ratio is large enough that a path through infinity would be cheaper. |
+| [`ASTRO - OrbitDesignLab`](skills/ASTRO%20-%20OrbitDesignLab) | Run `orbit_design_lab.py` only when the user explicitly asks for the interactive orbit page. Writes a PNG and a self-contained HTML lab: Hohmann versus bielliptic on one globe, with the other Earth-orbit tools on secondary tabs and a named delta-v export to VacuumPropellantMass. Not a replacement for the one-shot CLI chain. |
+| [`ASTRO - LambertTransfer`](skills/ASTRO%20-%20LambertTransfer) | Run `lambert_transfer.py` for a single-revolution transfer between two inertial position vectors and a time of flight. Prints both velocities and the transfer conic. Writes a PNG in the transfer plane. Optional `--html` writes a self-contained 3D viewer. Multi-revolution branches are not solved. |
 | [`ASTRO - RendezvousPhasing`](skills/ASTRO%20-%20RendezvousPhasing) | Run `rendezvous_phasing.py` for the coplanar phasing ellipse that closes a phase angle in an integer number of revolutions on one circular orbit: semi-major axis, wait, and the two equal impulsive burns. Hands the delta-v to VacuumPropellantMass. Optional PNG looking down the orbit normal. Unequal radii are a Hohmann transfer. |
 | [`ASTRO - RelativeOrbitClohessyWiltshire`](skills/ASTRO%20-%20RelativeOrbitClohessyWiltshire) | Run `relative_orbit_clohessy_wiltshire.py` for the planar Clohessy–Wiltshire state of a deputy about a circular chief, plus the impulses that null the relative velocity or close the relative ellipse. Optional PNG in the chief frame. Not a six-degree-of-freedom or eccentric solution. |
 | [`ASTRO - SolarSystemBody`](skills/ASTRO%20-%20SolarSystemBody) | Run `solar_system_body.py` for the gravitational parameter, radius, and heliocentric semi-major axis, eccentricity, and inclination of the Sun, a planet, or Pluto. Prints mean, perihelion, and aphelion radii. No figure. Earth's radius and \(\mu\) stay the catalogue Earth. |
 | [`ASTRO - HeliocentricHohmann`](skills/ASTRO%20-%20HeliocentricHohmann) | Run `heliocentric_hohmann.py` for the Sun-centered Hohmann half-ellipse between two planets or Pluto: transfer elements, coplanar and inclined excess speeds, phase angle, and synodic period. Writes a PNG looking down the ecliptic normal. The excess speeds are not the rocket burns. |
 | [`ASTRO - LeoToLowOrbit`](skills/ASTRO%20-%20LeoToLowOrbit) | Run `leo_to_low_orbit.py` for the patched-conic delta-v from a circular LEO to a circular low orbit about another planet or Pluto, including the cheaper placement of the target's ecliptic inclination. Writes a PNG of the heliocentric half-ellipse with the two burns. Does not size a rocket. |
 | [`ASTRO - HyperbolicExcess`](skills/ASTRO%20-%20HyperbolicExcess) | Run `hyperbolic_excess.py` for hyperbolic excess speed, characteristic energy \(C_3\), the periapsis burn from a circular park onto a hyperbola, the turning angle, and the true anomaly of the asymptote. Writes a PNG of the park and the hyperbola. Optional `--html` writes a self-contained 3D viewer of the burn and the morph from the circle onto the hyperbola. |
+| [`ASTRO - GravityAssistFlyby`](skills/ASTRO%20-%20GravityAssistFlyby) | Run `gravity_assist_flyby.py` for a planar patched-conic flyby: the turned excess velocity, heliocentric speeds, and the unpowered \(\Delta v\). Writes a PNG of the planet-centered hyperbola. Optional `--html` writes the same self-contained animated viewer as OrbitalParameters, with the planet and the spacecraft coast. Not the park-orbit burn. |
 | [`ASTRO - BiellipticTransfer`](skills/ASTRO%20-%20BiellipticTransfer) | Run `bielliptic_transfer.py` for the three-burn delta-v, time of flight, and \(|r_2|/|r_1|\) of a coplanar bi-elliptic transfer between two circular orbits, from radii, classical elements, NORAD two-line element sets, or inertial states plus an intermediate apoapsis. Writes a PNG looking down the orbit normal. Optional `--html` writes a self-contained 3D viewer with the three burns. Recommends a Hohmann transfer when this apoapsis is not cheaper. |
 | [`ASTRO - OrbitalParameters`](skills/ASTRO%20-%20OrbitalParameters) | Run `orbital_parameters.py` for classical elements, a NORAD two-line element set, or the inertial state of a Keplerian conic, plus time of flight for one orbit or between two anomalies on an ellipse, and optional circular-orbit eclipse duration with `--beta`. Writes a PNG of the orbit and a self-contained HTML viewer. Optional `--j2` applies first-order \(J_2\) secular rates in the viewer. |
 | [`ASTRO - PlaneChangeImpulse`](skills/ASTRO%20-%20PlaneChangeImpulse) | Run `plane_change_impulse.py` for the impulsive delta-v of a pure inclination change at the ascending or descending node, from classical elements, a NORAD two-line element set, or an inertial state. Writes a PNG of both planes and a self-contained HTML viewer. |
@@ -91,6 +102,7 @@ Cursor agent skills for aerospace engineering: checked formulas and small physic
 | [`ATMOS - TransportProperties`](skills/ATMOS%20-%20TransportProperties) | Run `transport_properties.py` for 1976 dry-air dynamic viscosity, thermal conductivity, and mean particle speed from geometric altitude or temperature. With altitude, or temperature plus pressure, also print density, kinematic viscosity, mean free path, collision frequency, and number density. |
 | [`AERO - IsentropicStagnation`](skills/AERO%20-%20IsentropicStagnation) | Run `isentropic_stagnation.py` for isentropic total temperature, pressure, and density from Mach number and optional static state, the sonic reference state, and static and stagnation speeds of sound. Optional PNG of \(p_t/p\) and \(T_t/T\) versus Mach (no shock). |
 | [`AERO - NormalShock`](skills/AERO%20-%20NormalShock) | Run `normal_shock.py` for downstream Mach, static pressure, temperature, and density ratios, stagnation-pressure ratio, and entropy jump of a simple normal shock. Writes a PNG of those ratios versus upstream Mach. |
+| [`AERO - FannoAndRayleighFlow`](skills/AERO%20-%20FannoAndRayleighFlow) | Run `fanno_and_rayleigh_flow.py` for constant-area Fanno or Rayleigh sonic-reference ratios at one Mach number. Exactly one of `--fanno` or `--rayleigh`. Optional Fanno friction length and Rayleigh stagnation-temperature ratio. Writes a PNG of the ratios versus Mach. |
 | [`AERO - PrandtlMeyerAndShocks`](skills/AERO%20-%20PrandtlMeyerAndShocks) | Run `prandtl_meyer_and_shocks.py` for the weak oblique-shock angle, downstream Mach, and static-pressure ratio on a two-dimensional wedge, the Prandtl-Meyer expansion through the same deflection, and whether the shock is attached. |
 | [`AERO - ConicalShock`](skills/AERO%20-%20ConicalShock) | Run `conical_shock.py` for the attached shock angle, surface Mach, and surface pressure coefficient of a right circular cone at zero incidence. |
 | [`AERO - DiamondAirfoilShockExpansion`](skills/AERO%20-%20DiamondAirfoilShockExpansion) | Run `diamond_airfoil_shock_expansion.py` for the four panel pressures and section lift and drag of a symmetric diamond airfoil by shock-expansion theory. Writes a PNG of the waves. |
@@ -119,18 +131,33 @@ Cursor agent skills for aerospace engineering: checked formulas and small physic
 | [`AERO - EquivalentAirspeed`](skills/AERO%20-%20EquivalentAirspeed) | Run `equivalent_airspeed.py` for Mach number, dynamic pressure, equivalent airspeed, and Reynolds number from a geometric altitude and either true airspeed or Mach number on the 1976 standard atmosphere. |
 | [`AERO - DensityAndPressureAltitude`](skills/AERO%20-%20DensityAndPressureAltitude) | Run `density_and_pressure_altitude.py` for dry or moist density, speed of sound, and 1976 pressure and density altitudes from station pressure and outside air temperature. Optional relative humidity and equivalent airspeed. |
 | [`AERO - LongitudinalStaticMargin`](skills/AERO%20-%20LongitudinalStaticMargin) | Run `longitudinal_static_margin.py` for the stick-fixed neutral point and static margin from the wing-fuselage and tail lift-curve slopes, downwash, tail dynamic-pressure ratio, tail geometry, and center-of-gravity position. |
+| [`AERO - LongitudinalTrim`](skills/AERO%20-%20LongitudinalTrim) | Run `longitudinal_trim.py` for the stick-fixed 1-g angle of attack and elevator that hold level flight. Lift coefficient comes from weight and dynamic pressure, or is supplied. Pitch stiffness comes from \(C_{m\alpha}\), a static-margin fraction, or the same geometry as the neutral-point program. Writes a PNG of \(C_m\) versus angle of attack. |
 | [`AERO - PhugoidAndShortPeriod`](skills/AERO%20-%20PhugoidAndShortPeriod) | Run `phugoid_and_short_period.py` for the classical phugoid period and the static short-period frequency from speed, density, wing loading, lift-curve slope, static margin as a fraction of chord, mean chord, and pitch radius of gyration. Optional PNG of the two periods versus speed. Not a fourth-order eigenvalue. |
 | [`AERO - DutchRollEstimate`](skills/AERO%20-%20DutchRollEstimate) | Run `dutch_roll_estimate.py` for Dutch-roll frequency, period, and damping from speed, density, wing size, inertias, mass, and the five lateral derivatives. Optional PNG of period and damping versus speed. Not the spiral mode, the roll-subsidence mode, or the full lateral quartic. |
+| [`AERO - LateralDirectionalStaticStability`](skills/AERO%20-%20LateralDirectionalStaticStability) | Run `lateral_directional_static_stability.py` for vertical-tail \(C_{n\beta}\) and unswept geometric-dihedral \(C_{l\beta}\), or for stability signs on derivatives the user already has. Writes a PNG of the two derivatives. Not the Dutch-roll oscillation. |
 | [`AERO - RayleighPitotMach`](skills/AERO%20-%20RayleighPitotMach) | Run `rayleigh_pitot_mach.py` for freestream Mach number and dynamic pressure from measured pitot pressure, freestream static pressure, and \(\gamma\). Below Mach 1 uses isentropic stagnation; above Mach 1 uses the Rayleigh-Pitot relation. |
 | [`AERO - PrandtGlauertCorrectionandCriticalMach`](skills/AERO%20-%20PrandtGlauertCorrectionandCriticalMach) | Run `prandtl_glauert_correction_and_critical_mach.py` for the two-dimensional Prandtl-Glauert correction of an incompressible lift or moment coefficient, an uncorrected drag coefficient, and the critical Mach number from a minimum pressure coefficient. Coefficients may be supplied or taken from a NACA Report 824 chart. |
 | [`AERO - ParachuteDescentRate`](skills/AERO%20-%20ParachuteDescentRate) | Run `parachute_descent_rate.py` for the steady open-canopy descent rate from mass, drag coefficient, and area. Density is the 1976 standard at `--alt`, or `--rho`. Repeat `--reef` for reefed canopies. Optional PNG of rate versus altitude. |
 | [`AERO - NACAFourDigitSection`](skills/AERO%20-%20NACAFourDigitSection) | Run `naca_four_digit_section.py` for the mean line, surface ordinates, and NACA Report 824 measured section lift, moment, and drag of a NACA four-digit airfoil. Writes PNGs of the section, coefficients versus angle of attack in degrees, and the drag polar. |
+| [`AERO - ThinAirfoilTheory`](skills/AERO%20-%20ThinAirfoilTheory) | Run `thin_airfoil_theory.py` for inviscid thin-section lift from an angle of attack, or from a NACA four-digit mean line, plus the quarter-chord moment of that mean line. Writes a PNG of \(c_l\) versus angle of attack. Measured tunnel polars stay on NACAFourDigitSection. |
+| [`AERO - FlatPlateBoundaryLayer`](skills/AERO%20-%20FlatPlateBoundaryLayer) | Run `flat_plate_boundary_layer.py` for laminar Blasius or one-seventh-power turbulent skin friction on a smooth zero-incidence plate. `--law` is required. Optional friction drag when density, speed, length, and span are given. Writes a PNG of plate \(C_f\) versus Reynolds number. |
+| [`AERO - WindTunnelSimilarity`](skills/AERO%20-%20WindTunnelSimilarity) | Run `wind_tunnel_similarity.py` to compare model and full-scale Reynolds and Mach numbers and, when coefficients are taken as equal, to scale a measured force or moment. A relative mismatch above 0.05 is not matched. Writes a PNG of the two Reynolds numbers and Mach numbers. Not a wall correction. |
+| [`AERO - WingAirfoilDesignLab`](skills/AERO%20-%20WingAirfoilDesignLab) | Run `wing_airfoil_lab.py` only when the user explicitly asks for the interactive wing and airfoil page. Writes a PNG and a self-contained 2D HTML lab: NACA section, trapezoidal planform, and a live lift curve with induced drag. |
+| [`AERO - CompressibleFlowDesignLab`](skills/AERO%20-%20CompressibleFlowDesignLab) | Run `compressible_flow_lab.py` only when the user explicitly asks for the interactive compressible-flow page. Writes a PNG and a self-contained 2D HTML lab: isentropic stagnation, normal shock, wedge, cone, diamond airfoil, Fanno and Rayleigh ducts, Prandtl–Glauert, and Rayleigh–Pitot. |
+
+`AERO - WingAirfoilDesignLab` is an opt-in interactive view of `AERO - NACAFourDigitSection`, `AERO - WingGeometry`, and `AERO - FiniteWingLiftCurve`. It does not replace those programs.
+
+`AERO - CompressibleFlowDesignLab` is an opt-in interactive view of `AERO - IsentropicStagnation`, `AERO - NormalShock`, `AERO - PrandtlMeyerAndShocks`, `AERO - ConicalShock`, `AERO - DiamondAirfoilShockExpansion`, `AERO - FannoAndRayleighFlow`, `AERO - PrandtGlauertCorrectionandCriticalMach`, and `AERO - RayleighPitotMach`. It does not replace those programs. Prandtl–Glauert on the page uses user coefficients only.
 
 Each skill has a `SKILL.md` that tells the agent when to use it and how to respond.
 
 ## Liquid rocket engine design path
 
 Run these in order for a preliminary liquid engine. Quote each program's stdout into the next call. Do not invent a missing input, and do not add an orchestrator.
+
+`ROCKET - NozzleChamberDesignLab` is an interactive 2D HTML alternative for steps 1–5 (performance through nozzle and chamber). Run it only when the user explicitly asks for the lab. It does not replace or orchestrate this CLI chain.
+
+`ROCKET - FeedTankDesignLab` is an opt-in interactive view of `ROCKET - FeedSystemPressureBudget`, `ROCKET - InjectorOrificeFlow`, `ROCKET - PumpHydraulicPower`, `ROCKET - PressurantBlowdown`, `ROCKET - TankStructureMass`, and `ROCKET - PropellantLoad`. It does not replace those programs.
 
 1. `ROCKET - PerformanceParameters` — \(c^{*}\), \(T_c\), \(\gamma\), \(M\), ideal \(C_F\).
 2. `ROCKET - LossStack` — delivered \(C_F\), \(c^{*}\), and \(\dot{m}\) when a throat is known.
@@ -150,6 +177,8 @@ The vehicle that uses this engine is the Ground-to-LEO path below. Quote each st
 ## Ground-to-LEO vehicle design path
 
 Preliminary liquid LOX/RP stack from the motor through circular LEO. A solid stage replaces the liquid motor block for that stage only. Angles are radians.
+
+`ROCKET - StageAscentDesignLab` is an opt-in interactive view of `ROCKET - LeoDeltaVBudget`, `ROCKET - StagePropellantSplit`, `ROCKET - VehicleMassBudget`, `ROCKET - MultiStageAscent`, and `ROCKET - MaxQAndAeroLoad`. It does not replace those programs.
 
 ### A. Liquid motor
 
@@ -184,6 +213,8 @@ Preliminary liquid LOX/RP stack from the motor through circular LEO. A solid sta
 ### C. Solid stage
 
 `ROCKET - SolidMotorParameters` and `ROCKET - CircularPortGrainHistory` replace steps 1–12 for that stage. Skip tanks, injector, feed, pump, and regenerative cooling for a solid stage.
+
+`ROCKET - SolidMotorGrainLab` is an interactive HTML alternative for that stage's grain history and case margin. Run it only when the user explicitly asks for the lab. It does not replace the one-shot CLI chain.
 
 `app/tests/test_ground_to_leo.py` runs this chain on several LEO cases and writes a pass/fail summary.
 
@@ -227,6 +258,11 @@ skills/
   ROCKET - KickStageNozzle/
     SKILL.md
     kick_stage_nozzle.py # vacuum / above-86 km kick-stage nozzle (key: value stdout, optional PNG)
+  ROCKET - NozzleChamberDesignLab/
+    SKILL.md
+    nozzle_chamber_lab.py  # interactive 2D nozzle and chamber page (key: value stdout, PNG + HTML)
+    js/                     # browser recompute of the nozzle, throat, chamber, and CEA lookup
+    viewer/template.html
   ROCKET - KickStageFeasibility/
     SKILL.md
     kick_stage_feasibility.py  # T/W, burn-time, restart, ACS coast budget (key: value stdout, PNG)
@@ -257,6 +293,11 @@ skills/
   ROCKET - MaxQAndAeroLoad/
     SKILL.md
     max_q_and_aero_load.py  # peak dynamic pressure from an ascent CSV (key: value stdout, PNG + HTML)
+  ROCKET - StageAscentDesignLab/
+    SKILL.md
+    stage_ascent_lab.py  # stage split, mass budget, LEO delta-v, ascent, and max-q (key: value stdout, PNG + HTML)
+    js/                  # budget, split, ascent, and peak-q relations
+    viewer/template.html # self-contained page; logic is inlined at bake time
   ROCKET - ElectricPropulsionDeltaV/
     SKILL.md
     electric_propulsion_delta_v.py  # propellant, burn time, and input power (optional PNG)
@@ -284,6 +325,11 @@ skills/
   ROCKET - PumpHydraulicPower/
     SKILL.md
     pump_hydraulic_power.py  # pump volume flow and shaft power (key: value stdout, optional PNG)
+  ROCKET - FeedTankDesignLab/
+    SKILL.md
+    feed_tank_lab.py     # pressure-fed or electric-pump feed and tanks (key: value stdout, PNG + HTML)
+    js/                  # feed, injector, pump, blowdown, tank, and propellant relations
+    viewer/template.html # self-contained page; logic is inlined at bake time
   ROCKET - ThroatGasSideHeatFlux/
     SKILL.md
     throat_gas_side_heat_flux.py  # Bartz throat heat flux (key: value stdout, optional PNG)
@@ -293,6 +339,9 @@ skills/
   STRUCT - BeamBendingStress/
     SKILL.md
     beam_bending_stress.py  # pure bending stress, optional MS and PNG
+  STRUCT - CombinedStressMohr/
+    SKILL.md
+    combined_stress_mohr.py  # bending-plus-torsion principals and Mohr circle (PNG)
   STRUCT - EulerColumnBuckling/
     SKILL.md
     euler_column_buckling.py  # elastic Euler buckling load, optional yield check and PNG
@@ -305,9 +354,15 @@ skills/
   STRUCT - FractureCriticalCrack/
     SKILL.md
     fracture_critical_crack.py  # wide-plate critical half-length (optional PNG)
+  STRUCT - FatigueGoodman/
+    SKILL.md
+    fatigue_goodman.py  # Goodman or Soderberg infinite-life line (PNG)
   GNC - SecondOrderResponse/
     SKILL.md
     second_order_response.py  # second-order step metrics and optional PNG
+  GNC - ClassicalControlMargins/
+    SKILL.md
+    classical_control_margins.py  # Bode gain and phase margins, optional series PID (PNG)
   GNC - ProportionalNavigation/
     SKILL.md
     proportional_navigation.py  # true PN a_c and planar engagement (optional PNG)
@@ -317,6 +372,9 @@ skills/
   ADCS - SlewMomentum/
     SKILL.md
     slew_momentum.py  # rest-to-rest slew or disturbance momentum, one mode per run (optional PNG)
+  ADCS - AttitudeKinematics/
+    SKILL.md
+    attitude_kinematics.py  # 3-2-1 direction cosines, quaternions, and kinematic rates (PNG)
   ADCS - ReactionWheelSizing/
     SKILL.md
     reaction_wheel_sizing.py  # single-axis wheel inertia and optional margins (optional PNG)
@@ -392,6 +450,11 @@ skills/
   ROCKET - CircularPortGrainHistory/
     SKILL.md
     circular_port_grain_history.py  # circular-port pc, K, remaining web versus time (PNG)
+  ROCKET - SolidMotorGrainLab/
+    SKILL.md
+    solid_motor_grain_lab.py  # interactive circular-port grain page (key: value stdout, PNG + HTML)
+    js/                     # browser recompute of Saint Robert history and case hoop
+    viewer/template.html
   ATMOS - Standard1976/
     SKILL.md
     standard_1976.py     # 1976 temperature, pressure, density, sound speed, scale height
@@ -412,6 +475,15 @@ skills/
   ASTRO - HohmannTransfer/
     SKILL.md
     hohmann_transfer.py  # Hohmann delta-v and coast (key: value stdout, PNG, optional HTML viewer)
+  ASTRO - OrbitDesignLab/
+    SKILL.md
+    orbit_design_lab.py  # opt-in Earth-orbit studio (PNG plus self-contained HTML)
+    js/                    # browser ports of the Earth-orbit programs
+    viewer/                # page template and vendored three.min.js
+  ASTRO - LambertTransfer/
+    SKILL.md
+    lambert_transfer.py  # single-revolution Lambert velocities and conic (PNG, optional HTML)
+    viewer/                # Three.js template and vendored three.min.js
   ASTRO - RendezvousPhasing/
     SKILL.md
     rendezvous_phasing.py  # coplanar phasing wait and delta-v (optional PNG)
@@ -432,6 +504,10 @@ skills/
   ASTRO - HyperbolicExcess/
     SKILL.md
     hyperbolic_excess.py  # circular-park escape onto a hyperbola (key: value stdout, PNG, optional HTML viewer)
+    viewer/                # Three.js template and vendored three.min.js
+  ASTRO - GravityAssistFlyby/
+    SKILL.md
+    gravity_assist_flyby.py  # planar flyby velocity patch (PNG, optional animated HTML viewer)
     viewer/                # Three.js template and vendored three.min.js
   ASTRO - BiellipticTransfer/
     SKILL.md
@@ -482,6 +558,9 @@ skills/
   AERO - NormalShock/
     SKILL.md
     normal_shock.py              # normal-shock jumps (key: value stdout, PNG)
+  AERO - FannoAndRayleighFlow/
+    SKILL.md
+    fanno_and_rayleigh_flow.py   # Fanno or Rayleigh sonic-reference ratios (key: value stdout, PNG)
   AERO - PrandtlMeyerAndShocks/
     SKILL.md
     prandtl_meyer_and_shocks.py  # wedge shock and Prandtl-Meyer expansion (key: value stdout, PNG)
@@ -557,12 +636,18 @@ skills/
   AERO - LongitudinalStaticMargin/
     SKILL.md
     longitudinal_static_margin.py  # stick-fixed neutral point and static margin (key: value stdout)
+  AERO - LongitudinalTrim/
+    SKILL.md
+    longitudinal_trim.py  # stick-fixed 1-g alpha and elevator (PNG)
   AERO - PhugoidAndShortPeriod/
     SKILL.md
     phugoid_and_short_period.py  # phugoid and static short-period periods (optional PNG)
   AERO - DutchRollEstimate/
     SKILL.md
     dutch_roll_estimate.py  # Dutch-roll frequency and damping (optional PNG)
+  AERO - LateralDirectionalStaticStability/
+    SKILL.md
+    lateral_directional_static_stability.py  # Cn_beta and Cl_beta estimates (PNG)
   AERO - RayleighPitotMach/
     SKILL.md
     rayleigh_pitot_mach.py  # pitot Mach and dynamic pressure (key: value stdout)
@@ -576,6 +661,25 @@ skills/
     SKILL.md
     naca_four_digit_section.py  # four-digit ordinates and Report 824 cl, cm, cd (key: value stdout, PNGs)
     data/report824_polars.json  # digitized Langley 2-D pressure-tunnel charts
+  AERO - ThinAirfoilTheory/
+    SKILL.md
+    thin_airfoil_theory.py  # inviscid thin-section lift and quarter-chord moment (PNG)
+  AERO - FlatPlateBoundaryLayer/
+    SKILL.md
+    flat_plate_boundary_layer.py  # laminar or 1/7-power turbulent plate friction (PNG)
+  AERO - WindTunnelSimilarity/
+    SKILL.md
+    wind_tunnel_similarity.py  # Reynolds and Mach match, coefficient load scale (PNG)
+  AERO - WingAirfoilDesignLab/
+    SKILL.md
+    wing_airfoil_lab.py  # interactive 2D wing and airfoil page (key: value stdout, PNG + HTML)
+    js/                  # browser recompute of the section, planform, and lift curve
+    viewer/template.html
+  AERO - CompressibleFlowDesignLab/
+    SKILL.md
+    compressible_flow_lab.py  # interactive compressible-flow classroom page (key: value stdout, PNG + HTML)
+    js/                  # browser recompute of the waves, ducts, and ratio curves
+    viewer/template.html
 ```
 
 ## Requirements
@@ -588,22 +692,27 @@ skills/
 - **ROCKET - TankStructureMass** — Python 3 standard library only. Pass `--volume`, `--rho`, `--residuals`, `--meop`, `--allowable`, and `--rho-mat`. Default shape is a sphere; `--shape cylinder` needs `--radius` and sizes flat heads with \(t_{\mathrm{head}}=R\sqrt{p/(S\eta)}\). Refuses when governing \(t/R\ge 0.1\). Optional `--design-factor`, `--boss-factor`, `--eta`, and `--structure` or `--structure-factor`. Prints `payload_to_deltav_stage` for `ROCKET - PayloadtoDeltaV`.
 - **ROCKET - ExpansionMatchEarth** — Python 3 with `numpy` and `matplotlib`, because it calls `ROCKET - Area-Mach Graph`. It does not call CEA.
 - **ROCKET - KickStageNozzle** — Python 3 with `numpy` and `matplotlib`, because it calls `ROCKET - Area-Mach Graph`. Pass `--pc` with `--epsilon` or `--pe`. Omit `--pa` for vacuum; pass `--pa` for ambient \(C_F\) and Summerfield separation (default `--k-sep` 0.4). Separated nozzles invalidate ambient `CF`/`thrust_N`. Geometry needs `--throat` or `--rt`; mass needs `--thickness` and `--rho-mat`. `--alt` is a note only and does not set ambient from the 1976 table. It does not call CEA.
+- **ROCKET - NozzleChamberDesignLab** — Python 3 with `matplotlib`. Run only when the user explicitly asks for the interactive page. It reads the frozen PerformanceParameters tables at bake time and writes a PNG plus a self-contained HTML file. The page recomputes in the browser. Default ambient pressure is \(101325\,\mathrm{Pa}\). `--open` opens that file.
 - **ROCKET - KickStageFeasibility** — Python 3 with `matplotlib` for the PNG. Pass `--thrust`, `--isp`, `--m0`, one of `--mf`/`--mp`/`--dv`, `--tb-max`, and `--restarts-max`. `--coast-max` is per-coast duration; `--acs-mp`/`--acs-mdot` budget the sum of coasts. T/W bounds apply to every equal-split ignition.
 - **ROCKET - PayloadtoDeltaV** — Python 3 standard library for a point result. A delta-v sweep also needs `matplotlib`.
 - **ROCKET - LossStack** — Python 3 standard library only.
 - **ROCKET - BasicTrajectoryLossesFromBodySurface** — Python 3 with `matplotlib`. Pass `--gamma` or `--kick`, not both. Pass `--mf` or `--mp`. Pass `--tb` or `--mdot`. Optional `--cd` needs `--area`. Off-nominal `--oat` uses `AERO - DensityAndPressureAltitude`. An omitted planet is the 1976 Earth radius and \(g_0\). Angles are radians. Vacuum thrust does not vary with ambient pressure.
+- **ROCKET - StageAscentDesignLab** — Python 3 with `matplotlib`. Run only when the user explicitly asks for the interactive page. It calls the LEO delta-v, propellant-split, vehicle-mass, multi-stage ascent, and max-q programs for the seed and writes a PNG plus a self-contained HTML file. The page recomputes in the browser. Default count is two stages. `--open` opens that file. It is an opt-in view of those programs, not a replacement.
 - **Ground-to-LEO skills** — `LaunchAzimuthInclination`, `FairingAndInterstageMass`, `VehicleMassBudget`, `LeoDeltaVBudget`, `StagePropellantSplit`, `MultiStageAscent`, `MaxQAndAeroLoad`, and `OrbitInsertionFromBurnout`. Python 3 with `matplotlib`. Fairing, vehicle mass, propellant split, and the LEO delta-v budget write a PNG. Launch azimuth, multi-stage ascent, max-q, and orbit insertion also write a self-contained HTML viewer; the PNG is the opening frame. The ascent viewer flies the vehicle from the pad to burnout. The insertion viewer keeps the coast outside the planet, then raises it into a circle. `MultiStageAscent` also writes a CSV. Pass the ascent `--radius` and `--mu` into orbit insertion. A parking orbit is `closed_orbit: yes` and `atmosphere_intersection: no`.
 - **ROCKET - ChamberVolumeAndCaseHoopStress** — Python 3 standard library only.
 - **ROCKET - InjectorOrificeFlow** — Python 3 standard library for the point result. Optional `--out` needs `matplotlib`. Pass `--mdot`, `--rho`, `--cd`, and exactly one of `--dp` or `--velocity`. Optional `--count`.
 - **ROCKET - FeedSystemPressureBudget** — Python 3 standard library only. Pass `--pc` and `--dp-injector`, or `--pc` with `--dp-injector-ox` and `--dp-injector-fuel`. Repeat `--dp name=Pa` for extra drops. `--height` needs a density. `meop_Pa` is the pressure-fed tank suggestion.
 - **ROCKET - PumpHydraulicPower** — Python 3 standard library for the point result. Optional `--out` needs `matplotlib`. Pass `--mdot`, `--rho`, `--dp`, and `--eta`. Optional `--eta-drive`. Not for a pressure-fed engine.
+- **ROCKET - FeedTankDesignLab** — Python 3 with `matplotlib`. Run only when the user explicitly asks for the interactive page. It calls the feed, injector, pump, blowdown, tank, and propellant programs for the seed and writes a PNG plus a self-contained HTML file. The page recomputes in the browser. Default architecture is pressure-fed. `--open` opens that file. It is an opt-in view of those programs, not a replacement.
 - **ROCKET - ThroatGasSideHeatFlux** — Python 3 standard library for the point result. Optional `--out` needs `matplotlib`. Pass `--pc`, `--Tc`, `--cstar`, `--curvature`, `--tw`, and `--throat` or `--rt`. Pass `--mu` `--cp` `--pr`, or `--mw` `--gamma`. Omitted `--sigma` and `--recovery` are 1. Not Sutton–Graves.
 - **ROCKET - RegenerativeCoolantHeatPickUp** — Python 3 standard library for the point result. Optional `--out` needs `matplotlib`. Pass `--mdot`, `--cp`, `--t-in`, and `--q-dot` or `--flux` with `--area`. Optional `--t-max`.
 - **STRUCT - BeamBendingStress** — Python 3 standard library for the point result. Optional `--out` needs `matplotlib`. Pass `--section-modulus`, or both `--inertia` and `--fiber`. Pure bending only; no axial, shear, or torsion. Optional `--allowable` prints `margin_of_safety`.
+- **STRUCT - CombinedStressMohr** — Python 3 with `matplotlib`. Pass `--sigma` and `--tau`, or bending plus torsion loads. Do not mix the paths. Optional `--allowable` uses the larger principal magnitude. The PNG is the Mohr circle.
 - **STRUCT - EulerColumnBuckling** — Python 3 standard library for the point result. Optional `--out` needs `matplotlib`. Pass `--E`, `--inertia`, and `--length`. Optional `--k` or `--ends` (default pinned–pinned \(K=1\)). Optional `--area` for stress and slenderness; `--yield` needs `--area`. Elastic Euler only; no short-column curve.
 - **STRUCT - ThinWallPressureVessel** — Python 3 standard library for the point result. Optional `--out` needs `matplotlib`. Pass `--p`, `--radius`, and `--shape` (`cylinder` or `sphere`). Pass `--thickness`, `--allowable`, or both. The governing stress is hoop on a cylinder and membrane on a sphere. A thickness sized from the allowable has zero margin of safety.
 - **STRUCT - PanelBuckling** — Python 3 standard library for the point result. Optional `--out` needs `matplotlib`. Pass `--E`, `--nu`, `--width`, and `--thickness`. Omit `--length` for a long plate with \(k=4\). Optional `--stress` prints `margin_of_safety`.
 - **GNC - SecondOrderResponse** — Python 3 standard library for the point result. Optional `--out` needs `matplotlib`. Pass `--wn` with `--zeta`, or `--mass` with `--stiffness` and `--damping`. Optional `--settling-percent` (default 2). Linear unity-gain second-order plant only.
+- **GNC - ClassicalControlMargins** — Python 3 with `matplotlib`. Pass `--num` and `--den`, highest power first. Optional `--kp`, `--ki`, and `--kd` form a series PID; omitted gains are zero. The PNG title is `Classical control margins`. Root-locus geometry is not plotted.
 - **GNC - ProportionalNavigation** — Python 3 standard library for Mode 1 and the engagement integrator. Optional `--out` (Mode 2) needs `matplotlib`. Pass `--n-prime` with either Mode 1 (`--vc --los-rate`) or Mode 2 (`--range --los-angle` and speed/heading or velocity components). Planar true PN only; not second-order plant metrics.
 - **VIBR - CantileverNaturalFrequency** — Python 3 standard library for the point result. Optional `--out` needs `matplotlib`. Pass `--E`, `--inertia`, `--length`, and either `--mu` (primary) or `--mass` (\(\mu = m_{\mathrm{beam}}/L\)). Uniform fixed–free Euler–Bernoulli first bending mode only; no tip mass, damping, or forced response.
 - **VIBR - BaseExcitationTransmissibility** — Python 3 standard library for the point result. Optional `--out` needs `matplotlib`. Pass `--fn`, `--zeta`, and `--f`, all with frequency in hertz. Isolation is `yes` only for a frequency ratio above \(\sqrt{2}\). `r_peak` is printed only when \(\zeta < 1/\sqrt{2}\). `--fn` may be `f_Hz` from CantileverNaturalFrequency.
@@ -625,11 +734,15 @@ skills/
 - **COMMS - DopplerShiftBudget** — Python 3 standard library for the point result. Optional `--out` needs `matplotlib` and is drawn only for the orbit path. Pass `--freq` and either `--v-radial` or `--alt`/`--a` with `--elev-min`. Earth rotation is omitted from the orbit range rate.
 - **ROCKET - SolidMotorParameters** — Python 3 standard library only.
 - **ROCKET - CircularPortGrainHistory** — Python 3 with `matplotlib`. Reuses `ROCKET - SolidMotorParameters`. Ends inhibited; no erosive burning. An omitted `--sliver` is 0.
+- **ROCKET - SolidMotorGrainLab** — Python 3 with `matplotlib`. Run only when the user explicitly asks for the interactive page. It reuses circular-port history, Saint Robert equilibrium, and case hoop stress, and writes a PNG plus a self-contained HTML file. The page recomputes in the browser. The default grain is an \(80\,\mathrm{mm}\) web, \(50\,\mathrm{mm}\) port, and \(1\,\mathrm{m}\) length at Kn \(120\), with \(a\) set so the burn is \(10\,\mathrm{s}\). `--open` opens that file.
 - **ASTRO - MultiBurnLeoRaise** — Python 3 with `matplotlib`. It reuses OrbitalParameters. Pass parking elements or a state, `--alt-target` or `--r-target`, and `--thrust`/`--isp`/`--m0` or `--profile`. Optional `--i-target`, `--burns` (\(\ge 2\)), `--mf`/`--mp`. Finite-thrust raise with gravity loss; coasts are Keplerian. `--html` writes a self-contained HTML viewer; `--open` opens it.
 - **ASTRO - HohmannTransfer** — Python 3 with `matplotlib`. The PNG looks down the orbit normal. `--html` writes a self-contained HTML viewer beside the PNG; `--open` opens it. The viewer flies the two burns and the transfer coast. The solid trail is the path already flown; the remaining future path stays faded.
+- **ASTRO - OrbitDesignLab** — Python 3 with `matplotlib`. Run only when the user explicitly asks for the interactive page. It calls the Earth-orbit programs for the seed and writes a PNG plus a self-contained HTML file. The page recomputes in the browser on one globe. The default seed is a 400 km circle to geostationary radius. `--open` opens that file. It is an opt-in view of those programs, not a replacement. The LEO-raise tab is the impulsive reference, not the finite-thrust gravity-loss integral.
+- **ASTRO - LambertTransfer** — Python 3 with `matplotlib`. Pass both position vectors in meters and `--tof` in seconds. Omit `--mu` for Earth \(\mu=g_0 R_0^2\). `--way` is `short` or `long` (default short). One revolution only. The PNG is the transfer plane. `--html` writes a self-contained HTML viewer beside the PNG; `--open` opens it. A 180 degree chord uses \(p=2 r_1 r_2/(r_1+r_2)\).
 - **ASTRO - RendezvousPhasing** — Python 3 standard library for the point result. Optional `--out` needs `matplotlib`. Pass `--phase`, `--lead` (`target` or `chaser`), and one circular radius: `--radius` or `--alt`, or a target/chaser pair that names the same radius. Optional `--revs` defaults to 1. Unequal radii are rejected. The two burns are equal; hand either delta-v to VacuumPropellantMass.
 - **ASTRO - RelativeOrbitClohessyWiltshire** — Python 3 standard library for the point result. Optional `--out` needs `matplotlib`. Pass `--x`, `--z`, `--xdot`, `--zdot`, `--time`, and `--a` or `--alt`. \(x\) is along-track with the chief velocity; \(z\) is radial outward. One run prints the state at that time and both the null and hold impulses. Planar and circular-chief only.
 - **ASTRO - HyperbolicExcess** — Python 3 with `matplotlib`. It reuses OrbitalParameters for the planet backdrop. `--rp` is the circular park and the hyperbola periapsis. Pass exactly one of `--vinf`, `--C3`, or `--rinf`. `--rinf` is \(\lvert a\rvert=\mu/v_{\infty}^{2}\), not a station on the path. The PNG is the park, the hyperbola, and the periapsis burn. `--html` writes a self-contained HTML viewer; `--open` opens it. The viewer parks on the circle, morphs through the burn onto the hyperbola, then coasts toward the outgoing asymptote.
+- **ASTRO - GravityAssistFlyby** — Python 3 with `matplotlib`. Pass `--rp`, `--turn`, `--vp-x`, and `--vp-y`. Pass `--mu` or `--R0`, and `--vinf` or `--C3`. Pass `--ux` and `--uy`, or `--psi`. `--html` writes the OrbitalParameters viewer: lit planet, hyperbola, and a coasting spacecraft. That page needs `--radius` or `--R0`. Park-burn sizing stays on HyperbolicExcess.
 - **ASTRO - BiellipticTransfer** — Python 3 with `matplotlib`. It reuses HohmannTransfer and OrbitalParameters. `--rb` is the common apoapsis and must be at least the larger circular radius. Element angles are radians. The burns are coplanar; a plane change is omitted. Epoch radius from elements, a NORAD TLE, or a state is treated as a circular orbit of that radius. A TLE is passed as two 69-character lines and is not propagated with SGP4. The PNG looks down the orbit normal. `--html` writes a self-contained HTML viewer; `--open` opens it. The viewer flies the three burns and both coasts. The solid trail is the path already flown; the remaining future path stays faded.
 - **ASTRO - OrbitalParameters** — Python 3 with `matplotlib`. Element angles are radians. `--tle` accepts a NORAD two-line element set as a Keplerian ellipse; line-2 angles stay in degrees, and SGP4 is not applied. On an ellipse, `tof_s` is always printed: one orbit by default, or the forward coast to optional `--nu2` / `--M2`. Optional `--beta` prints circular-orbit cylindrical-umbra eclipse fraction and duration (\(t_e=f_e T\)) for near-circular ellipses. `--elev` and `--azim` are degrees. Flattening is visual only. Optional `--j2` applies first-order \(J_2\) secular \(\dot{\Omega}\) and \(\dot{\omega}\) in the HTML viewer, matching `ASTRO - J2SecularRates`; omit it for Keplerian motion. Each run also writes a self-contained HTML viewer beside the PNG. The viewer opens offline and animates the spacecraft on the same conic.
 - **ASTRO - PlaneChangeImpulse** — Python 3 with `matplotlib`. It reuses OrbitalParameters. Element angles and `--di` are radians. `--tle` accepts a NORAD two-line element set. `--burn` is `an` or `dn`; the default is the slower node. `--elev` and `--azim` are degrees. Flattening is visual only. The impulse is a pure inclination change, \(\Delta v = 2 v \sin(\Delta i / 2)\). Each run writes a PNG and a self-contained HTML viewer. The viewer flies one revolution on the initial orbit, slows into the node, hinges the inclination, then flies four revolutions on the final orbit. The orbit the spacecraft is on is drawn solid; the other is faded.
@@ -643,6 +756,7 @@ skills/
 - **ATMOS - DensityAbove86km** — Python 3 standard library for the point result. Optional `--out` needs `matplotlib`. Pass `--alt` in metres, greater than 86000 and at most 1000000. Mean solar activity, exospheric temperature 1000 K. At or below 86 km, use Standard1976.
 - **ADCS - EnvironmentalTorques** — Python 3 standard library for the point result. Optional `--out` needs `matplotlib`. Pass the flag group for each torque requested. Aerodynamic density comes from altitude unless `--rho` is set.
 - **ADCS - SlewMomentum** — Python 3 standard library for the point result. Optional `--out` needs `matplotlib`. One mode per run: `--inertia`, `--angle`, and `--time`, or `--torque` and `--duration`.
+- **ADCS - AttitudeKinematics** — Python 3 with `matplotlib`. One `--mode` per run. Angles and rates are radians. The quaternion is scalar-first. Only the 3-2-1 sequence is supported. Pitch near \(\pm\pi/2\) is gimbal lock. The PNG title is `Attitude kinematics`.
 - **ADCS - ReactionWheelSizing** — Python 3 standard library for the point result. Optional `--out` needs `matplotlib`. Pass `--H`, `--tau`, and `--omega-max`. Optional `--H-max` and `--tau-max` print margins. Do not add the slew impulse and the disturbance impulse unless the user already added them.
 - **ADCS - MagneticTorquerSizing** — Python 3 standard library for the point result. Optional `--out` needs `matplotlib`. Pass `--torque` and `--b-field`. Optional `--mag-angle` defaults to \(\pi/2\). Coil current needs both `--turns` and `--area`. Optional `--m-max` and `--i-max` print margins. The field is an input.
 - **ASTRO - AerodynamicDragDeltaV** — Python 3 standard library for the point result. Optional `--out` needs `matplotlib`. Pass `--alt`, `--mass`, `--cd`, and `--area`. Density comes from altitude unless `--rho` is set.
@@ -652,6 +766,7 @@ skills/
 - **ATMOS - TransportProperties** — Python 3 standard library only. Viscosity, conductivity, and mean particle speed from temperature. Altitude mode reuses `ATMOS - Standard1976` through 86 km. Density-dependent lengths need altitude or temperature plus pressure. It does not use the NASA Glenn three-zone fit.
 - **AERO - IsentropicStagnation** — Python 3 standard library for the point result. Optional `--out` needs `matplotlib`. An omitted `--gamma` is \(1.4\). Absolute totals and sonic states only for each static that was given. Sound speed uses \(\sqrt{\gamma p/\rho}\) when pressure and density are both given; with temperature alone it uses 1976 dry-air \(R\). No shock.
 - **AERO - NormalShock** — Python 3 with `matplotlib`. An omitted `--gamma` is \(1.4\). Upstream Mach is at least 1. Entropy is reported as \(\Delta s/R\).
+- **AERO - FannoAndRayleighFlow** — Python 3 with `matplotlib`. Exactly one of `--fanno` or `--rayleigh`, plus `--mach`. An omitted `--gamma` is \(1.4\). Optional `--fld` is the Fanno friction parameter \(4fL/D\). Optional `--tt-ratio` is the Rayleigh stagnation-temperature ratio. The PNG title is `Fanno flow ratios` or `Rayleigh flow ratios`.
 - **AERO - PrandtlMeyerAndShocks** — Python 3 with `matplotlib`. Deflection is in radians. A two-dimensional wedge, not a cone.
 - **AERO - ConicalShock** — Python 3 with `numpy` and `matplotlib`. Half-angle is in radians. A right circular cone at zero incidence, not a wedge. An omitted `--gamma` is \(1.4\).
 - **AERO - DiamondAirfoilShockExpansion** — Python 3 with `matplotlib`. Half-angle and angle of attack are radians. Reuses `AERO - PrandtlMeyerAndShocks`. Symmetric diamond only; trailing-edge wake matching is omitted.
@@ -677,18 +792,26 @@ skills/
 - **AERO - EquivalentAirspeed** — Python 3 standard library only. Temperature, pressure, density, and sound speed come from `ATMOS - Standard1976`. Equivalent airspeed is `freestream_dynamic_pressure` at 1976 sea-level density. It is not calibrated airspeed. An omitted length is 1 m.
 - **AERO - DensityAndPressureAltitude** — Python 3 standard library only. The 1976 layers and sea-level density come from `ATMOS - Standard1976`. An omitted `--rh` is dry air. Station pressure above sea-level pressure extrapolates the troposphere below \(H = 0\). Equivalent airspeed is not calibrated airspeed. It does not use the NASA Glenn three-zone fit.
 - **AERO - LongitudinalStaticMargin** — Python 3 standard library only. Stick-fixed TN 1670 equation (6). \(l\) is measured from the neutral point. \(q_T/q\) is the tail dynamic-pressure ratio. Both lift-curve slopes use the same angle unit.
-- **AERO - PhugoidAndShortPeriod** — Python 3 standard library for the point result. Optional `--out` needs `matplotlib`. Pass `--speed`, `--rho`, `--wing-loading`, `--cla` per radian, `--static-margin` as the fraction \(x/c\) (`x_over_c`, not the percent), `--mac`, and `--ky`. The phugoid period uses speed only. The short-period frequency omits pitch damping.
+- **AERO - LongitudinalTrim** — Python 3 with `matplotlib`. Pass `--a`, `--cm0`, and `--cm-de`. Pass `--CL` or `--q` `--S` `--W`. Pass `--cm-alpha`, or `--kn` as a fraction of chord, or the neutral-point geometry. The PNG is \(C_m\) versus angle of attack.
 - **AERO - DutchRollEstimate** — Python 3 standard library for the point result. Optional `--out` needs `matplotlib`. Pass `--speed`, `--rho`, `--span`, `--area`, `--ix`, `--iz`, `--mass`, and `--cn-beta`, `--cl-beta`, `--cy-beta`, `--cn-r`, `--cl-p`, all derivatives per radian. A missing derivative is not invented. Not the spiral or roll-subsidence mode.
+- **AERO - LateralDirectionalStaticStability** — Python 3 with `matplotlib`. Pass the tail and dihedral geometry, or `--cn-beta` and `--cl-beta`. Do not mix them. Omitted `--eta-v` is 1. Omitted `--taper` is 1. Positive \(C_{n\beta}\) weathervanes. Negative \(C_{l\beta}\) is positive effective dihedral.
+- **AERO - FlatPlateBoundaryLayer** — Python 3 with `matplotlib`. `--law` is `laminar` or `turbulent`. Pass `--re`, or `--rho`, `--V`, `--L`, and `--mu` or `--nu`. `--span` needs density, speed, and length and is one wetted side. There is no transition model.
+- **AERO - WindTunnelSimilarity** — Python 3 with `matplotlib`. Pass the four Reynolds and Mach numbers, or lengths, speeds, sound speeds, and a viscosity. A relative mismatch above 0.05 is `mismatch`. `--force-m` and `--moment-m` scale only when the coefficients are taken as equal.
+- **AERO - PhugoidAndShortPeriod** — Python 3 standard library for the point result. Optional `--out` needs `matplotlib`. Pass `--speed`, `--rho`, `--wing-loading`, `--cla` per radian, `--static-margin` as the fraction \(x/c\) (`x_over_c`, not the percent), `--mac`, and `--ky`. The phugoid period uses speed only. The short-period frequency omits pitch damping.
 - **AERO - RayleighPitotMach** — Python 3 standard library only. Measured pitot at or above freestream static. An omitted `--gamma` is \(1.4\). The sonic pressure ratio selects isentropic stagnation versus Rayleigh-Pitot.
 - **AERO - PrandtGlauertCorrectionandCriticalMach** — Python 3 with `matplotlib`. Freestream Mach is below 1. An omitted `--gamma` is \(1.4\). Pass any combination of `--cl-inc`, `--cm-inc`, `--cd-inc`, and `--cpmin-inc`, or `--naca` with `--alpha` instead of the lift, moment, and drag coefficients. Drag is not divided by \(\beta\). Critical Mach needs a negative `--cpmin-inc`. Two-dimensional \(1/\beta\) only.
 - **AERO - ParachuteDescentRate** — Python 3 standard library for the point result. Optional `--out` needs `matplotlib`. Pass `--mass`, `--cd`, `--area`, and `--alt` or `--rho`. Repeat `--reef name=cd,area` for reefed canopies.
 - **MASS - StageCgTravel** — Python 3 standard library for the point result. Optional `--out` needs `matplotlib`. Repeat `--stage dry,x_dry,mp,x_full,x_empty`. Pass `--fraction` in \([0, 1]\).
 - **STRUCT - FractureCriticalCrack** — Python 3 standard library for the point result. Optional `--out` needs `matplotlib`. Pass `--kic` and `--stress`. Optional `--geometry` defaults to 1. Optional `--crack` prints `margin_of_safety`.
+- **STRUCT - FatigueGoodman** — Python 3 with `matplotlib`. `--criterion` is `goodman` or `soderberg`. Pass `--sigma-a`, `--sigma-m`, and `--se`. Goodman needs `--sut`. Soderberg needs `--sy`. Optional `--n` is a required factor. The PNG is the intercept line and the load point.
 - **PROP - AfterburningTurbofan** — Python 3 with `matplotlib`. Pass `--mach`, `--tit`, `--opr`, `--bpr`, `--fpr`, `--t7`, and a freestream path. Core reheat only. No mixer.
 - **PROP - ScramjetIdealCycle** — Python 3 with `matplotlib`. Pass `--mach`, `--combustor-mach` (\(> 1\) and below the flight Mach), `--tmax`, and a freestream path. A subsonic burner is `PROP - IdealRamjet`.
 - **PROP - IdealTurboprop** — Python 3 with `matplotlib`. Pass `--mach` (\(> 0\)), `--tit`, `--opr`, `--eta-prop`, and a freestream path. Shaft power and thrust are per 1 kg/s of inlet air.
 - **ROCKET - RocketHallThrusterSizing** — Python 3 standard library for the point result. Optional `--out` needs `matplotlib`. Pass `--isp`, `--eta`, and exactly one of `--thrust` or `--power`. Optional `--ion-mass` replaces xenon. Optional `--utilization` is the ionized fraction of the propellant and multiplies the beam current.
 - **AERO - NACAFourDigitSection** — Python 3 with `matplotlib`. Angle of attack is radians. Geometry is the four-digit family. Coefficients are interpolated from digitized NACA Report 824 charts (smooth) for 0012, 2412, 2415, and 4412. Optional `--re` selects or interpolates among the tabulated Reynolds numbers (about \(3\times10^6\), \(6\times10^6\), and \(9\times10^6\)). An omitted `--re` uses the curve nearest \(6\times10^6\). An omitted `--alpha` still writes the coefficient and polar figures. Coefficient plots use degrees over the measured range. There is no inviscid \(c_d = 0\).
+- **AERO - ThinAirfoilTheory** — Python 3 with `matplotlib`. Angles are radians. Pass `--alpha`, or `--m` and `--p` for a NACA four-digit mean line. Inviscid lift slope is \(2\pi\) per radian. A sealed flap is not included. Measured polars stay on NACAFourDigitSection.
+- **AERO - WingAirfoilDesignLab** — Python 3 with `matplotlib`. Run only when the user explicitly asks for the interactive page. It reads the Report 824 charts at bake time and writes a PNG plus a self-contained HTML file. The page recomputes in the browser. Chart sections use the measured polar. Other four-digit sections use thin-airfoil lift. `--open` opens that file.
+- **AERO - CompressibleFlowDesignLab** — Python 3 with `matplotlib`. Run only when the user explicitly asks for the interactive page. It writes a PNG plus a self-contained HTML file. The page recomputes in the browser. Angles are radians on the CLI and degrees on the page. An omitted `--gamma` is \(1.4\). Prandtl–Glauert uses the user-coefficient path only. Duct lines are contours of the stream function. Equal spacing is the constant mass flux \(\rho V\) in a constant-area duct. `--open` opens that file.
 
 Example:
 
@@ -703,6 +826,8 @@ python "skills/ROCKET - FeedSystemPressureBudget/feed_system_pressure_budget.py"
 python "skills/ROCKET - FeedSystemPressureBudget/feed_system_pressure_budget.py" --check
 python "skills/ROCKET - PumpHydraulicPower/pump_hydraulic_power.py" --mdot 0.625 --rho 1000 --dp 2.2e6 --eta 0.7
 python "skills/ROCKET - PumpHydraulicPower/pump_hydraulic_power.py" --check
+python "skills/ROCKET - FeedTankDesignLab/feed_tank_lab.py" --check
+python "skills/ROCKET - FeedTankDesignLab/feed_tank_lab.py" --architecture electric
 python "skills/ROCKET - ThroatGasSideHeatFlux/throat_gas_side_heat_flux.py" --pc 2e6 --Tc 3400 --cstar 1600 --throat 0.02523 --curvature 0.02 --tw 800 --mw 22 --gamma 1.22 --recovery 0.95
 python "skills/ROCKET - ThroatGasSideHeatFlux/throat_gas_side_heat_flux.py" --check
 python "skills/ROCKET - RegenerativeCoolantHeatPickUp/regenerative_coolant_heat_pickup.py" --mdot 0.2 --cp 2000 --t-in 300 --flux 1e7 --area 0.01 --t-max 450
@@ -725,6 +850,8 @@ python "skills/ROCKET - LeoDeltaVBudget/leo_delta_v_budget.py" --alt 300000 --v-
 python "skills/ROCKET - StagePropellantSplit/stage_propellant_split.py" --stages 2 --stage isp=300,eps=0.1 --stage isp=330,eps=0.12 --dv 9000 --payload 200
 python "skills/ROCKET - MultiStageAscent/multi_stage_ascent.py" --stages 2 --stage mp=80000,inert=8000,isp=300,tb=120 --stage mp=15000,inert=2000,isp=330,tb=150 --payload 1500 --gamma 1.05 --cd 0.3 --area 2
 python "skills/ROCKET - MaxQAndAeroLoad/max_q_and_aero_load.py" --table "skills/ROCKET - MultiStageAscent/multi_stage_ascent.csv"
+python "skills/ROCKET - StageAscentDesignLab/stage_ascent_lab.py" --check
+python "skills/ROCKET - StageAscentDesignLab/stage_ascent_lab.py" --stages 3
 python "skills/ASTRO - OrbitInsertionFromBurnout/orbit_insertion_from_burnout.py" --r 6774200 --v 7670 --gamma 0
 python "skills/ROCKET - ChamberVolumeAndCaseHoopStress/chamber_case.py" --throat 0.0005 --lstar 1.2 --pc 2e6 --radius 0.05 --thickness 0.002 --allowable 6.25e7
 python "skills/ROCKET - ChamberVolumeAndCaseHoopStress/chamber_case.py" --check
@@ -732,9 +859,14 @@ python "skills/ROCKET - SolidMotorParameters/solid_motor_parameters.py" --a 1e-5
 python "skills/ROCKET - SolidMotorParameters/solid_motor_parameters.py" --check
 python "skills/ROCKET - CircularPortGrainHistory/circular_port_grain_history.py" --a 1e-5 --n 0.5 --port 0.02 --length 0.4 --outer 0.05 --throat 0.0005 --rho 1800 --cstar 1550
 python "skills/ROCKET - CircularPortGrainHistory/circular_port_grain_history.py" --check
+python "skills/ROCKET - SolidMotorGrainLab/solid_motor_grain_lab.py" --check
+python "skills/ASTRO - OrbitDesignLab/orbit_design_lab.py" --check
+python "skills/ASTRO - OrbitDesignLab/orbit_design_lab.py" --r1 6774200 --r2 42164000
 python "skills/ASTRO - HohmannTransfer/hohmann_transfer.py" --r1 6774200 --r2 7374200
 python "skills/ASTRO - HohmannTransfer/hohmann_transfer.py" --alt 400000 --ecc 0.2 --html
 python "skills/ASTRO - HohmannTransfer/hohmann_transfer.py" --check
+python "skills/ASTRO - LambertTransfer/lambert_transfer.py" --r1x 7000000 --r1y 0 --r1z 0 --r2x 0 --r2y 7000000 --r2z 0 --tof 1457.41
+python "skills/ASTRO - LambertTransfer/lambert_transfer.py" --check
 python "skills/ASTRO - SolarSystemBody/solar_system_body.py" --body mars
 python "skills/ASTRO - SolarSystemBody/solar_system_body.py" --check
 python "skills/ASTRO - HeliocentricHohmann/heliocentric_hohmann.py" --from earth --to mars
@@ -743,6 +875,8 @@ python "skills/ASTRO - LeoToLowOrbit/leo_to_low_orbit.py" --to mars --h-leo 4000
 python "skills/ASTRO - LeoToLowOrbit/leo_to_low_orbit.py" --check
 python "skills/ASTRO - HyperbolicExcess/hyperbolic_excess.py" --rp 6774200 --vinf 3200 --html
 python "skills/ASTRO - HyperbolicExcess/hyperbolic_excess.py" --check
+python "skills/ASTRO - GravityAssistFlyby/gravity_assist_flyby.py" --mu 3.986e14 --rp 6771000 --vinf 3000 --ux 1 --uy 0 --vp-x 29780 --vp-y 0 --turn left --radius 6374200 --html
+python "skills/ASTRO - GravityAssistFlyby/gravity_assist_flyby.py" --check
 python "skills/ASTRO - BiellipticTransfer/bielliptic_transfer.py" --r1 6774200 --r2 42164000 --rb 2e8 --html
 python "skills/ASTRO - BiellipticTransfer/bielliptic_transfer.py" --check
 python "skills/ASTRO - OrbitalParameters/orbital_parameters.py" --a 10000000 --e 0.3 --i 0.9 --raan 0.6 --aop 1.2 --nu 0.8
@@ -763,6 +897,8 @@ python "skills/ROCKET - ExpansionMatchEarth/expansion_match.py" --check
 python "skills/ROCKET - KickStageNozzle/kick_stage_nozzle.py" --pc 2e6 --gamma 1.25 --pe 5000 --throat 0.001 --thickness 0.002 --rho-mat 2700
 python "skills/ROCKET - KickStageNozzle/kick_stage_nozzle.py" --pc 2e6 --gamma 1.25 --epsilon-min 10 --epsilon-max 80 --epsilon 40 --throat 0.001
 python "skills/ROCKET - KickStageNozzle/kick_stage_nozzle.py" --check
+python "skills/ROCKET - NozzleChamberDesignLab/nozzle_chamber_lab.py" --check
+python "skills/ROCKET - NozzleChamberDesignLab/nozzle_chamber_lab.py" --pa 0
 python "skills/ROCKET - KickStageFeasibility/kick_stage_feasibility.py" --thrust 1000 --isp 300 --m0 500 --mp 50 --tb-max 200 --restarts-max 5
 python "skills/ROCKET - KickStageFeasibility/kick_stage_feasibility.py" --check
 python "skills/ASTRO - MultiBurnLeoRaise/multi_burn_leo_raise.py" --a 6674200 --e 0 --i 0.5 --raan 0.2 --aop 0 --nu 0 --alt-target 800000 --thrust 20000 --isp 320 --m0 2000 --mp 600 --burns 2
@@ -770,12 +906,16 @@ python "skills/ASTRO - MultiBurnLeoRaise/multi_burn_leo_raise.py" --check
 python "skills/STRUCT - BeamBendingStress/beam_bending_stress.py" --moment 1200 --section-modulus 0.003 --allowable 500000
 python "skills/STRUCT - BeamBendingStress/beam_bending_stress.py" --moment 1200 --inertia 9e-5 --fiber 0.03 --out beam_bending_stress.png
 python "skills/STRUCT - BeamBendingStress/beam_bending_stress.py" --check
+python "skills/STRUCT - CombinedStressMohr/combined_stress_mohr.py" --sigma 100e6 --tau 40e6
+python "skills/STRUCT - CombinedStressMohr/combined_stress_mohr.py" --check
 python "skills/STRUCT - EulerColumnBuckling/euler_column_buckling.py" --E 2e11 --inertia 1e-6 --length 2 --area 1e-3 --yield 6e8
 python "skills/STRUCT - EulerColumnBuckling/euler_column_buckling.py" --E 2e11 --inertia 1e-6 --length 2 --ends fixed-fixed --out euler_column_buckling.png
 python "skills/STRUCT - EulerColumnBuckling/euler_column_buckling.py" --check
 python "skills/GNC - SecondOrderResponse/second_order_response.py" --wn 2 --zeta 0.5 --out second_order_response.png
 python "skills/GNC - SecondOrderResponse/second_order_response.py" --mass 1 --stiffness 4 --damping 2 --settling-percent 2
 python "skills/GNC - SecondOrderResponse/second_order_response.py" --check
+python "skills/GNC - ClassicalControlMargins/classical_control_margins.py" --num 1 --den 1 1 0
+python "skills/GNC - ClassicalControlMargins/classical_control_margins.py" --check
 python "skills/GNC - ProportionalNavigation/proportional_navigation.py" --n-prime 3 --vc 1000 --los-rate 0.01
 python "skills/GNC - ProportionalNavigation/proportional_navigation.py" --n-prime 3 --range 10000 --los-angle 0 --vm 300 --hm 0 --vt 200 --ht 3.141592653589793 --out proportional_navigation.png
 python "skills/GNC - ProportionalNavigation/proportional_navigation.py" --check
@@ -822,6 +962,8 @@ python "skills/ADCS - EnvironmentalTorques/environmental_torques.py" --check
 python "skills/ADCS - SlewMomentum/slew_momentum.py" --inertia 2 --angle 1.5707963267948966 --time 60
 python "skills/ADCS - SlewMomentum/slew_momentum.py" --torque 1e-4 --duration 5400
 python "skills/ADCS - SlewMomentum/slew_momentum.py" --check
+python "skills/ADCS - AttitudeKinematics/attitude_kinematics.py" --mode euler_to_dcm --yaw 1.5707963267948966 --pitch 0 --roll 0
+python "skills/ADCS - AttitudeKinematics/attitude_kinematics.py" --check
 python "skills/ASTRO - AerodynamicDragDeltaV/aerodynamic_drag_delta_v.py" --alt 400000 --mass 50 --cd 2.2 --area 0.8 --rho 1e-11
 python "skills/ASTRO - AerodynamicDragDeltaV/aerodynamic_drag_delta_v.py" --check
 python "skills/ASTRO - VacuumPropellantMass/vacuum_propellant_mass.py" --dry 80 --isp 220 --name transfer --dv 120 --name drag --dv 30
@@ -839,6 +981,8 @@ python "skills/AERO - BreguetRangeEndurance/breguet_range_endurance.py" --ld 16 
 python "skills/AERO - BreguetRangeEndurance/breguet_range_endurance.py" --check
 python "skills/AERO - NormalShock/normal_shock.py" --mach 2
 python "skills/AERO - NormalShock/normal_shock.py" --check
+python "skills/AERO - FannoAndRayleighFlow/fanno_and_rayleigh_flow.py" --fanno --mach 2
+python "skills/AERO - FannoAndRayleighFlow/fanno_and_rayleigh_flow.py" --check
 python "skills/AERO - PrandtlMeyerAndShocks/prandtl_meyer_and_shocks.py" --mach 2 --delta 0.174533
 python "skills/AERO - PrandtlMeyerAndShocks/prandtl_meyer_and_shocks.py" --check
 python "skills/AERO - ConicalShock/conical_shock.py" --mach 2 --delta 0.174533
@@ -888,6 +1032,8 @@ python "skills/AERO - DensityAndPressureAltitude/density_and_pressure_altitude.p
 python "skills/AERO - DensityAndPressureAltitude/density_and_pressure_altitude.py" --check
 python "skills/AERO - LongitudinalStaticMargin/longitudinal_static_margin.py" --a 5 --at 4 --downwash 0.4 --q-ratio 0.9 --tail-area 2 --tail-length 5 --wing-area 10 --mac 1 --cg 0.1
 python "skills/AERO - LongitudinalStaticMargin/longitudinal_static_margin.py" --check
+python "skills/AERO - LongitudinalTrim/longitudinal_trim.py" --a 5 --cm0 0.05 --cm-de -0.8 --q 500 --S 10 --W 1000 --kn 0.1
+python "skills/AERO - LongitudinalTrim/longitudinal_trim.py" --check
 python "skills/AERO - RayleighPitotMach/rayleigh_pitot_mach.py" --pitot 120195 --static 101325 --gamma 1.4
 python "skills/AERO - RayleighPitotMach/rayleigh_pitot_mach.py" --check
 python "skills/AERO - PrandtGlauertCorrectionandCriticalMach/prandtl_glauert_correction_and_critical_mach.py" --mach 0.6 --cl-inc 0.5 --cpmin-inc -0.4
@@ -895,6 +1041,16 @@ python "skills/AERO - PrandtGlauertCorrectionandCriticalMach/prandtl_glauert_cor
 python "skills/AERO - ParachuteDescentRate/parachute_descent_rate.py" --check
 python "skills/AERO - NACAFourDigitSection/naca_four_digit_section.py" --naca 2412 --chord 1 --alpha 0.0872664625997 --re 5.7e6
 python "skills/AERO - NACAFourDigitSection/naca_four_digit_section.py" --check
+python "skills/AERO - ThinAirfoilTheory/thin_airfoil_theory.py" --m 0.02 --p 0.4 --alpha 0.0872664625997
+python "skills/AERO - ThinAirfoilTheory/thin_airfoil_theory.py" --check
+python "skills/AERO - FlatPlateBoundaryLayer/flat_plate_boundary_layer.py" --law laminar --re 1e5
+python "skills/AERO - FlatPlateBoundaryLayer/flat_plate_boundary_layer.py" --check
+python "skills/AERO - WindTunnelSimilarity/wind_tunnel_similarity.py" --re-m 1e6 --re-f 2e6 --mach-m 0.2 --mach-f 0.2
+python "skills/AERO - WindTunnelSimilarity/wind_tunnel_similarity.py" --check
+python "skills/AERO - WingAirfoilDesignLab/wing_airfoil_lab.py" --check
+python "skills/AERO - WingAirfoilDesignLab/wing_airfoil_lab.py" --naca 0015
+python "skills/AERO - CompressibleFlowDesignLab/compressible_flow_lab.py" --check
+python "skills/AERO - CompressibleFlowDesignLab/compressible_flow_lab.py" --mode wedge --mach 2 --delta 0.174532925
 python "skills/STRUCT - ThinWallPressureVessel/thin_wall_pressure_vessel.py" --p 1e6 --radius 0.5 --thickness 0.002 --shape cylinder --allowable 2.5e8
 python "skills/STRUCT - ThinWallPressureVessel/thin_wall_pressure_vessel.py" --check
 python "skills/VIBR - BaseExcitationTransmissibility/base_excitation_transmissibility.py" --fn 20 --zeta 0.05 --f 40
@@ -919,6 +1075,8 @@ python "skills/MASS - PropellantSloshFrequency/propellant_slosh_frequency.py" --
 python "skills/STRUCT - PanelBuckling/panel_buckling.py" --E 70e9 --nu 0.3 --width 0.5 --thickness 0.002 --length 1.5
 python "skills/STRUCT - PanelBuckling/panel_buckling.py" --check
 python "skills/STRUCT - FractureCriticalCrack/fracture_critical_crack.py" --check
+python "skills/STRUCT - FatigueGoodman/fatigue_goodman.py" --criterion goodman --sigma-a 100e6 --sigma-m 80e6 --se 200e6 --sut 500e6
+python "skills/STRUCT - FatigueGoodman/fatigue_goodman.py" --check
 python "skills/VIBR - RandomVibeRms/random_vibe_rms.py" --fn 100 --psd 0.01 --q 10
 python "skills/VIBR - RandomVibeRms/random_vibe_rms.py" --check
 python "skills/ADCS - MagneticTorquerSizing/magnetic_torquer_sizing.py" --torque 0.01 --b-field 5e-5 --turns 100 --area 0.02
@@ -927,6 +1085,8 @@ python "skills/COMMS - DopplerShiftBudget/doppler_shift_budget.py" --freq 2e9 --
 python "skills/COMMS - DopplerShiftBudget/doppler_shift_budget.py" --check
 python "skills/AERO - DutchRollEstimate/dutch_roll_estimate.py" --speed 150 --rho 1 --span 20 --area 50 --ix 1e5 --iz 2e5 --mass 5000 --cn-beta 0.1 --cl-beta -0.1 --cy-beta -0.5 --cn-r -0.2 --cl-p -0.4
 python "skills/AERO - DutchRollEstimate/dutch_roll_estimate.py" --check
+python "skills/AERO - LateralDirectionalStaticStability/lateral_directional_static_stability.py" --span 10 --area 20 --cl-alpha 4 --sv 2 --lv 5 --av 2 --gamma 0.1
+python "skills/AERO - LateralDirectionalStaticStability/lateral_directional_static_stability.py" --check
 python "skills/ASTRO - GeostationaryStationKeeping/geostationary_station_keeping.py" --di-year 0.02 --e-year 0.0001 --ns-burns 2
 python "skills/ASTRO - GeostationaryStationKeeping/geostationary_station_keeping.py" --check
 python "skills/ASTRO - CoverageAndRevisit/coverage_and_revisit.py" --alt 600000 --elev-min 0.2

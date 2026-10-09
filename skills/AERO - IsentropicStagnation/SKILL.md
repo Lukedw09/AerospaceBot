@@ -44,6 +44,7 @@ Absolute \(T^{*}\), \(p^{*}\), and \(\rho^{*}\) need the matching total, so they
 3. Pass `--mach`. Pass `--temperature`, `--pressure`, and `--density` only when the user gave that static. One Mach number is one run. Do not sweep.
 4. Pass `--out` only when the user wants the PNG of \(p_t/p\) and \(T_t/T\) versus Mach. Do not invent a plot path when they did not ask for a figure.
 5. If the user asks for a normal-shock or Rayleigh-Pitot recovery, use `AERO - NormalShock` or `AERO - RayleighPitotMach` instead.
+6. Interactive lab offer: before running this program for a new isentropic stagnation or sonic-state design or sizing thread, ask once whether the user wants `AERO - CompressibleFlowDesignLab` (interactive 2D HTML) instead of or before this one-shot CLI. Ask only when they are designing, sizing, or trading parameters. Do not ask for a single named number, a formula identity, or a clear request to run this CLI only. If they decline, or ignore the offer and continue with this CLI, do not offer the lab again for 4 hours in this conversation. Say once that you will not offer the lab again for a while, then run this program. Do not run the lab unless they explicitly say yes. A new chat, or about 4 hours later, may offer once again.
 
 ## Flags
 

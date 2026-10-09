@@ -19,6 +19,8 @@ There is no finite optimum in vacuum. The altitude sweep stops at 86 km, where t
 
 ## When to run
 
+Interactive lab offer: before running this program for a new engine, nozzle, or chamber design or sizing thread, ask once whether the user wants `ROCKET - NozzleChamberDesignLab` (interactive 2D HTML) instead of or before this one-shot CLI. Ask only when they are designing, sizing, or trading parameters. Do not ask for a single named number, a formula identity, or a clear request to run this CLI only. If they decline, or ignore the offer and continue with this CLI, do not offer the lab again for 4 hours in this conversation. Say once that you will not offer the lab again for a while, then run this program. Do not run the lab unless they explicitly say yes. A new chat, or about 4 hours later, may offer once again.
+
 1. Point: the user gives one geometric altitude. Pass `--alt`. Do not pass sweep limits. A point does not write a PNG.
 2. Sweep: the user gives an altitude range, or asks for the ratio across altitude without a single design point. Pass `--alt-min` and `--alt-max` when the user gave both ends. If an end is missing, omit that flag. If the user also names a design altitude inside the range, pass `--alt` so the curve is marked.
 3. Convert inputs to SI before the call (Pa, m). State the converted units in the reply. A bare altitude is geometric metres, not geopotential. Do not invent chamber pressure, gamma, or altitude.

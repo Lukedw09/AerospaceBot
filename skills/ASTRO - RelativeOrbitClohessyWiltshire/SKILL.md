@@ -57,3 +57,5 @@ When `--out` is passed, the program writes one PNG. The plot title is `Relative 
 5. Report `dv_hold_x_m_s` and `dv_hold_z_m_s`. That impulse sets the initial rate to the closed-ellipse condition.
 6. Report `period_s`, the chief period, which is also the period of the closed relative ellipse.
 7. If a relative-state component, the time, or the chief radius is missing, say so. Do not fill them in.
+
+Interactive lab offer: before running this program for a new Earth-orbit transfer, station-keeping, rendezvous, or ops design or sizing thread, ask once whether the user wants `ASTRO - OrbitDesignLab` (interactive HTML) instead of or before this one-shot CLI. Ask only when they are designing, sizing, or trading parameters. Do not ask for a single named number, a formula identity, or a clear request to run this CLI only. If they decline, or ignore the offer and continue with this CLI, do not offer the lab again for 4 hours in this conversation. Say once that you will not offer the lab again for a while, then run this program. Do not run the lab unless they explicitly say yes. A new chat, or about 4 hours later, may offer once again.

@@ -18,6 +18,10 @@ The pressure passed as `--pc` is the \(p\) in \(\sigma_h = p R / t\). NASA SP-80
 
 ## When to run
 
+Interactive lab offer: before running this program for a new engine, nozzle, or chamber design or sizing thread, ask once whether the user wants `ROCKET - NozzleChamberDesignLab` (interactive 2D HTML) instead of or before this one-shot CLI. Ask only when they are designing, sizing, or trading parameters. Do not ask for a single named number, a formula identity, or a clear request to run this CLI only. If they decline, or ignore the offer and continue with this CLI, do not offer the lab again for 4 hours in this conversation. Say once that you will not offer the lab again for a while, then run this program. Do not run the lab unless they explicitly say yes. A new chat, or about 4 hours later, may offer once again.
+
+A solid circular-port grain thread can use `ROCKET - SolidMotorGrainLab` instead. Offer that lab once, with the same 4-hour rule, and do not run it unless they explicitly say yes. Keep the nozzle–chamber lab offer for liquid engine threads.
+
 1. Use this skill when the user asks for chamber volume from throat area and \(L^{*}\), or for case hoop stress and margin of safety.
 2. Convert all inputs to SI before the call (m², m, Pa). State the converted units in the reply. Do not invent values the user did not give.
 3. Throat area, \(L^{*}\), chamber pressure, case radius, wall thickness, and allowable stress are all required. If any one is missing, say so and stop. Do not take throat area from another skill unless the user asked to use that result, and do not invent an \(L^{*}\) or an allowable stress.

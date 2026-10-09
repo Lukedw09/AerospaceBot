@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>__TITLE__</title>
+<style>
+  :root { color-scheme: light; --ink: #1b2631; --muted: #34495e; --line: #d5d8dc; --paper: #f7f9fb; --card: #ffffff; --accent: #1a5276; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: var(--paper); color: var(--ink); font-family: "Segoe UI", Helvetica, Arial, sans-serif; }
+  #app { min-height: 100%; display: grid; grid-template-columns: 340px 1fr; }
+  aside { padding: 14px 14px 24px; border-right: 1px solid var(--line); background: var(--card); overflow: auto; }
+  main { min-width: 0; display: flex; flex-direction: column; padding: 12px 16px 20px; gap: 10px; }
+  h1 { margin: 0 0 4px; font-size: 20px; font-weight: 560; }
+  h2 { margin: 14px 0 6px; font-size: 13px; font-weight: 650; letter-spacing: 0.02em; }
+  p.note { margin: 0 0 8px; color: var(--muted); font-size: 12px; line-height: 1.4; }
+  label { display: grid; grid-template-columns: 1fr 92px; gap: 6px; align-items: center; margin: 0 0 2px; font-size: 12px; }
+  label.stack { grid-template-columns: 1fr; }
+  input[type="number"], select, textarea { width: 100%; font: inherit; color: inherit; background: var(--paper); border: 1px solid var(--line); padding: 3px 6px; }
+  input[type="range"] { width: 100%; margin: 0 0 8px; }
+  #schematic, #curves { width: 100%; background: var(--paper); border: 1px solid var(--line); display: block; }
+  #status { margin: 0; font-size: 13px; line-height: 1.4; }
+  #readout { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 6px 14px; margin: 0; }
+  #readout div { margin: 0; }
+  #readout dt { color: var(--muted); font-size: 11px; }
+  #readout dd { margin: 0; font-size: 14px; }
+  textarea { min-height: 120px; font-family: Consolas, "Courier New", monospace; font-size: 11px; }
+  [hidden] { display: none !important; }
+  @media (max-width: 860px) {
+    #app { grid-template-columns: 1fr; }
+    aside { border-right: 0; border-bottom: 1px solid var(--line); }
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <aside>
+    <h1>Compressible flow</h1>
+    <p class="note">Classroom lab for isentropic flow, shocks, the diamond airfoil, Fanno and Rayleigh ducts, Prandtl–Glauert, and a pitot probe.</p>
+    <label class="stack">Mode
+      <select id="mode">
+        <option value="isentropic">Isentropic stagnation</option>
+        <option value="normal">Normal shock</option>
+        <option value="wedge">Wedge — oblique shock</option>
+        <option value="cone">Cone — conical shock</option>
+        <option value="diamond">Diamond airfoil</option>
+        <option value="fanno">Fanno duct</option>
+        <option value="rayleigh">Rayleigh duct</option>
+        <option value="prandtl_glauert">Prandtl–Glauert</option>
+        <option value="rayleigh_pitot">Rayleigh–Pitot</option>
+      </select>
+    </label>
+    <h2>Gas</h2>
+    <label>gamma <input id="gamma" type="number" min="1.01" step="any"></label>
+    <input id="gamma-range" type="range" min="1.05" max="1.67" step="0.01">
+    <div data-modes="isentropic normal wedge cone diamond fanno rayleigh prandtl_glauert">
+      <h2>Mach</h2>
+      <label>Mach <input id="mach" type="number" min="0" step="any"></label>
+      <input id="mach-range" type="range" min="0" max="6" step="0.01">
+    </div>
+    <div data-modes="wedge cone">
+      <h2>Deflection</h2>
+      <label>Angle, deg <input id="delta" type="number" min="0" step="any"></label>
+      <input id="delta-range" type="range" min="0" max="40" step="0.1">
+      <p class="note">Wedge semivertex angle, or cone half-angle. Degrees on this page, radians on the CLI.</p>
+    </div>
+    <div data-modes="diamond">
+      <h2>Diamond</h2>
+      <label>Half-angle, deg <input id="epsilon" type="number" min="0.1" step="any"></label>
+      <input id="epsilon-range" type="range" min="1" max="25" step="0.1">
+      <label>Alpha, deg <input id="alpha" type="number" step="any"></label>
+      <input id="alpha-range" type="range" min="-15" max="15" step="0.1">
+    </div>
+    <div data-modes="fanno">
+      <h2>Friction length</h2>
+      <label>4fL/D <input id="fld" type="number" min="0" step="any"></label>
+      <p class="note">Leave blank for ratios at this station only. A value is the friction parameter from the station toward Mach 1.</p>
+    </div>
+    <div data-modes="rayleigh">
+      <h2>Heat addition</h2>
+      <label>Tt2/Tt1 <input id="tt-ratio" type="number" min="0" step="any"></label>
+      <p class="note">Leave blank for ratios at this station only.</p>
+    </div>
+    <div data-modes="prandtl_glauert">
+      <h2>Incompressible coefficients</h2>
+      <p class="note">User values only. Drag is not divided by beta. Critical Mach uses Cp0,min.</p>
+      <label>CL0 <input id="cl-inc" type="number" step="any"></label>
+      <label>Cm0 <input id="cm-inc" type="number" step="any"></label>
+      <label>Cd0 <input id="cd-inc" type="number" step="any"></label>
+      <label>Cp0,min <input id="cpmin" type="number" step="any"></label>
+    </div>
+    <div data-modes="rayleigh_pitot">
+      <h2>Probe pressures</h2>
+      <label>Pitot, Pa <input id="pitot" type="number" min="0" step="any"></label>
+      <label>Static, Pa <input id="static" type="number" min="0" step="any"></label>
+    </div>
+    <div data-modes="isentropic">
+      <h2>Optional static state</h2>
+      <label>T, K <input id="temperature" type="number" min="0" step="any"></label>
+      <label>p, Pa <input id="pressure" type="number" min="0" step="any"></label>
+      <label>rho <input id="density" type="number" min="0" step="any"></label>
+    </div>
+    <h2>Export</h2>
+    <textarea id="export" readonly></textarea>
+  </aside>
+  <main>
+    <canvas id="schematic"></canvas>
+    <canvas id="curves"></canvas>
+    <p id="status"></p>
+    <dl id="readout"></dl>
+  </main>
+</div>
+<script>
+var SEED = __SEED_JSON__;
+__LAB_JS__
+Lab.boot(SEED);
+</script>
+</body>
+</html>

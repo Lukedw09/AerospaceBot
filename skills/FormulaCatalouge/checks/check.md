@@ -5,7 +5,7 @@ A formula is listed when every identity named for it passed, or when it is a def
 A definition is exempt from the identity check.
 Use only these formula ids. Do not use a formula that is absent from this file.
 
-Passed: 627
+Passed: 720
 Failed: 0
 Unchecked: 0
 
@@ -103,6 +103,18 @@ Exempt from the identity check.
 - `imperfect_density_ratio` (imperfect): equal_static_and_total, temperature_ratio_two
 - `imperfect_pressure_ratio` (imperfect): equal_static_and_total, temperature_ratio_two
 - `imperfect_dynamic_pressure` (imperfect): rest, temperature_ratio_two
+- `fanno_temperature_ratio` (duct): sonic, air_mach_two
+- `fanno_pressure_ratio` (duct): sonic, air_mach_two
+- `fanno_density_ratio` (duct): sonic, air_mach_two
+- `fanno_velocity_ratio` (duct): sonic, air_mach_two
+- `fanno_stagnation_pressure_ratio` (duct): sonic, air_mach_two
+- `fanno_friction_parameter` (duct): sonic, air_mach_two
+- `rayleigh_stagnation_temperature_ratio` (duct): sonic, air_mach_two
+- `rayleigh_temperature_ratio` (duct): sonic, air_mach_two
+- `rayleigh_pressure_ratio` (duct): sonic, air_mach_two
+- `rayleigh_density_ratio` (duct): sonic, air_mach_two
+- `rayleigh_stagnation_pressure_ratio` (duct): sonic, air_mach_two
+- `rayleigh_velocity_ratio` (duct): sonic, air_mach_two
 
 ## Atmosphere
 
@@ -368,6 +380,26 @@ Exempt from the identity check.
 - `elevation_mask_earth_angle` (flight): horizon_half
 - `swath_arc` (flight): twice_footprint
 - `footprint_radius` (flight): one_radian
+- `lambert_chord` (flight): unit_axes
+- `lambert_transfer_cosine` (flight): perpendicular
+- `lambert_semiperimeter` (flight): unit_chord
+- `lambert_geometric_parameter` (flight): quarter_turn
+- `stumpff_c_elliptic` (flight): half_turn
+- `stumpff_s_elliptic` (flight): half_turn
+- `stumpff_c_hyperbolic` (flight): unit
+- `stumpff_s_hyperbolic` (flight): unit
+- `lambert_y_parameter` (flight): cancels
+- `lambert_time_of_flight` (flight): unit_mu
+- `lambert_tof_residual` (flight): matched
+- `lagrange_f` (flight): twice_radius
+- `lagrange_g` (flight): unit
+- `lagrange_gdot` (flight): twice_radius
+- `lambert_velocity_from_lagrange` (flight): unit
+- `planar_rotate_x` (flight): quarter_turn
+- `planar_rotate_y` (flight): quarter_turn
+- `planar_speed` (flight): three_four
+- `vector_difference_speed` (flight): unit_step
+- `flyby_kinetic_change` (flight): faster
 
 ## Aerodynamics
 
@@ -388,6 +420,11 @@ Exempt from the identity check.
 - `critical_pressure_coefficient` (aerodynamics): sonic_freestream, air_half
 - `critical_mach` (aerodynamics): air_half, air_four_fifths, off_design_three_fifths
 - `skin_friction_coefficient` (aerodynamics): wall_shear
+- `blasius_local_skin_friction` (aerodynamics): ten_thousand
+- `blasius_plate_friction` (aerodynamics): ten_thousand
+- `blasius_thickness_ratio` (aerodynamics): one_hundred
+- `turbulent_plate_friction_seventh` (aerodynamics): one_hundred_thousand
+- `turbulent_local_skin_friction_seventh` (aerodynamics): one_hundred_thousand
 - `section_normal_coefficient` (aerodynamics): uniform_distributions
 - `section_axial_coefficient` (aerodynamics): uniform_distributions
 - `leading_edge_moment_coefficient` (aerodynamics): uniform_distributions
@@ -545,6 +582,16 @@ Exempt from the identity check.
 - `dutch_roll_omega_sq` (aerodynamics): both_springs
 - `dutch_roll_damping_product` (aerodynamics): yaw_and_side
 - `parachute_descent_rate` (aerodynamics): unit_balance
+- `vertical_tail_volume` (aerodynamics): sample
+- `cn_beta_vertical_tail` (aerodynamics): sample
+- `cl_beta_geometric_dihedral` (aerodynamics): rectangular
+- `level_flight_lift_coefficient` (aerodynamics): cruise
+- `cm_alpha_from_static_margin` (aerodynamics): ten_percent
+- `trim_angle_of_attack` (aerodynamics): cruise
+- `trim_elevator` (aerodynamics): sample
+- `force_scale_dynamic_pressure` (aerodynamics): double_q
+- `moment_scale_dynamic_pressure` (aerodynamics): chord_ratio
+- `relative_mismatch` (aerodynamics): ten_percent
 
 ## Structures
 
@@ -572,6 +619,14 @@ Exempt from the identity check.
 - `simply_supported_plate_k` (shell): square_plate
 - `plate_buckling_stress` (shell): long_plate_sample
 - `fracture_critical_half_length` (shell): unit_plate
+- `principal_stress_max` (beam): bending_plus_shear
+- `principal_stress_min` (beam): bending_plus_shear
+- `mohr_center` (beam): uniaxial
+- `mohr_radius` (beam): bending_plus_shear
+- `max_shear_from_mohr` (beam): bending_plus_shear
+- `goodman_factor` (beam): quarter_mean
+- `soderberg_factor` (beam): yield_intercept
+- `goodman_allowable_alternating` (beam): quarter_mean
 
 ## Mass properties
 
@@ -691,3 +746,41 @@ Exempt from the identity check.
 - `displacement_transmissibility` (control): isolation_corner
 - `transmissibility_peak_ratio` (control): five_percent
 - `miles_rms_acceleration` (control): unit_rms
+- `bode_magnitude_db` (control): unit, decade
+- `bode_phase_deg` (control): forty_five
+- `phase_margin_deg` (control): typical
+- `gain_margin_db` (control): tenth
+- `series_pid_real` (control): two
+- `series_pid_imag` (control): mixed
+- `dcm_321_c11` (control): level
+- `dcm_321_c12` (control): yaw_right
+- `dcm_321_c13` (control): level
+- `dcm_321_c21` (control): yaw_right
+- `dcm_321_c22` (control): level
+- `dcm_321_c23` (control): level
+- `dcm_321_c31` (control): level
+- `dcm_321_c32` (control): level
+- `dcm_321_c33` (control): level
+- `quaternion_to_dcm_c11` (control): identity
+- `quaternion_to_dcm_c12` (control): yaw_right
+- `quaternion_to_dcm_c13` (control): identity
+- `quaternion_to_dcm_c21` (control): yaw_right
+- `quaternion_to_dcm_c22` (control): identity
+- `quaternion_to_dcm_c23` (control): identity
+- `quaternion_to_dcm_c31` (control): identity
+- `quaternion_to_dcm_c32` (control): identity
+- `quaternion_to_dcm_c33` (control): identity
+- `quaternion_rate_0` (control): identity_roll
+- `quaternion_rate_1` (control): identity_roll
+- `quaternion_rate_2` (control): identity_roll
+- `quaternion_rate_3` (control): identity_roll
+- `euler_rate_roll` (control): level
+- `euler_rate_pitch` (control): level
+- `euler_rate_yaw` (control): level
+- `euler_pitch_from_dcm` (control): level
+- `euler_roll_from_dcm` (control): level
+- `euler_yaw_from_dcm` (control): yaw_right
+- `quaternion_scalar_from_dcm` (control): identity
+- `quaternion_q1_from_dcm` (control): identity
+- `quaternion_q2_from_dcm` (control): identity
+- `quaternion_q3_from_dcm` (control): yaw_right

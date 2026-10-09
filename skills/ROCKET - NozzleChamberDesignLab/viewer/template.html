@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>__TITLE__</title>
+<style>
+  :root { color-scheme: light; --ink: #1b2631; --muted: #34495e; --line: #d5d8dc; --paper: #f7f9fb; --card: #ffffff; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: var(--paper); color: var(--ink); font-family: "Segoe UI", Helvetica, Arial, sans-serif; }
+  body { min-height: 100%; }
+  #app { min-height: 100%; display: grid; grid-template-columns: 320px 1fr; }
+  aside { padding: 14px 14px 24px; border-right: 1px solid var(--line); background: var(--card); overflow: auto; }
+  main { min-width: 0; display: flex; flex-direction: column; padding: 12px 16px 20px; gap: 10px; }
+  h1 { margin: 0 0 4px; font-size: 20px; font-weight: 560; }
+  h2 { margin: 14px 0 6px; font-size: 13px; font-weight: 650; letter-spacing: 0.02em; }
+  p.note { margin: 0 0 8px; color: var(--muted); font-size: 12px; line-height: 1.4; }
+  label { display: grid; grid-template-columns: 1fr 88px; gap: 6px; align-items: center; margin: 0 0 6px; font-size: 12px; }
+  label.stack { grid-template-columns: 1fr; }
+  label.inline, .choice label { display: flex; align-items: center; gap: 8px; }
+  input[type="number"], select, textarea { width: 100%; font: inherit; color: inherit; background: var(--paper); border: 1px solid var(--line); padding: 3px 6px; }
+  input[type="range"] { width: 100%; margin: 0 0 8px; }
+  .choice { display: flex; gap: 12px; font-size: 12px; margin-bottom: 8px; }
+  #stage { flex: 1; min-height: 360px; display: flex; flex-direction: column; }
+  #view { width: 100%; flex: 1; min-height: 320px; background: var(--paper); border: 1px solid var(--line); display: block; }
+  #status { margin: 0; font-size: 13px; line-height: 1.4; }
+  #readout { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 6px 14px; margin: 0; }
+  #readout div { margin: 0; }
+  #readout dt { color: var(--muted); font-size: 11px; }
+  #readout dd { margin: 0; font-size: 14px; }
+  textarea { min-height: 140px; font-family: Consolas, "Courier New", monospace; font-size: 12px; }
+  @media (max-width: 860px) {
+    #app { grid-template-columns: 1fr; }
+    aside { border-right: 0; border-bottom: 1px solid var(--line); }
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <aside>
+    <h1>__TITLE__</h1>
+    <p class="note">Frozen CEA gas properties, then a live isentropic nozzle and chamber. The divergent wall is a length-fraction cone, not a Rao bell.</p>
+    <h2>Propellant</h2>
+    <label class="stack">Pair<select id="pair"></select></label>
+    <label>Mixture ratio<input id="of" type="number" step="0.01"></label>
+    <input id="of-range" type="range" min="1" max="4" step="0.1">
+    <label class="inline"><input id="manual" type="checkbox"> Manual γ and c*</label>
+    <label>γ<input id="gamma" type="number" step="0.001"></label>
+    <label>c* [m/s]<input id="cstar" type="number" step="1"></label>
+    <h2>Nozzle</h2>
+    <label>pc [Pa]<input id="pc" type="number" step="10000"></label>
+    <input id="pc-range" type="range" min="500000" max="20000000" step="10000">
+    <div class="choice">
+      <label class="stack"><input id="design-epsilon" type="radio" name="design" value="epsilon" checked> Design ε</label>
+      <label class="stack"><input id="design-pe" type="radio" name="design" value="pe"> Design pe</label>
+    </div>
+    <label>ε<input id="epsilon" type="number" step="0.1"></label>
+    <input id="epsilon-range" type="range" min="1.5" max="80" step="0.1">
+    <label>pe [Pa]<input id="pe" type="number" step="100"></label>
+    <label>pa [Pa]<input id="pa" type="number" step="100"></label>
+    <input id="pa-range" type="range" min="0" max="101325" step="1">
+    <label>Thrust [N]<input id="thrust" type="number" step="100"></label>
+    <input id="thrust-range" type="range" min="100" max="500000" step="100">
+    <label>Half-angle [deg]<input id="half-deg" type="number" step="0.1"></label>
+    <input id="half-range" type="range" min="8" max="30" step="0.1">
+    <label>Length fraction<input id="length-fraction" type="number" step="0.01"></label>
+    <input id="length-range" type="range" min="0.6" max="1" step="0.01">
+    <label>η c*<input id="eta-cstar" type="number" step="0.01"></label>
+    <label>η CF<input id="eta-cf" type="number" step="0.01"></label>
+    <label>k sep<input id="k-sep" type="number" step="0.01"></label>
+    <h2>Chamber and wall</h2>
+    <label>L* [m]<input id="lstar" type="number" step="0.05"></label>
+    <label>Rc [m]<input id="chamber-radius" type="number" step="0.001" placeholder="auto 2.5 Rt"></label>
+    <label>Case t [m]<input id="case-thickness" type="number" step="0.0001"></label>
+    <label>Allowable [Pa]<input id="allowable" type="number" step="1e6"></label>
+    <label>Nozzle t [m]<input id="wall-thickness" type="number" step="0.0001"></label>
+    <label>ρ wall [kg/m³]<input id="rho-mat" type="number" step="10"></label>
+  </aside>
+  <main>
+    <div id="stage">
+      <canvas id="view"></canvas>
+    </div>
+    <p id="status"></p>
+    <dl id="readout"></dl>
+    <h2>Export</h2>
+    <p class="note">Quote these into the one-shot rocket skills after you settle the design in this page.</p>
+    <textarea id="export" readonly></textarea>
+  </main>
+</div>
+<script type="application/json" id="cea-pack">__CEA_PACK__</script>
+<script type="application/json" id="seed-json">__SEED_JSON__</script>
+<script>
+__LAB_JS__
+</script>
+</body>
+</html>

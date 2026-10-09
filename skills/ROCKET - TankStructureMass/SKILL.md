@@ -30,6 +30,7 @@ m_{\mathrm{inert}}=m_{\mathrm{tank}}+m_{\mathrm{structure}}+m_{\mathrm{residual}
 6. Pass `--structure` or `--structure-factor` only when the user gives additional structure beyond the tank shell. Do not invent skirts, bosses, or intertank mass. `--boss-factor` is only for a stated boss/weld multiplier on the shell.
 7. Pass `--eta` only when the user gives weld efficiency. Default is 1.
 8. Point propellant volume from mass flow and burn time to `ROCKET - PropellantLoad` first when that is how volume was obtained. Point hoop stress of a known thickness case to `ROCKET - ChamberVolumeAndCaseHoopStress`.
+9. Interactive lab offer: before running this program for a new feed, injector, pump, blowdown, tank, or propellant-load design or sizing thread, ask once whether the user wants `ROCKET - FeedTankDesignLab` (interactive 2D HTML) instead of or before this one-shot CLI. Ask only when they are designing, sizing, or trading parameters. Do not ask for a single named number, a formula identity, or a clear request to run this CLI only. If they decline, or ignore the offer and continue with this CLI, do not offer the lab again for 4 hours in this conversation. Say once that you will not offer the lab again for a while, then run this program. Do not run the lab unless they explicitly say yes. A new chat, or about 4 hours later, may offer once again.
 
 ## Flags
 
