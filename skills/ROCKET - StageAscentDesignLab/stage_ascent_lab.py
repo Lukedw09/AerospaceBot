@@ -716,12 +716,16 @@ def main(argv: list[str] | None = None) -> int:
     seed = default_seed(args.stages, args.mode, args.size, args.path)
     result = design_point(seed)
     if not result["ok"]:
-        print(result["error"], file=sys.stderr)
-        return 1
+        print(f"error: {result['error']}", file=sys.stderr)
+        return 2
     out = Path(args.out) if args.out else Path(tempfile.gettempdir()) / "stage-ascent-lab.png"
-    write_png(out, result)
     html_path = out.with_suffix(".html")
-    html_path.write_text(bake_html(seed), encoding="utf-8")
+    try:
+        write_png(out, result)
+        html_path.write_text(bake_html(seed), encoding="utf-8")
+    except OSError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
     emit(seed, result, out)
     print_kv("viewer", html_path.resolve())
     if args.open:

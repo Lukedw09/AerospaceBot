@@ -770,6 +770,8 @@ class Labs(unittest.TestCase):
             ascent_data = self._bake(ascent, ["--out", str(root / "ascent.png")])
             self.assertGreater(num(ascent_data, "dv_design_m_s"), 0.0)
             self.assertGreater(num(ascent_data, "stage_1_mp_kg"), 0.0)
+            refused = run_fail(ascent, ["--stages", "1", "--path", "gamma", "--out", str(root / "one.png")])
+            self.assertIn("structural coefficient", refused)
 
 
 if __name__ == "__main__":

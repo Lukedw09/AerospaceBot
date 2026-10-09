@@ -650,7 +650,7 @@ def main(argv: list[str] | None = None) -> int:
         html_path.write_text(bake_html(seed), encoding="utf-8")
     except (OSError, DesignError) as exc:
         print(f"error: {exc}", file=sys.stderr)
-        return 1
+        return 2
     emit(result, out, html_path)
     if args.open:
         webbrowser.open(html_path.resolve().as_uri())

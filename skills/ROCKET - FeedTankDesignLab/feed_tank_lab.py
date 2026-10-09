@@ -516,8 +516,8 @@ def main(argv: list[str] | None = None) -> int:
     seed = default_seed(args.architecture, args.flow, args.shape)
     result = design_point(seed)
     if not result["ok"]:
-        print(result["error"], file=sys.stderr)
-        return 1
+        print(f"error: {result['error']}", file=sys.stderr)
+        return 2
     out = Path(args.out) if args.out else Path(tempfile.gettempdir()) / "feed-tank-lab.png"
     write_png(out, seed, result)
     html_path = out.with_suffix(".html")
