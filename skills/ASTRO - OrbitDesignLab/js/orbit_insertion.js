@@ -12,8 +12,10 @@ Lab.insertionMean = function (nu, e) {
 
 Lab.orbitInsertion = function (mu, radiusBody, r, v, gamma) {
   var energy = v * v / 2.0 - mu / r;
-  var h = r * v * Math.cos(gamma);
-  var closed = energy < 0.0 && h > 1.0;
+  var cosine = Math.cos(gamma);
+  if (Math.abs(cosine) <= 1.0e-12) cosine = 0.0;
+  var h = r * v * cosine;
+  var closed = energy < 0.0 && h > 0.0;
   if (!closed) {
     return { closed: false, dv: null, a: null, e: null, rp: null, ra: null, where: "none" };
   }

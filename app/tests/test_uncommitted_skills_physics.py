@@ -685,6 +685,25 @@ class GravityAndLambert(unittest.TestCase):
             end, _vel = propagate((1.0, 0.0, 0.0), (num(q, "v1x_m_s"), num(q, "v1y_m_s"), num(q, "v1z_m_s")), quarter, 1.0)
             assert_close(self, end[0], 0.0, "quarter x", abs_tol=1e-4)
             assert_close(self, end[1], 1.0, "quarter y", rel=1e-4)
+            half = math.pi
+            coast = run(
+                self.lambert,
+                [
+                    "--r1x", "1", "--r1y", "0", "--r1z", "0",
+                    "--r2x", "-1", "--r2y", "0", "--r2z", "0",
+                    "--tof", str(half), "--mu", "1", "--way", "short", "--out", out,
+                ],
+            )
+            assert_close(self, num(coast, "v1z_m_s"), 1.0, "circular 180 v1z")
+            assert_close(self, num(coast, "v1x_m_s"), 0.0, "circular 180 v1x", abs_tol=1e-8)
+            assert_close(self, num(coast, "e"), 0.0, "circular 180 e", abs_tol=1e-8)
+            landed, _landed_v = propagate(
+                (1.0, 0.0, 0.0),
+                (num(coast, "v1x_m_s"), num(coast, "v1y_m_s"), num(coast, "v1z_m_s")),
+                half,
+                1.0,
+            )
+            assert_close(self, landed[0], -1.0, "circular 180 x", abs_tol=1e-5)
             hoh = run(self.hohmann, ["--r1", str(r_peri), "--r2", str(r_apo), "--R0", str(R0), "--out", out])
             assert_close(self, num(hoh, "dv_m_s"), num(hoh, "dv_depart_m_s") + num(hoh, "dv_arrive_m_s"), "hohmann sum")
             assert_close(self, num(hoh, "v_depart_transfer_m_s"), v_peri, "vis-viva", rel=1e-6)

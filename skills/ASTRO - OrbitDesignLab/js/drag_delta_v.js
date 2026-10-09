@@ -17,7 +17,10 @@ Lab.densityAt = function (alt, table, rhoOverride) {
       var a1 = table[i][0];
       var span = a1 - a0;
       var w = span === 0.0 ? 0.0 : (alt - a0) / span;
-      return table[i - 1][1] + w * (table[i][1] - table[i - 1][1]);
+      var rho0 = table[i - 1][1];
+      var rho1 = table[i][1];
+      if (!(rho0 > 0.0) || !(rho1 > 0.0)) return rho0 + w * (rho1 - rho0);
+      return Math.exp(Math.log(rho0) + w * (Math.log(rho1) - Math.log(rho0)));
     }
   }
   return last[1];

@@ -30,7 +30,7 @@ Checked budget rows become `--name` and `--dv` arguments for `ASTRO - VacuumProp
 3. Pass only flags the user supplied. Omitted flags keep the program defaults: Earth \(R_0\), a 400 km circular departure, geostationary arrival, bielliptic apoapsis at twice that arrival radius, and strategy `auto`.
 4. Pass `--alt` and `--ecc` together when they describe the Hohmann path that way. Do not also pass `--r1` or `--r2`. The baked page stores the resulting radii.
 5. Pass `--rb` only when they give the intermediate apoapsis. It must be at least the larger circular radius.
-6. Pass `--R0` only when they give a planetary radius other than the Earth default. Geostationary station-keeping, drag, coverage, and launch azimuth stay on the Earth constants of those skills.
+6. Pass `--R0` only when they give a planetary radius other than the Earth default. That radius rebuilds the default 400 km departure, the geostationary arrival from the new \(\mu\), and the other default orbits that must lie outside the body. Geostationary station-keeping, drag, coverage, and launch azimuth stay on the Earth constants of those skills.
 7. Pass `--open` only when they ask to open the HTML file.
 8. In the reply, state every assumption the user did not supply, including the default radii, the bielliptic apoapsis, the secondary-tab seeds, dry mass 500 kg, and specific impulse 310 s when those budget fields were not set.
 

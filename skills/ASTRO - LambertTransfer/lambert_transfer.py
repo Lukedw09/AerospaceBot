@@ -38,6 +38,7 @@ ASSUMPTIONS = (
     "semimajor_axis_from_state, eccentricity_from_energy, parameter_from_angular_momentum; "
     "short way is the transfer angle at most pi; long way is the supplement through 2*pi; "
     "a 180 degree chord uses the fixed parameter p = 2*r1*r2/(r1+r2) and an elliptic root; "
+    "equal radii at half the circular period are the circular coast, eccentricity 0; "
     "the 180 degree plane normal is r1 cross z, or r1 cross y if those are parallel; "
     "long way flips that normal; "
     "parking delta-v uses a circular velocity in the transfer plane; "
@@ -195,6 +196,18 @@ def elliptic_half_tof(eccentricity: float, r1: float, r2: float, mu: float) -> f
 
 def solve_collinear(r1: Vec, r2: Vec, tof: float, mu: float, way: str) -> tuple[Vec, Vec, float]:
     r1n, r2n = norm(r1), norm(r2)
+    # Equal radii: the circular half-period is the elliptic 180° coast.
+    # The eccentricity search starts above zero, so that exact time is not a root.
+    if abs(r1n - r2n) <= 1.0e-9 * max(r1n, r2n):
+        half = math.pi * math.sqrt(r1n**3 / mu)
+        if abs(tof - half) <= 1.0e-6 * half:
+            specific_h = math.sqrt(mu * r1n)
+            normal = collinear_normal(r1, way)
+            r1_hat = unit(r1)
+            r2_hat = unit(r2)
+            v1 = scale(cross(normal, r1_hat), specific_h / r1n)
+            v2 = scale(cross(normal, r2_hat), specific_h / r2n)
+            return v1, v2, 0.0
     parameter = 2.0 * r1n * r2n / (r1n + r2n)
     kappa = (parameter / 2.0) * (1.0 / r1n - 1.0 / r2n)
     e_min = max(abs(kappa), 1.0e-8)
@@ -1105,6 +1118,12 @@ def run_check() -> int:
         return fail("quarter-circle transfer is not circular")
     if not close(float(quarter["a_m"]), radius):
         return fail("quarter-circle semimajor axis is not the radius")
+    half_tof = math.pi * math.sqrt(radius**3 / mu)
+    half = solve((radius, 0.0, 0.0), (-radius, 0.0, 0.0), half_tof, mu, "short", None, None)
+    if not close(float(half["v1z_m_s"]), speed) or not close(float(half["v1x_m_s"]), 0.0):
+        return fail("half-period 180 degree departure is not the circular speed")
+    if not close(float(half["v2z_m_s"]), -speed) or not close(float(half["e"]), 0.0, 1e-6):
+        return fail("half-period 180 degree arrival is not circular")
     c_val, s_val = stumpff(math.pi**2)
     if not close(c_val, 2.0 / math.pi**2, 1e-12) or not close(s_val, 1.0 / math.pi**2, 1e-12):
         return fail("Stumpff values at pi^2 are wrong")

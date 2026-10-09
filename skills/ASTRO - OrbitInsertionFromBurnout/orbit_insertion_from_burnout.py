@@ -65,7 +65,10 @@ def run(args: argparse.Namespace) -> int:
     if args.gamma < -math.pi / 2.0 or args.gamma > math.pi / 2.0:
         raise ValueError("flight-path angle must lie in [-pi/2, pi/2]")
     energy = args.v ** 2 / 2.0 - mu / args.r
-    h = args.r * args.v * math.cos(args.gamma)
+    cosine = math.cos(args.gamma)
+    if abs(cosine) <= 1.0e-12:
+        cosine = 0.0
+    h = args.r * args.v * cosine
     print_kv("title", PLOT_TITLE)
     print_kv("assumptions", ASSUMPTIONS)
     print_kv("mu_m3_s2", mu)
@@ -76,7 +79,8 @@ def run(args: argparse.Namespace) -> int:
     print_kv("energy_m2_s2", energy)
     print_kv("h_m2_s", h)
     # A radial trajectory has no area and is not a closed parking orbit.
-    closed = energy < 0.0 and h > 1.0
+    # cos(pi/2) is a few ulps, so a right angle is snapped before the test.
+    closed = energy < 0.0 and h > 0.0
     nu = 0.0
     r_circ = args.r
     if not closed:
@@ -282,6 +286,20 @@ def run_check() -> int:
             return fail(text2)
         if "closed_orbit: no" not in text2:
             return fail("vertical burnout should not close")
+        buf3 = io.StringIO()
+        sys.stdout = buf3
+        try:
+            code = main(
+                [
+                    "--r", "1", "--v", "0.5", "--gamma", "0", "--mu", "1", "--radius", "0.1",
+                    "--out", str(Path(tmp) / "toy.png"),
+                ]
+            )
+        finally:
+            sys.stdout = old
+        text3 = buf3.getvalue()
+        if code != 0 or "closed_orbit: yes" not in text3:
+            return fail("a slow ellipse with h = 0.5 must be closed")
     print("CHECK PASS")
     return 0
 

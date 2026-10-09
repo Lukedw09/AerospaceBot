@@ -149,8 +149,7 @@ def modules() -> dict:
     }
 
 
-def default_seed(mods: dict | None = None) -> dict:
-    r0 = R0_EARTH
+def default_seed(r0: float = R0_EARTH) -> dict:
     mu = G0 * r0 * r0
     r1 = r0 + 400000.0
     r2 = (mu / OMEGA_E**2) ** (1.0 / 3.0)
@@ -241,8 +240,11 @@ def _on(seed: dict, flag: str, fallback: bool) -> bool:
 def insertion_delta(mod, mu: float, radius_body: float, radius: float, speed: float, gamma: float) -> dict:
     """Same burnout arithmetic as ASTRO - OrbitInsertionFromBurnout.run."""
     energy = speed**2 / 2.0 - mu / radius
-    h = radius * speed * math.cos(gamma)
-    closed = energy < 0.0 and h > 1.0
+    cosine = math.cos(gamma)
+    if abs(cosine) <= 1.0e-12:
+        cosine = 0.0
+    h = radius * speed * cosine
+    closed = energy < 0.0 and h > 0.0
     if not closed:
         return {"dv": None, "where": "none"}
     a = -mu / (2.0 * energy)
@@ -304,7 +306,7 @@ def compute(seed: dict, mods: dict) -> dict:
     )
     sub = mods["ground"].subsatellite_at(body, gt_orbit, gt_orbit.period / 4.0, 0.0, 0.0)
     cover = mods["cover"].evaluate(mods["cover"].R0_EARTH + float(seed["cov_alt"]), float(seed["cov_elev"]))
-    j2_body = mods["j2"].resolve_body(None, None, None, None)
+    j2_body = mods["j2"].resolve_body(r0, None, None, None)
     rates = mods["j2"].evaluate_rates(j2_body, float(seed["j2_a"]), float(seed["j2_e"]), float(seed["j2_i"]))
     launch_i = mods["launch"].inclination_from_azimuth(float(seed["launch_lat"]), float(seed["launch_az"]))
     launch_assist = mods["launch"].rotation_assist(
@@ -344,6 +346,7 @@ def compute(seed: dict, mods: dict) -> dict:
     return {
         "ok": True,
         "mu": mu,
+        "r0": r0,
         "r1": r1,
         "r2": r2,
         "rb": rb,
@@ -395,8 +398,9 @@ def compute(seed: dict, mods: dict) -> dict:
 
 
 def density_table(drag_mod) -> list[list[float]]:
+    """Sample the drag program's density. The page interpolates log(rho) between nodes."""
     rows = []
-    alt = 90000.0
+    alt = 0.0
     while alt <= 800000.0 + 1.0:
         rho, _source = drag_mod.density_at(alt, None)
         rows.append([alt, float(rho)])
@@ -456,7 +460,7 @@ def write_png(path: Path, result: dict) -> None:
     ax.plot(bx, by, color="#6c3483", lw=1.4, label="bielliptic")
     cx, cy = polar(min(result["r2"], result["rb"]), max(result["r2"], result["rb"]), math.pi, 2.0 * math.pi)
     ax.plot(cx, cy, color="#922b21", lw=1.4)
-    earth = plt.Circle((0.0, 0.0), R0_EARTH / 1000.0, color="#8fb7d6", zorder=0)
+    earth = plt.Circle((0.0, 0.0), float(result["r0"]) / 1000.0, color="#8fb7d6", zorder=0)
     ax.add_patch(earth)
     ax.set_aspect("equal", adjustable="box")
     ax.set_xlabel("X [km]")
@@ -561,10 +565,54 @@ def public_seed(seed: dict) -> dict:
 
 def run_check() -> int:
     mods = modules()
-    seed = default_seed(mods)
+    seed = default_seed()
     point = compute(seed, mods)
+    half = default_seed()
+    radius = float(half["r1"])
+    half_mu = G0 * R0_EARTH * R0_EARTH
+    half["lam_r1x"] = radius
+    half["lam_r1y"] = 0.0
+    half["lam_r1z"] = 0.0
+    half["lam_r2x"] = -radius
+    half["lam_r2y"] = 0.0
+    half["lam_r2z"] = 0.0
+    half["lam_tof"] = math.pi * math.sqrt(radius**3 / half_mu)
+    half_point = compute(half, mods)
+    if half_point["lambert_dv1"] > 1.0e-3 or half_point["lambert_dv2"] > 1.0e-3:
+        print("CHECK FAIL: equal-radius 180 degree Lambert is not circular", file=sys.stderr)
+        return 1
+    chord = default_seed()
+    r_peri = 7000.0e3
+    r_apo = 14000.0e3
+    semimajor = 0.5 * (r_peri + r_apo)
+    chord["lam_r1x"] = r_peri
+    chord["lam_r1y"] = 0.0
+    chord["lam_r1z"] = 0.0
+    chord["lam_r2x"] = -r_apo
+    chord["lam_r2y"] = 0.0
+    chord["lam_r2z"] = 0.0
+    chord["lam_tof"] = math.pi * math.sqrt(semimajor**3 / half_mu)
+    chord_point = compute(chord, mods)
+    v_peri = math.sqrt(half_mu * (2.0 / r_peri - 1.0 / semimajor))
+    v_apo = math.sqrt(half_mu * (2.0 / r_apo - 1.0 / semimajor))
+    if abs(chord_point["lambert_dv1"] - (v_peri - math.sqrt(half_mu / r_peri))) > 1.0:
+        print("CHECK FAIL: 180 degree Hohmann departure burn", file=sys.stderr)
+        return 1
+    if abs(chord_point["lambert_dv2"] - (math.sqrt(half_mu / r_apo) - v_apo)) > 1.0:
+        print("CHECK FAIL: 180 degree Hohmann arrival burn", file=sys.stderr)
+        return 1
+    other = compute(default_seed(6_300_000.0), mods)
+    if other["r1"] <= 6_300_000.0 or other["r2"] <= other["r1"]:
+        print("CHECK FAIL: --R0 did not rebuild the default orbits", file=sys.stderr)
+        return 1
+    if abs(other["j2_node"] - point["j2_node"]) <= 0.0:
+        print("CHECK FAIL: J2 nodal rate ignored the new radius", file=sys.stderr)
+        return 1
     pack = {"density": density_table(mods["drag"])}
-    parity = node_parity(pack, [("default", seed, point)])
+    parity = node_parity(
+        pack,
+        [("default", seed, point), ("half", half, half_point), ("chord", chord, chord_point)],
+    )
     print_kv("node_parity", parity)
     if point["bielliptic_dv"] <= 0.0 or point["hohmann_dv"] <= 0.0:
         print("CHECK FAIL: transfer delta-v", file=sys.stderr)
@@ -600,9 +648,7 @@ def main(argv: list[str] | None = None) -> int:
             print(f"CHECK FAIL: {exc}", file=sys.stderr)
             return 1
     mods = modules()
-    seed = default_seed(mods)
-    if args.R0 is not None:
-        seed["R0"] = args.R0
+    seed = default_seed(args.R0 if args.R0 is not None else R0_EARTH)
     if args.alt is not None or args.ecc is not None:
         if args.alt is None or args.ecc is None:
             print("error: pass both --alt and --ecc", file=sys.stderr)
