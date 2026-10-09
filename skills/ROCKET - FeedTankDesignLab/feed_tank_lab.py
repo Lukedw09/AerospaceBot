@@ -54,8 +54,11 @@ ASSUMPTIONS = (
     "and rho*g*height with g = 9.80665; "
     "orifice area is mdot / (Cd * sqrt(2*rho*dp)); "
     "mixture-ratio flow is propellant_load mdot_o = r*mdot/(r+1); "
-    "loaded volume is mdot*tb/rho and expelled volume is (1-residuals)*volume; "
-    "blowdown is p2 = p0*(V0/(V0+V_expelled))**n with default n = 1; "
+    "loaded liquid volume is mdot*tb/((1-residuals)*rho) so residuals stay in the tank "
+    "and the injector flow is the expelled volume; residuals must be in [0, 1); "
+    "a pressure-fed shell internal volume is that loaded liquid plus the initial ullage; "
+    "an electric-pump shell is the loaded liquid only; "
+    "blowdown is p2 = p0*(V0/(V0+V_expelled))**n with n > 0 and default n = 1; "
     "a tank is flagged when p2 is below that branch p_supply; "
     "shell thickness and membrane stress use p0 when pressure-fed and the user tank MEOP "
     "when electric-pump-fed, times design factor 1; "
@@ -132,18 +135,28 @@ def default_seed(
 
 def branch_point(seed: dict, name: str, mdot: float) -> dict[str, float | bool | None]:
     src = seed[name]
+    tank.require_fraction("residuals fraction", seed["residuals"])
+    if not math.isfinite(seed["tb"]) or seed["tb"] <= 0.0:
+        raise DesignError("burn time must be > 0")
     _manifold, head, supply = feed.supply_pressure(
         seed["pc"], src["dpInj"], seed["dpLine"], src["rho"], seed["height"], feed.G0
     )
-    volume = mdot * seed["tb"] / src["rho"]
+    # Residuals stay behind. The injector delivers mdot for the whole burn.
+    volume = mdot * seed["tb"] / (src["rho"] * (1.0 - seed["residuals"]))
     expelled = (1.0 - seed["residuals"]) * volume
     area = injector.orifice_area(mdot, src["rho"], src["cd"], src["dpInj"])
     diameter = injector.orifice_diameter(area, src["count"])
     tank_pressure = src["p0"] if seed["architecture"] == "pressure" else src["meop"]
+    if seed["architecture"] == "pressure":
+        blowdown.require_positive(f"{name} polytropic exponent", src["n"])
+        blowdown.require_positive(f"{name} initial ullage", src["v0"])
+        shell_volume = volume + src["v0"]
+    else:
+        shell_volume = volume
     shell = tank.evaluate(
-        volume,
+        shell_volume,
         src["rho"],
-        seed["residuals"],
+        0.0,
         tank_pressure,
         seed["allowable"],
         seed["rhoMat"],
@@ -407,14 +420,21 @@ def run_check() -> int:
             return 1
         volume = pressure[name]["volume"]
         expelled = (1.0 - 0.02) * volume
+        if not close(expelled, pressure[name]["mdot"] * seed["tb"] / rho):
+            print(f"CHECK FAIL: {name} expelled volume is not the injector flow", file=sys.stderr)
+            return 1
         v2 = blowdown.end_ullage(0.1, expelled)
         p2 = blowdown.blowdown_pressure(4.0e6, 0.1, v2, 1.0)
         if not close(pressure[name]["p2"], p2):
             print(f"CHECK FAIL: {name} blowdown", file=sys.stderr)
             return 1
-        shell = tank.evaluate(volume, rho, 0.02, 4.0e6, 9.0e8, 4430.0, "sphere", None, 1.0, 1.0, 1.0, None, None)
+        shell = tank.evaluate(volume + 0.1, rho, 0.0, 4.0e6, 9.0e8, 4430.0, "sphere", None, 1.0, 1.0, 1.0, None, None)
         if not close(pressure[name]["mass"], float(shell["m_tank_kg"])):
             print(f"CHECK FAIL: {name} shell mass", file=sys.stderr)
+            return 1
+        internal = (4.0 / 3.0) * math.pi * float(pressure[name]["radius"]) ** 3
+        if not close(internal, volume + 0.1):
+            print(f"CHECK FAIL: {name} shell omits the ullage", file=sys.stderr)
             return 1
         if not close(pressure[name]["sigma"], 9.0e8 * 1.0):
             print(f"CHECK FAIL: {name} membrane stress", file=sys.stderr)
@@ -462,6 +482,17 @@ def run_check() -> int:
     thick_point = design_point(thicker)
     if not thick_point["ok"] or not (thick_point["ox"]["thickness"] > pressure["ox"]["thickness"]):
         print("CHECK FAIL: allowable stress did not change thickness", file=sys.stderr)
+        return 1
+    bad_residuals = default_seed()
+    bad_residuals["residuals"] = 1.5
+    if design_point(bad_residuals)["ok"]:
+        print("CHECK FAIL: residuals outside [0, 1) were accepted", file=sys.stderr)
+        return 1
+    bad_n = default_seed()
+    bad_n["ox"]["n"] = 0.0
+    bad_n["fuel"]["n"] = 0.0
+    if design_point(bad_n)["ok"]:
+        print("CHECK FAIL: polytropic exponent 0 was accepted", file=sys.stderr)
         return 1
     html = bake_html(default_seed())
     if "<script src=" in html or "addEventListener" not in html:

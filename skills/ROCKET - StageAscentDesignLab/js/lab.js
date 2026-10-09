@@ -37,6 +37,7 @@ Lab.onePass = function (seed, gravity, drag) {
       dv: row.dv
     };
   });
+  var jetMass = 0;
   var mass = payload + flown.reduce(function (sum, stage) { return sum + stage.mp + stage.inert; }, 0);
   var mu = Lab.G0 * Lab.R_EARTH * Lab.R_EARTH;
   var hold = seed.path === "gamma";
@@ -48,10 +49,13 @@ Lab.onePass = function (seed, gravity, drag) {
   var jet = null;
   if (seed.jettison) {
     if (!(seed.jetMass > 0)) throw new Error("jettison needs mass > 0");
-    jet = { mass: seed.jetMass };
+    jetMass = seed.jetMass;
+    mass += jetMass;
+    jet = { mass: jetMass };
     if (seed.jetBy === "time") jet.time = seed.jetTime;
     else jet.alt = seed.jetAlt;
   }
+  var stacked = mass;
   var state = [Lab.R_EARTH, 0, 0, 0];
   var t0 = 0;
   var rows = [];
@@ -84,11 +88,15 @@ Lab.onePass = function (seed, gravity, drag) {
       t0: t0,
       jettison: jet
     });
-    if (piece.dropped) jet = null;
     gravityLoss += piece.dvg;
     dragLoss += piece.dvD;
     rows = rows.concat(piece.rows);
     mass = mf - stage.inert;
+    if (piece.dropped) {
+      mass -= jetMass;
+      jet = null;
+      jetMass = 0;
+    }
     if (!(mass > 0)) throw new Error("staging drops the mass through zero");
     state = piece.state;
     t0 += stage.tb;
@@ -106,7 +114,7 @@ Lab.onePass = function (seed, gravity, drag) {
     drag: dragLoss,
     steering: 0,
     payload: payload,
-    stacked: payload + flown.reduce(function (sum, stage) { return sum + stage.mp + stage.inert; }, 0),
+    stacked: stacked,
     stages: flown,
     Vbo: piece.Vbo,
     gammaBo: piece.thetaBo,

@@ -17,6 +17,9 @@ Lab.budgetInert = function (mp, stage) {
     return value;
   }
   var engineMass = get("engineMass");
-  var engines = engineMass > 0 ? engineMass * (stage.engineCount > 0 ? stage.engineCount : 1) : 0;
+  var count = stage.engineCount;
+  if (count === undefined || count === null) count = 1;
+  if (!isFinite(count) || count < 0) throw new Error("engine-count must be >= 0");
+  var engines = engineMass * count;
   return get("tank") + engines + get("fairing") + get("interstage") + get("other") + get("mH") + residuals;
 };

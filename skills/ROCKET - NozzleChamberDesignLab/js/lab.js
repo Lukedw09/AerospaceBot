@@ -103,7 +103,7 @@ Lab.evaluate = function (seed, pack) {
   var thrustVac = deliveredVac.cf * pc * at;
   var thrustAmb = separated ? null : deliveredPa.cf * pc * at;
   var ispAmb = separated ? null : deliveredPa.isp;
-  var wallAngle = Math.atan((geom.Re - rt) / geom.Ldiv);
+  var wallAngle = geom.Ldiv === 0 ? 0 : Math.atan((geom.Re - rt) / geom.Ldiv);
 
   return {
     ok: true,

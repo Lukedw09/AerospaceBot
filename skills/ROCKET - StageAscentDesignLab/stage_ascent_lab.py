@@ -57,7 +57,8 @@ ASSUMPTIONS = (
     "structural coefficient eps = ms/(ms+mp); equal_dv shares the ideal delta-v; "
     "a mass budget replaces inert after the split and leaves propellant unchanged; "
     "linear inert is mH + k*mp + residuals; explicit inert sums the named components; "
-    "vacuum thrust; inert drops at burnout; optional fairing drop by altitude or time; "
+    "vacuum thrust; inert drops at burnout; an optional fairing drop is added to liftoff "
+    "mass and removed when the altitude or time is reached; "
     "density on the page is the 1976 table every 100 m through 86 km and 0 above; "
     "q = 0.5*rho*V^2; the loop stops when gravity loss, drag loss, and each propellant "
     "mass change by less than 1 or 0.1 percent, or after 12 passes; "
@@ -230,7 +231,19 @@ def budget_inert(mp: float, stage: dict) -> float | None:
 
 
 def fly(seed: dict, stages: list[dict], payload: float) -> dict:
-    mass = payload + sum(stage["mp"] + stage["inert"] for stage in stages)
+    jet_mass = 0.0
+    jet = None
+    if seed["jettison"]:
+        if not math.isfinite(seed["jetMass"]) or seed["jetMass"] <= 0.0:
+            raise DesignError("jettison needs mass > 0")
+        jet_mass = seed["jetMass"]
+        jet = {"mass": jet_mass}
+        if seed["jetBy"] == "time":
+            jet["time"] = seed["jetTime"]
+        else:
+            jet["alt"] = seed["jetAlt"]
+    mass = payload + sum(stage["mp"] + stage["inert"] for stage in stages) + jet_mass
+    stacked = mass
     mu = trajectory.G0_STD * trajectory.R_EARTH * trajectory.R_EARTH
     hold = seed["path"] == "gamma"
     theta0 = seed["gamma"] if hold else trajectory.kick_flight_path_angle(seed["kick"])
@@ -244,15 +257,6 @@ def fly(seed: dict, stages: list[dict], payload: float) -> dict:
         rho=None, rho0=None, scale_height=None, oat=None, rh=None, cd=cd, alt=None
     )
     density_at, _source, _meta = trajectory.make_density_at(namespace, trajectory.R_EARTH, trajectory.R_EARTH)
-    jet = None
-    if seed["jettison"]:
-        if seed["jetMass"] <= 0.0:
-            raise DesignError("jettison needs mass > 0")
-        jet = {"mass": seed["jetMass"]}
-        if seed["jetBy"] == "time":
-            jet["time"] = seed["jetTime"]
-        else:
-            jet["alt"] = seed["jetAlt"]
     state = (trajectory.R_EARTH, 0.0, 0.0, 0.0)
     t0 = 0.0
     rows: list[tuple] = []
@@ -288,12 +292,14 @@ def fly(seed: dict, stages: list[dict], payload: float) -> dict:
             t0=t0,
             jettison=jet,
         )
-        if piece.get("dropped"):
-            jet = None
         gravity += piece["dvg"]
         drag_loss += piece["dvD"]
         rows.extend(piece["rows"])
         mass = mf - stage["inert"]
+        if piece.get("dropped"):
+            mass -= jet_mass
+            jet = None
+            jet_mass = 0.0
         if mass <= 0.0:
             raise DesignError("staging drops the mass through zero")
         state = piece["state"]
@@ -311,7 +317,7 @@ def fly(seed: dict, stages: list[dict], payload: float) -> dict:
         "gammaBo": piece["theta_bo"],
         "rBo": piece["r_bo"],
         "Zbo": piece["r_bo"] - trajectory.R_EARTH,
-        "stacked": payload + sum(stage["mp"] + stage["inert"] for stage in stages),
+        "stacked": stacked,
     }
 
 
@@ -610,6 +616,10 @@ process.stdout.write(JSON.stringify(point));
     for index, stage in enumerate(expected["stages"]):
         if not close(float(got["stages"][index]["mp"]), float(stage["mp"]), tol=5e-2):
             raise DesignError(f"stage {index + 1} mp mismatch")
+        if not close(float(got["stages"][index]["inert"]), float(stage["inert"]), tol=5e-2):
+            raise DesignError(f"stage {index + 1} inert mismatch")
+    if not close(float(got["stacked"]), float(expected["stacked"]), tol=1e-3):
+        raise DesignError(f"stacked: JS {got['stacked']!r} != Python {expected['stacked']!r}")
     return "pass"
 
 
@@ -661,7 +671,45 @@ def run_check() -> int:
         dropped["jettison"] = True
         dropped["jetMass"] = 100.0
         dropped["jetAlt"] = 40000.0
-        require_point(dropped, "jettison")
+        dropped_point = require_point(dropped, "jettison")
+        stages = [
+            {"mp": 2000.0, "inert": 200.0, "isp": 280.0, "tb": 40.0},
+            {"mp": 500.0, "inert": 80.0, "isp": 320.0, "tb": 40.0},
+        ]
+        plain_seed = default_seed()
+        plain_seed["cd"] = 0.0
+        timed = default_seed()
+        timed["cd"] = 0.0
+        timed["jettison"] = True
+        timed["jetMass"] = 100.0
+        timed["jetBy"] = "time"
+        timed["jetTime"] = 1.0
+        plain = fly(plain_seed, stages, 500.0)
+        timed_flight = fly(timed, stages, 500.0)
+        if not close(timed_flight["stacked"], plain["stacked"] + 100.0):
+            raise DesignError("fairing was not added to liftoff mass")
+        plain_mass = next(row[6] for row in plain["rows"] if 5.0 <= row[0] < 40.0)
+        timed_mass = next(row[6] for row in timed_flight["rows"] if 5.0 <= row[0] < 40.0)
+        if not close(timed_mass, plain_mass):
+            raise DesignError("fairing mass was still missing after the drop")
+        stage = default_seed()["stages"][0]
+        stage["budget"] = True
+        stage["law"] = "explicit"
+        stage["engineMass"] = 25.0
+        stage["engineCount"] = 0.0
+        if budget_inert(1000.0, stage) != 0.0:
+            raise DesignError("engine count 0 was treated as one engine")
+        stage["engineCount"] = 2.0
+        if not close(budget_inert(1000.0, stage), 50.0):
+            raise DesignError("engine count did not scale engine mass")
+        engines = default_seed()
+        engines["stages"][0]["budget"] = True
+        engines["stages"][0]["law"] = "explicit"
+        engines["stages"][0]["engineMass"] = 25.0
+        engines["stages"][0]["engineCount"] = 0.0
+        engine_point = require_point(engines, "zero engines")
+        if engine_point["stages"][0]["inert"] != 0.0:
+            raise DesignError("flown stage kept an engine when the count was 0")
         with tempfile.TemporaryDirectory() as folder:
             root = Path(folder)
             flown = program_ascent(seed, point, root)
@@ -684,6 +732,10 @@ def run_check() -> int:
         if "<script src=" in html or "addEventListener" not in html or 'id="parameters"' not in html:
             raise DesignError("baked HTML is not self-contained")
         parity = node_parity(seed, point)
+        if parity == "pass":
+            parity = node_parity(dropped, dropped_point)
+            if parity == "pass":
+                parity = node_parity(engines, engine_point)
     except DesignError as exc:
         print(f"CHECK FAIL: {exc}", file=sys.stderr)
         return 1

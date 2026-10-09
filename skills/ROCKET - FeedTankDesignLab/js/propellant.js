@@ -20,6 +20,10 @@ Lab.splitFlows = function (mode, mdot, ratio, mdotOx, mdotFuel) {
   };
 };
 
-Lab.loadedVolume = function (mdot, burnTime, rho) {
-  return mdot * burnTime / rho;
+Lab.loadedVolume = function (mdot, burnTime, rho, residuals) {
+  if (!isFinite(residuals) || residuals < 0 || residuals >= 1) {
+    throw new Error("residuals fraction must be in [0, 1)");
+  }
+  if (!(burnTime > 0)) throw new Error("burn time must be > 0");
+  return mdot * burnTime / (rho * (1 - residuals));
 };

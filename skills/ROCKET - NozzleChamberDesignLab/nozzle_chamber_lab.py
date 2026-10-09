@@ -212,7 +212,11 @@ def evaluate(seed: dict) -> dict:
     thrust_amb = None if separated else cf_pa_del * pc * at
     isp_vac = cstar * cf_vac_del / G0
     isp_amb = None if separated else cstar * cf_pa_del / G0
-    wall_angle = math.atan((geom["Re"] - rt) / geom["L_m"])
+    # A sonic nozzle has no divergent wall. epsilon = 1 makes L_m = 0.
+    if geom["L_m"] == 0.0:
+        wall_angle = 0.0
+    else:
+        wall_angle = math.atan((geom["Re"] - rt) / geom["L_m"])
     return {
         "ok": True,
         "error": None,
@@ -333,10 +337,15 @@ def embed_json(payload: object) -> str:
 
 
 def bake_html(seed: dict, pack: dict) -> str:
+    baked = dict(seed)
+    try:
+        baked["pair"] = load_table.canonical_pair(str(seed["pair"]))
+    except load_table.TableError as exc:
+        raise DesignError(str(exc)) from exc
     template = (SKILL_DIR / "viewer" / "template.html").read_text(encoding="utf-8")
     html = template.replace("__TITLE__", PLOT_TITLE)
     html = html.replace("__CEA_PACK__", embed_json(pack))
-    html = html.replace("__SEED_JSON__", embed_json(seed))
+    html = html.replace("__SEED_JSON__", embed_json(baked))
     html = html.replace("__LAB_JS__", read_lab_js().replace("</", "<\\/"))
     if "__" in html and any(
         token in html for token in ("__TITLE__", "__CEA_PACK__", "__SEED_JSON__", "__LAB_JS__")
@@ -440,7 +449,10 @@ def emit(result: dict, png: Path, html: Path) -> None:
 
 def seed_from_args(ns: argparse.Namespace) -> dict:
     seed = default_seed()
-    seed["pair"] = ns.pair
+    try:
+        seed["pair"] = load_table.canonical_pair(ns.pair)
+    except load_table.TableError as exc:
+        raise DesignError(str(exc)) from exc
     seed["of"] = ns.of
     seed["pc"] = ns.pc
     seed["pa"] = ns.pa
@@ -500,6 +512,7 @@ PARITY_KEYS = (
     "Vc",
     "Lcyl",
     "Ldiv",
+    "wallAngle",
     "Rc",
     "hoop",
     "margin",
@@ -613,6 +626,25 @@ def run_check() -> int:
     if not (vacuum_point["CFVacDelivered"] > sea_point["CF"] ):
         print("CHECK FAIL: vacuum CF is not above ambient CF", file=sys.stderr)
         return 1
+    sonic = default_seed()
+    sonic["design"] = "epsilon"
+    sonic["epsilon"] = 1.0
+    sonic["pe"] = None
+    sonic_point = design_point(sonic)
+    if (
+        not sonic_point["ok"]
+        or sonic_point["Ldiv"] != 0.0
+        or sonic_point["wallAngle"] != 0.0
+        or not _close(sonic_point["Re"], sonic_point["Rt"])
+    ):
+        print("CHECK FAIL: epsilon = 1 did not give a zero-length divergent", file=sys.stderr)
+        return 1
+    alias = default_seed()
+    alias["pair"] = "LOX/RP-1"
+    alias_point = design_point(alias)
+    if alias_point["pair"] != "LOX/RP1" or not _close(alias_point["cstarIdeal"], sea_point["cstarIdeal"]):
+        print("CHECK FAIL: LOX/RP-1 did not resolve to the LOX/RP1 card", file=sys.stderr)
+        return 1
     pack = build_pack()
     with tempfile.TemporaryDirectory() as folder:
         html_path = Path(folder) / "lab.html"
@@ -627,10 +659,19 @@ def run_check() -> int:
         if "LOX/RP1" not in html or "addEventListener" not in html:
             print("CHECK FAIL: HTML is missing the CEA pack or live inputs", file=sys.stderr)
             return 1
+        alias_html = bake_html(alias, pack)
+        seed_blob = alias_html.split('id="seed-json">', 1)[1].split("</script>", 1)[0]
+        if "LOX/RP-1" in seed_blob or "LOX/RP1" not in seed_blob:
+            print("CHECK FAIL: HTML seed kept the LOX/RP-1 alias", file=sys.stderr)
+            return 1
     try:
         parity = node_parity(
             pack,
-            [("sea", sea, sea_point), ("vacuum", vacuum, vacuum_point)],
+            [
+                ("sea", sea, sea_point),
+                ("vacuum", vacuum, vacuum_point),
+                ("sonic", sonic, sonic_point),
+            ],
         )
     except DesignError as exc:
         print(f"CHECK FAIL: {exc}", file=sys.stderr)

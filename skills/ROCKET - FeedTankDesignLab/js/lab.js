@@ -17,12 +17,18 @@ Lab.designPoint = function (seed) {
       var input = seed[name];
       var mdot = name === "ox" ? flows.mdotOx : flows.mdotFuel;
       var feed = Lab.supplyPressure(seed.pc, input.dpInj, seed.dpLine, input.rho, seed.height, g);
-      var volume = Lab.loadedVolume(mdot, seed.tb, input.rho);
+      var volume = Lab.loadedVolume(mdot, seed.tb, input.rho, seed.residuals);
       var expelled = (1 - seed.residuals) * volume;
+      var shellVolume = volume;
+      if (seed.architecture === "pressure") {
+        if (!(input.n > 0)) throw new Error(name + " polytropic exponent must be > 0");
+        if (!(input.v0 > 0)) throw new Error(name + " initial ullage must be > 0");
+        shellVolume = volume + input.v0;
+      }
       var orifice = Lab.orificeSolve(mdot, input.rho, input.cd, input.dpInj, input.count);
       var tankPressure = seed.architecture === "pressure" ? input.p0 : input.meop;
       var shell = Lab.tankShell(
-        volume, tankPressure, seed.allowable, seed.rhoMat,
+        shellVolume, tankPressure, seed.allowable, seed.rhoMat,
         seed.etaWeld, seed.designFactor, seed.shape, seed.radius
       );
       var row = {
