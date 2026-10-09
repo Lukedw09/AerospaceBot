@@ -18,6 +18,7 @@ import tempfile
 from pathlib import Path
 
 CHECK_TOL = 1e-9
+SONIC_TOL = 1e-6
 TABLE_TOL = 5e-4
 DEFAULT_GAMMA = 1.4
 N_CURVE = 401
@@ -38,7 +39,10 @@ ASSUMPTIONS = (
     "rayleigh_pressure_ratio, rayleigh_density_ratio, "
     "rayleigh_stagnation_pressure_ratio, rayleigh_velocity_ratio; "
     f"an omitted --gamma is {DEFAULT_GAMMA:g} (air); "
-    "a duct longer than 4fL*/D or a Rayleigh Tt ratio above 1 is choked; "
+    "a duct longer than 4fL*/D is choked; "
+    "Rayleigh flow is choked when Tt2 exceeds Tt*, not when Tt2/Tt1 exceeds 1; "
+    "a supplied sonic length or heat ratio within 1e-6 of the limit is the sonic exit, not a choke; "
+    "four_f_L_remaining_over_D is the length still available and is never negative; "
     "combined friction and heat addition is not solved"
 )
 
@@ -146,14 +150,19 @@ def _bisect(func, lo: float, hi: float, target: float) -> float:
     return 0.5 * (lo + hi)
 
 
+def _sonic_band(limit: float) -> float:
+    """Width that still round-trips through 8 significant figures or 6 decimals."""
+    return SONIC_TOL * max(1.0, abs(limit))
+
+
 def fanno_exit_mach(mach: float, gamma: float, fld: float) -> tuple[float | None, str]:
     remain_inlet = fanno_friction_parameter(mach, gamma)
-    if fld > remain_inlet + 1e-9:
+    if fld > remain_inlet + _sonic_band(remain_inlet):
         return None, "yes"
     if fld < -1e-12:
         raise ValueError("--fld must be >= 0")
     target = remain_inlet - fld
-    if target <= 1e-12:
+    if target <= _sonic_band(remain_inlet):
         return 1.0, "no"
     if mach < 1.0:
         lo, hi = MACH_MIN, 1.0 - 1e-9
@@ -168,7 +177,7 @@ def rayleigh_exit_mach(mach: float, gamma: float, tt_ratio: float) -> tuple[floa
         raise ValueError("--tt-ratio must be finite and > 0")
     inlet = rayleigh_stagnation_temperature_ratio(mach, gamma)
     target = tt_ratio * inlet
-    if target > 1.0 + 1e-9:
+    if target > 1.0 + SONIC_TOL:
         return None, "yes"
     target = min(target, 1.0)
     if mach < 1.0:
@@ -364,6 +373,15 @@ def run_check() -> int:
     _none, choked_long = fanno_exit_mach(0.5, gamma, fanno_friction_parameter(0.5, gamma) + 0.1)
     if choked_long != "yes":
         return fail("an over-long Fanno duct was not choked")
+    printed_length = float(f"{fanno_friction_parameter(0.4, gamma):.8g}")
+    printed_exit, printed_choke = fanno_exit_mach(0.4, gamma, printed_length)
+    if printed_choke != "no" or printed_exit is None or abs(printed_exit - 1.0) > 1e-4:
+        return fail("the printed Fanno sonic length round-tripped as choked")
+    # The printed Tt/Tt* has 8 figures. Its reciprocal must still be the sonic exit.
+    tt_star = float(f"{rayleigh_stagnation_temperature_ratio(0.5, gamma):.8g}")
+    heat_exit, heat_choke = rayleigh_exit_mach(0.5, gamma, 1.0 / tt_star)
+    if heat_choke != "no" or heat_exit is None or abs(heat_exit - 1.0) > 1e-3:
+        return fail("the printed Rayleigh sonic temperature ratio round-tripped as choked")
     hot, choked_heat = rayleigh_exit_mach(0.5, gamma, 1.0 / rayleigh_stagnation_temperature_ratio(0.5, gamma) + 0.1)
     if hot is not None or choked_heat != "yes":
         return fail("excess Rayleigh heat was not choked")
@@ -431,7 +449,9 @@ def main(argv: list[str] | None = None) -> int:
         if args.fld is not None:
             exit_mach, choked_length = fanno_exit_mach(args.mach, gamma, args.fld)
             result["fld"] = args.fld
-            result["four_f_L_remaining_over_D"] = float(result["four_f_Lmax_over_D"]) - args.fld
+            result["four_f_L_remaining_over_D"] = max(
+                0.0, float(result["four_f_Lmax_over_D"]) - args.fld
+            )
             result["choked_by_length"] = choked_length
             if exit_mach is not None:
                 result["exit_mach"] = exit_mach

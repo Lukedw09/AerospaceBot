@@ -47,7 +47,7 @@ Every successful run writes one PNG. The plot title is `Classical control margin
 1. Quote the printed `key: value` stdout. Do not recompute the numbers.
 2. Include the PNG at `graph:`. The upper curve is magnitude in dB and the lower curve is phase in degrees. A dashed line marks the gain crossover. A dotted line marks the phase crossover when one exists.
 3. Report `wc` and `phase_margin_deg`. `wc: none` means the magnitude does not cross 0 dB in the sweep.
-4. Report `wpc` and `gain_margin_db`. `gain_margin_db: inf` means the phase does not cross \(-180^\circ\).
+4. Report `wpc` and `gain_margin_db`. `gain_margin_db: inf` means the phase does not cross \(-180^\circ\). `wpc: 0` is the low-frequency limit. A negative gain margin means the magnitude there is already above \(0\,\mathrm{dB}\). `gain_margin_db: -inf` means that low-frequency magnitude is infinite.
 5. Report `stable` and `dc_gain`. `stable` is the closed-loop characteristic polynomial.
 6. Report `compensator` as `plant` or `series_pid`.
 7. If a polynomial is missing, say so. Do not fill it in.

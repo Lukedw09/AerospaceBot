@@ -365,6 +365,14 @@ class FannoRayleigh(unittest.TestCase):
             )
             self.assertEqual(choked["choked_by_length"], "yes")
             self.assertNotIn("exit_mach", choked)
+            self.assertEqual(float(choked["four_f_L_remaining_over_D"]), 0.0)
+            station = run(self.program, ["--fanno", "--mach", "0.4", "--out", out])
+            printed = run(
+                self.program,
+                ["--fanno", "--mach", "0.4", "--fld", station["four_f_Lmax_over_D"], "--out", out],
+            )
+            self.assertEqual(printed["choked_by_length"], "no")
+            assert_close(self, num(printed, "exit_mach"), 1.0, "printed sonic length", rel=1e-4, abs_tol=1e-4)
         run_fail(self.program, ["--fanno", "--rayleigh", "--mach", "2"])
         run_fail(self.program, ["--mach", "2"])
 
@@ -525,6 +533,15 @@ class ControlMargins(unittest.TestCase):
             assert_close(self, num(data, "wpc"), wpc, "wpc", rel=2e-3)
             assert_close(self, num(data, "gain_margin_db"), gm, "gm", rel=2e-3, abs_tol=0.05)
             self.assertEqual(data["stable"], "yes")
+            double = run(self.program, ["--num", "1", "--den", "1", "0", "0", "--out", out])
+            assert_close(self, num(double, "wc"), 1.0, "double integrator wc", rel=1e-4)
+            assert_close(self, num(double, "phase_margin_deg"), 0.0, "double integrator pm", abs_tol=1e-4)
+            assert_close(self, num(double, "gain_margin_db"), 0.0, "double integrator gm", abs_tol=1e-4)
+            self.assertEqual(double["stable"], "marginal")
+            real = run(self.program, ["--num", "2", "--den", "1", "-1", "--out", out])
+            assert_close(self, num(real, "gain_margin_db"), -20.0 * math.log10(2.0), "negative real gm", abs_tol=1e-4)
+            assert_close(self, num(real, "phase_margin_deg"), 60.0, "negative real pm", abs_tol=0.05)
+            self.assertEqual(real["wpc"], "0")
         run_fail(self.program, ["--num", "1"])
 
 
@@ -587,6 +604,12 @@ class Structures(unittest.TestCase):
                 ["--criterion", "goodman", "--sigma-a", "10e6", "--sigma-m", "500e6", "--se", "200e6", "--sut", "500e6", "--out", out],
             )
             self.assertEqual(past["status"], "fail")
+            idle = run(
+                self.fatigue,
+                ["--criterion", "goodman", "--sigma-a", "0", "--sigma-m", "0", "--se", "200e6", "--sut", "400e6", "--out", out],
+            )
+            self.assertEqual(idle["n"], "inf")
+            self.assertEqual(idle["status"], "pass")
         run_fail(self.fatigue, ["--criterion", "goodman", "--sigma-a", "-1", "--sigma-m", "0", "--se", "1", "--sut", "2"])
 
 
@@ -694,6 +717,7 @@ class Labs(unittest.TestCase):
             fanno = self._bake(lab, ["--mode", "fanno", "--mach", "2", "--out", out])
             assert_close(self, num(fanno, "T_over_Tstar"), 2.0 / 3.0, "lab Fanno")
             self.assertIn("stream function", baked["assumptions"].lower() + fanno.get("assumptions", "").lower())
+        run_fail(lab, ["--mode", "wedge", "--mach", "2", "--delta", "-0.1", "--out", out])
 
     def test_wing_matches_lifting_line(self) -> None:
         lab = script("skills", "AERO - WingAirfoilDesignLab", "wing_airfoil_lab.py")

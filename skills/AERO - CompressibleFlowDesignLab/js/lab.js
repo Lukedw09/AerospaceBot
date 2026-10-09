@@ -150,7 +150,7 @@ Lab.packDuct = function (mode, seed) {
   if (mode === "fanno" && seed.fld != null) {
     var length = Lab.fannoExitMach(seed.mach, seed.gamma, seed.fld);
     state.fld = seed.fld;
-    state.four_f_L_remaining_over_D = state.four_f_Lmax_over_D - seed.fld;
+    state.four_f_L_remaining_over_D = Math.max(0, state.four_f_Lmax_over_D - seed.fld);
     state.choked_by_length = length.choked;
     state.exit_mach = length.exitMach;
   }

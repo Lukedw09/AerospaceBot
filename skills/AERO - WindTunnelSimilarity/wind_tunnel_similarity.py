@@ -209,17 +209,14 @@ def emit(result: dict[str, object], graph: Path) -> None:
 def write_plot(result: dict[str, object], out_path: Path) -> None:
     import matplotlib.pyplot as plt
 
-    labels = ["Re model", "Re full", "M model", "M full"]
-    values = [
-        float(result["Re_m"]),
-        float(result["Re_f"]),
-        float(result["Mach_m"]),
-        float(result["Mach_f"]),
-    ]
-    fig, ax = plt.subplots(figsize=(6.8, 4.4))
-    ax.bar(labels, values, color=["C0", "C0", "C1", "C1"])
-    ax.set_ylabel("Reynolds number or Mach number")
-    ax.set_title("Wind-tunnel similarity")
+    fig, axes = plt.subplots(1, 2, figsize=(7.2, 4.2))
+    axes[0].bar(["model", "full"], [float(result["Re_m"]), float(result["Re_f"])], color="C0")
+    axes[0].set_ylabel("Reynolds number")
+    axes[0].set_title("Reynolds number")
+    axes[1].bar(["model", "full"], [float(result["Mach_m"]), float(result["Mach_f"])], color="C1")
+    axes[1].set_ylabel("Mach number")
+    axes[1].set_title("Mach number")
+    fig.suptitle("Wind-tunnel similarity")
     fig.tight_layout()
     out_path.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(out_path, dpi=120)

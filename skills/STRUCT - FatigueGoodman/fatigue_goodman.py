@@ -23,6 +23,7 @@ ASSUMPTIONS = (
     "below the intercept; Goodman n = 1/(sa/se + sm/sut) from the "
     "straight line of NASA TN D-3883; Soderberg n = 1/(sa/se + sm/sy); "
     "sa_allow at n = 1 is se*(1 - sm/intercept); "
+    "zero alternating and mean stress has an infinite factor; "
     "Miner sums and crack growth are omitted"
 )
 
@@ -46,7 +47,10 @@ def require_positive(name: str, value: float) -> None:
 
 
 def factor(sa: float, se: float, sm: float, intercept: float) -> float:
-    return 1.0 / (sa / se + sm / intercept)
+    load = sa / se + sm / intercept
+    if load == 0.0:
+        return math.inf
+    return 1.0 / load
 
 
 def allowable_alternating(se: float, sm: float, intercept: float) -> float:
@@ -155,6 +159,9 @@ def run_check() -> int:
     over = solve("goodman", 100.0, 100.0, 200.0, 400.0, 2.0)
     if over["status"] != "fail":
         return fail("required n was not enforced")
+    idle = solve("goodman", 0.0, 0.0, 200.0, 400.0, None)
+    if not math.isinf(float(idle["n"])) or idle["status"] != "pass":
+        return fail("zero stress should have an infinite factor")
     past = solve("goodman", 10.0, 400.0, 200.0, 400.0, None)
     if past["status"] != "fail":
         return fail("mean at ultimate should fail")

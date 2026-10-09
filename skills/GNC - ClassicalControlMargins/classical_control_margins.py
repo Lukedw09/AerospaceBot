@@ -26,9 +26,12 @@ ASSUMPTIONS = (
     "unity-feedback open-loop L(s) is a ratio of real polynomials; "
     "coefficients are highest power first; "
     "bode_magnitude_db is 20*log10(|L|); "
-    "phase uses a four-quadrant argument in degrees; "
-    "phase_margin_deg is 180 plus the phase at the first gain crossover; "
-    "gain_margin_db is -20*log10(|L|) at the first phase crossover of -180 deg; "
+    "Bode phase starts from the origin pole excess and the sign of the low-frequency gain, "
+    "so a negative-real value is -180 deg; "
+    "phase_margin_deg is 180 plus that continuous phase at the gain crossover; "
+    "gain_margin_db is -20*log10(|L|) where the continuous phase crosses an odd multiple of -180 deg; "
+    "a negative-real low-frequency limit is a phase crossover at zero frequency; "
+    "a locus that stays on the negative-real axis uses the gain crossover, so the margin is 0 dB when |L| passes through 1; "
     "a series PID is C = kd*s + kp + ki/s when any of --kp, --ki, --kd is set; "
     "omitted PID gains are 0; "
     "stability is the closed-loop characteristic polynomial den(L)+num(L); "
@@ -163,7 +166,10 @@ def polynomial_roots(coeffs: list[float]) -> list[complex]:
 
 
 def stability(num: list[float], den: list[float]) -> str:
-    roots = polynomial_roots(characteristic(num, den))
+    coeffs = characteristic(num, den)
+    if all(abs(coeff) <= 1e-12 for coeff in coeffs):
+        return "marginal"
+    roots = polynomial_roots(coeffs)
     if any(root.real > 1e-7 for root in roots):
         return "no"
     if any(abs(root.real) <= 1e-7 for root in roots):
@@ -177,16 +183,46 @@ def dc_gain(num: list[float], den: list[float]) -> float:
     return num[-1] / den[-1]
 
 
+def origin_count(coeffs: list[float]) -> int:
+    scale = max(1.0, max(abs(coeff) for coeff in coeffs))
+    count = 0
+    for value in reversed(coeffs):
+        if abs(value) <= 1e-14 * scale:
+            count += 1
+        else:
+            break
+    return count if count < len(coeffs) else 0
+
+
+def bode_start_phase(num: list[float], den: list[float]) -> float:
+    """Low-frequency Bode phase. A negative real value is -pi, not +pi."""
+    zeros = origin_count(num)
+    poles = origin_count(den)
+    numerator = num[-(zeros + 1)]
+    denominator = den[-(poles + 1)]
+    phase = -0.5 * math.pi * (poles - zeros)
+    if numerator * denominator < 0.0:
+        phase -= math.pi
+    return phase
+
+
+def on_negative_real(phase: float, tol: float = 1e-5) -> bool:
+    turns = phase / math.pi
+    nearest = round(turns)
+    return nearest % 2 != 0 and abs(turns - nearest) <= tol
+
+
 def response_grid(num: list[float], den: list[float]) -> list[tuple[float, float, float, float]]:
     rows: list[tuple[float, float, float, float]] = []
     phase = 0.0
     previous = None
+    start = bode_start_phase(num, den)
     for index in range(N_GRID):
         omega = W_MIN * (W_MAX / W_MIN) ** (index / (N_GRID - 1))
         re, im = eval_ratio(num, den, omega)
         angle = math.atan2(im, re)
         if previous is None:
-            phase = angle
+            phase = continuous_phase(angle, start)
         else:
             phase += (angle - previous + math.pi) % (2.0 * math.pi) - math.pi
         previous = angle
@@ -207,17 +243,22 @@ def first_crossing(
     kind: str,
     num: list[float],
     den: list[float],
+    phase_target: float = -math.pi,
 ) -> float | None:
     for left, right in zip(rows, rows[1:]):
         if kind == "gain":
             y0, y1 = math.log(max(left[1], 1e-30)), math.log(max(right[1], 1e-30))
-            target = 0.0
+            goal = 0.0
         else:
             y0, y1 = left[2], right[2]
-            target = -math.pi
-        if (y0 - target) == 0.0:
+            goal = phase_target
+        if abs(y0 - goal) <= 1e-8:
+            # A value already on the target at the first sample is the
+            # low-frequency limit, not a crossover inside the sweep.
+            if left[0] == rows[0][0] or abs(y1 - goal) <= 1e-8:
+                continue
             return left[0]
-        if (y0 - target) * (y1 - target) < 0.0:
+        if (y0 - goal) * (y1 - goal) < 0.0:
             lo, hi = left[0], right[0]
             for _ in range(60):
                 mid = math.sqrt(lo * hi)
@@ -226,7 +267,7 @@ def first_crossing(
                     value = math.log(max(math.hypot(re, im), 1e-30))
                 else:
                     value = continuous_phase(math.atan2(im, re), y0)
-                if (y0 - target) * (value - target) <= 0.0:
+                if (y0 - goal) * (value - goal) <= 0.0:
                     hi = mid
                     y1 = value
                 else:
@@ -248,6 +289,14 @@ def unwrapped_phase(
     return continuous_phase(phase_at(omega), reference)
 
 
+def margin_db(magnitude: float) -> float:
+    if magnitude == 0.0:
+        return math.inf
+    if math.isinf(magnitude):
+        return -math.inf
+    return -20.0 * math.log(magnitude) / math.log(10.0)
+
+
 def margins(num: list[float], den: list[float]) -> dict[str, object]:
     rows = response_grid(num, den)
 
@@ -259,25 +308,58 @@ def margins(num: list[float], den: list[float]) -> dict[str, object]:
         re, im = eval_ratio(num, den, omega)
         return math.hypot(re, im)
 
-    wc = first_crossing(rows, "gain", num, den)
-    wpc = first_crossing(rows, "phase", num, den)
+    dc = dc_gain(num, den)
+    start_phase = bode_start_phase(num, den)
+    flat_zero_db = all(abs(math.log(max(row[1], 1e-30))) <= 1e-6 for row in rows)
+    stays = on_negative_real(start_phase) and all(on_negative_real(row[2]) for row in rows)
+    wc = None if flat_zero_db else first_crossing(rows, "gain", num, den)
     result: dict[str, object] = {
-        "dc_gain": dc_gain(num, den),
+        "dc_gain": dc,
         "stable": stability(num, den),
         "curve": rows,
     }
-    if wc is None:
+    if flat_zero_db and stays:
+        result["wc"] = 0.0
+        result["phase_margin_deg"] = 0.0
+        result["wpc"] = 0.0
+        result["gain_margin_db"] = 0.0
+        return result
+    if flat_zero_db:
+        result["wc"] = 0.0
+        result["phase_margin_deg"] = 180.0 + math.degrees(rows[0][2])
+    elif wc is None:
         result["wc"] = "none"
         result["phase_margin_deg"] = "none"
     else:
         result["wc"] = wc
-        result["phase_margin_deg"] = 180.0 + math.degrees(unwrapped_phase(wc, rows, phase_at))
-    if wpc is None:
+        phase = unwrapped_phase(float(wc), rows, phase_at)
+        result["phase_margin_deg"] = 0.0 if stays else 180.0 + math.degrees(phase)
+    candidates: list[tuple[float, float]] = []
+    if stays and isinstance(wc, float):
+        candidates.append((wc, 0.0))
+    elif stays and math.isfinite(dc):
+        candidates.append((0.0, margin_db(abs(dc))))
+    elif stays:
+        candidates.append((0.0, -math.inf))
+    else:
+        if on_negative_real(start_phase):
+            candidates.append((0.0, margin_db(abs(dc) if math.isfinite(dc) else math.inf)))
+        phases = [row[2] for row in rows]
+        n_lo = math.floor(min(phases) / math.pi) - 1
+        n_hi = math.ceil(max(phases) / math.pi) + 1
+        for multiple in range(n_lo, n_hi + 1):
+            if multiple % 2 == 0:
+                continue
+            found = first_crossing(rows, "phase", num, den, phase_target=multiple * math.pi)
+            if found is not None:
+                candidates.append((found, margin_db(mag_at(found))))
+    if not candidates:
         result["wpc"] = "none"
         result["gain_margin_db"] = "inf"
     else:
+        wpc, gain_margin = min(candidates, key=lambda item: (item[1], item[0]))
         result["wpc"] = wpc
-        result["gain_margin_db"] = -20.0 * math.log(mag_at(wpc)) / math.log(10.0)
+        result["gain_margin_db"] = gain_margin
     return result
 
 
@@ -344,6 +426,29 @@ def run_check() -> int:
         return fail("s^2+s+1 was not stable")
     if not math.isinf(float(result["dc_gain"])):
         return fail("integrator DC gain is finite")
+    double = margins([1.0], [1.0, 0.0, 0.0])
+    if not close(float(double["wc"]), 1.0, 1e-4) or not close(float(double["phase_margin_deg"]), 0.0, 1e-4):
+        return fail("1/s^2 phase margin is not 0 at the gain crossover")
+    if not close(float(double["gain_margin_db"]), 0.0, 1e-4) or double["stable"] != "marginal":
+        return fail("1/s^2 gain margin is not 0")
+    type2 = margins([1.0], [1.0, 1.0, 0.0, 0.0])
+    if not close(float(type2["phase_margin_deg"]), -40.985, 1e-2) or type2["stable"] != "no":
+        return fail("1/(s^2(s+1)) phase margin is not about -41 deg")
+    unstable_real = margins([2.0], [1.0, -1.0])
+    if not close(float(unstable_real["wpc"]), 0.0, 1e-9) or not close(float(unstable_real["gain_margin_db"]), -20.0 * math.log10(2.0), 1e-4):
+        return fail("2/(s-1) missed the negative DC gain margin")
+    if not close(float(unstable_real["phase_margin_deg"]), 60.0, 0.2):
+        return fail("2/(s-1) phase margin is not 60 deg")
+    critical = margins([-1.0], [1.0])
+    if critical["stable"] != "marginal" or not close(float(critical["gain_margin_db"]), 0.0, 1e-6):
+        return fail("L=-1 is not the critical point")
+    if not close(float(critical["phase_margin_deg"]), 0.0, 1e-6):
+        return fail("L=-1 phase margin is not 0")
+    negative_gain = margins([-2.0], [1.0])
+    if not close(float(negative_gain["gain_margin_db"]), -20.0 * math.log10(2.0), 1e-4):
+        return fail("L=-2 gain margin is not -6.0206 dB")
+    if negative_gain["phase_margin_deg"] != "none":
+        return fail("L=-2 has no gain crossover")
     same, _, _ = loop_transfer([1.0], [1.0, 1.0, 0.0], 1.0, 0.0, 0.0)
     if same != [1.0]:
         return fail("unit proportional PID changed the numerator")

@@ -136,11 +136,13 @@ def design_point(seed: dict) -> dict:
             return state
         if mode == "wedge":
             wedge = _module("AERO - PrandtlMeyerAndShocks", "prandtl_meyer_and_shocks")
+            wedge.require_inputs(float(seed["mach"]), gamma, float(seed["delta"]))
             state = dict(wedge.evaluate(float(seed["mach"]), gamma, float(seed["delta"])))
             state.update(ok=True, mode=mode, error=None)
             return state
         if mode == "cone":
             cone = _module("AERO - ConicalShock", "conical_shock")
+            cone.require_inputs(float(seed["mach"]), gamma, float(seed["delta"]))
             state = dict(cone.evaluate(float(seed["mach"]), gamma, float(seed["delta"])))
             state.update(ok=True, mode=mode, error=None)
             return state
@@ -148,6 +150,12 @@ def design_point(seed: dict) -> dict:
             diamond = _module(
                 "AERO - DiamondAirfoilShockExpansion",
                 "diamond_airfoil_shock_expansion",
+            )
+            diamond.require_inputs(
+                float(seed["mach"]),
+                gamma,
+                float(seed["epsilon"]),
+                float(seed["alpha"]),
             )
             state = diamond.evaluate(
                 float(seed["mach"]),
@@ -222,8 +230,8 @@ def design_point(seed: dict) -> dict:
                     float(seed["mach"]), gamma, float(seed["fld"])
                 )
                 state["fld"] = float(seed["fld"])
-                state["four_f_L_remaining_over_D"] = (
-                    float(state["four_f_Lmax_over_D"]) - float(seed["fld"])
+                state["four_f_L_remaining_over_D"] = max(
+                    0.0, float(state["four_f_Lmax_over_D"]) - float(seed["fld"])
                 )
                 state["choked_by_length"] = choked
                 state["exit_mach"] = exit_mach
@@ -262,7 +270,7 @@ def design_point(seed: dict) -> dict:
             )
             state.update(ok=True, mode=mode, error=None)
             return state
-    except ValueError as exc:
+    except (ValueError, ImportError) as exc:
         return {"ok": False, "mode": mode, "error": str(exc)}
     return {"ok": False, "mode": mode, "error": "unknown mode"}
 
@@ -342,6 +350,11 @@ def write_png(path: Path, result: dict) -> None:
         ax.plot([2, 2 + 6 * math.cos(theta)], [3, 3 + 6 * math.sin(theta)], color="#922b21", lw=2)
         ax.plot([2, 2 + 6 * math.cos(theta)], [3, 3 - 6 * math.sin(theta)], color="#922b21", lw=2)
         ax.text(1.2, 5.4, f"cone  Cp {result['Cp']:.3g}", fontsize=10)
+    elif mode == "cone":
+        arc = [2 + 1.2 * math.cos(angle) for angle in (i * math.pi / 24 for i in range(6, 19))]
+        arc_y = [3 + 1.2 * math.sin(angle) for angle in (i * math.pi / 24 for i in range(6, 19))]
+        ax.plot(arc, arc_y, color="#922b21", lw=2, linestyle="--")
+        ax.text(1.2, 5.4, "cone  detached shock", fontsize=10)
     elif mode == "diamond":
         ax.plot([2, 5, 8, 5, 2], [3, 3.8, 3, 2.2, 3], color="#1b2631")
         ax.text(1.2, 5.2, f"diamond  {result['solution']}", fontsize=10)
@@ -360,7 +373,12 @@ def write_png(path: Path, result: dict) -> None:
     elif mode == "prandtl_glauert":
         ax.text(1.2, 4.2, f"beta {result['beta']:.4g}", fontsize=12)
         ax.text(1.2, 3.4, f"CL {result['CL']}", fontsize=11)
-        ax.text(1.2, 2.6, f"Mcr {result['M_cr']}", fontsize=11)
+        critical = result.get("M_cr")
+        if isinstance(critical, (int, float)) and math.isfinite(float(critical)):
+            critical_text = f"Mcr {float(critical):.4g}"
+        else:
+            critical_text = "Mcr not defined"
+        ax.text(1.2, 2.6, critical_text, fontsize=11)
         ax.text(1.2, 1.6, "Cd is not divided by beta", fontsize=9)
     else:
         ax.text(1.2, 3, mode or "lab", fontsize=12)
@@ -385,6 +403,7 @@ def emit(result: dict, png: Path, html: Path) -> None:
         "gamma",
         "attached",
         "shock",
+        "theta",
         "solution",
         "p2_over_p1",
         "pt2_over_pt1",
@@ -575,6 +594,18 @@ def run_check() -> int:
     subsonic = design_point(_case("rayleigh_pitot", pitot=1.2 * 101325.0, staticPressure=101325.0))
     if subsonic.get("branch") != "subsonic":
         print("CHECK FAIL: low pitot ratio was not subsonic", file=sys.stderr)
+        return 1
+    negative = design_point(_case("wedge", delta=-0.1))
+    if negative.get("ok") or "deflection" not in str(negative.get("error")):
+        print("CHECK FAIL: a negative wedge angle was not rejected", file=sys.stderr)
+        return 1
+    slow_wedge = design_point(_case("wedge", mach=0.8))
+    if slow_wedge.get("ok") or "greater than 1" not in str(slow_wedge.get("error")):
+        print("CHECK FAIL: a subsonic wedge did not name the Mach limit", file=sys.stderr)
+        return 1
+    flat = design_point(_case("diamond", epsilon=0.0))
+    if flat.get("ok"):
+        print("CHECK FAIL: a zero diamond half-angle was accepted", file=sys.stderr)
         return 1
     html = bake_html(default_seed())
     if any(token in html for token in ("__TITLE__", "__SEED_JSON__", "__LAB_JS__")):

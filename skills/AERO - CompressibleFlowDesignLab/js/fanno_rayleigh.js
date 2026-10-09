@@ -85,14 +85,15 @@ Lab._bisectScalar = function (func, lo, hi, target) {
 
 Lab.fannoExitMach = function (mach, gamma, fld) {
   var remain = Lab.fannoFrictionParameter(mach, gamma);
-  if (fld > remain + 1e-9) {
+  var band = 1e-6 * Math.max(1, Math.abs(remain));
+  if (fld > remain + band) {
     return { exitMach: null, choked: "yes" };
   }
   if (fld < -1e-12) {
     throw new Error("4fL/D must be >= 0");
   }
   var target = remain - fld;
-  if (target <= 1e-12) {
+  if (target <= band) {
     return { exitMach: 1, choked: "no" };
   }
   var lo;
@@ -116,7 +117,7 @@ Lab.rayleighExitMach = function (mach, gamma, ttRatio) {
   }
   var inlet = Lab.rayleighStagnationTemperatureRatio(mach, gamma);
   var target = ttRatio * inlet;
-  if (target > 1 + 1e-9) {
+  if (target > 1 + 1e-6) {
     return { exitMach: null, choked: "yes" };
   }
   target = Math.min(target, 1);
