@@ -23,7 +23,7 @@ Oxidizer and fuel are always side by side. The architecture is pressure-fed or e
 4. Say that an electric pump is not a turbine cycle. In electric-pump mode, blowdown is hidden, pump rise is supply pressure minus the user inlet pressure, and tank MEOP is a separate user pressure.
 5. In pressure-fed mode, say the shell and the membrane stress use each tank's initial pressure \(p_0\), and say whether each tank is flagged. A tank is flagged when burnout ullage pressure \(p_2\) is below that branch's supply pressure. Say the shell internal volume is the loaded liquid plus the initial ullage. Loaded liquid is \(\dot{m} t_b / ((1-f_r)\rho)\), so the residual fraction stays in the tank and the injector flow is what leaves. An electric-pump shell is the loaded liquid only.
 6. Say the membrane stress is the thin-wall check at the tank design pressure, and that chamber pressure is only the injector-end pressure. Design pressure is the design factor (default 1) times \(p_0\) when pressure-fed, or times the user tank MEOP when electric-pump-fed.
-7. State every default the user did not supply. Allowable stress and material density are assumptions, not a named alloy. Unless they set them, say allowable stress is \(900\,\mathrm{MPa}\) and material density is \(4430\,\mathrm{kg/m^3}\). Also state unused defaults: chamber pressure \(2\,\mathrm{MPa}\), line drop \(100\,\mathrm{kPa}\), height \(1\,\mathrm{m}\), burn time \(20\,\mathrm{s}\), residuals \(0.02\), mixture ratio \(2.3\), total flow \(2\,\mathrm{kg/s}\), oxidizer injector drop \(200\,\mathrm{kPa}\), fuel injector drop \(150\,\mathrm{kPa}\), \(C_d=0.75\), 20 orifices, densities \(1141\) and \(810\,\mathrm{kg/m^3}\), \(p_0=4\,\mathrm{MPa}\), ullage \(0.1\,\mathrm{m^3}\), blowdown exponent \(1\), weld efficiency \(1\), design factor \(1\), and a sphere. If they switch to an electric pump without setting the pump inputs, say inlet pressure \(300\,\mathrm{kPa}\), pump efficiency \(0.65\), motor efficiency \(0.9\), and tank MEOP \(500\,\mathrm{kPa}\) are assumptions.
+7. State every default the user did not supply. Pass `--pc`, `--dp-line`, `--height`, `--tb`, `--residuals`, `--allowable`, `--rho-mat`, `--r`, `--mdot`, `--dp-inj-ox`, `--dp-inj-fuel`, `--cd`, `--orifices`, `--rho-ox`, `--rho-fuel`, `--p0`, `--ullage`, `--n`, `--eta-weld`, `--design-factor`, and `--radius` when the user set those values. Allowable stress and material density are assumptions, not a named alloy. Unless they set them, say allowable stress is \(900\,\mathrm{MPa}\) and material density is \(4430\,\mathrm{kg/m^3}\). Also state unused defaults: chamber pressure \(2\,\mathrm{MPa}\), line drop \(100\,\mathrm{kPa}\), height \(1\,\mathrm{m}\), burn time \(20\,\mathrm{s}\), residuals \(0.02\), mixture ratio \(2.3\), total flow \(2\,\mathrm{kg/s}\), oxidizer injector drop \(200\,\mathrm{kPa}\), fuel injector drop \(150\,\mathrm{kPa}\), \(C_d=0.75\), 20 orifices, densities \(1141\) and \(810\,\mathrm{kg/m^3}\), \(p_0=4\,\mathrm{MPa}\), ullage \(0.1\,\mathrm{m^3}\), blowdown exponent \(1\), weld efficiency \(1\), design factor \(1\), and a sphere. If they switch to an electric pump without setting `--pin`, `--eta-pump`, `--eta-drive`, and `--meop`, say inlet pressure \(300\,\mathrm{kPa}\), pump efficiency \(0.65\), motor efficiency \(0.9\), and tank MEOP \(500\,\mathrm{kPa}\) are assumptions, and quote the printed `pin_`, `eta_pump_`, `eta_drive_`, and `meop_` lines.
 8. Pass `--open` only when they ask to open the HTML file.
 9. Do not offer to run this lab again in the same conversation after they have it open, unless they ask.
 
@@ -32,7 +32,7 @@ Oxidizer and fuel are always side by side. The architecture is pressure-fed or e
 Run:
 
 ```text
-python "skills/ROCKET - FeedTankDesignLab/feed_tank_lab.py" [--architecture pressure|electric] [--flow ratio|branches] [--shape sphere|cylinder] [--out <png>] [--open]
+python "skills/ROCKET - FeedTankDesignLab/feed_tank_lab.py" [--architecture pressure|electric] [--flow ratio|branches] [--shape sphere|cylinder] [--pc <Pa>] [--dp-line <Pa>] [--height <m>] [--tb <s>] [--residuals <fraction>] [--allowable <Pa>] [--rho-mat <kg/m^3>] [--r <ratio>] [--mdot <kg/s>] [--out <png>] [--open]
 ```
 
 | Flag | Meaning | Unit | Required? |
@@ -40,6 +40,31 @@ python "skills/ROCKET - FeedTankDesignLab/feed_tank_lab.py" [--architecture pres
 | `--architecture` | `pressure` or `electric` | — | Optional |
 | `--flow` | `ratio` (total flow and mixture ratio) or `branches` | — | Optional |
 | `--shape` | `sphere` or `cylinder` | — | Optional |
+| `--pc` | Chamber pressure | Pa | Optional |
+| `--dp-line` | Line pressure drop | Pa | Optional |
+| `--height` | Tank-to-injector height | m | Optional |
+| `--tb` | Burn time | s | Optional |
+| `--residuals` | Residual fraction, in [0, 1) | — | Optional |
+| `--allowable` | Allowable stress | Pa | Optional |
+| `--rho-mat` | Tank material density | kg/m³ | Optional |
+| `--r` | Mixture ratio | — | Optional |
+| `--mdot` | Total propellant flow | kg/s | Optional |
+| `--dp-inj-ox` | Oxidizer injector drop | Pa | Optional |
+| `--dp-inj-fuel` | Fuel injector drop | Pa | Optional |
+| `--cd` | Orifice discharge coefficient, both branches | — | Optional |
+| `--orifices` | Orifice count, both branches | — | Optional |
+| `--rho-ox` | Oxidizer density | kg/m³ | Optional |
+| `--rho-fuel` | Fuel density | kg/m³ | Optional |
+| `--p0` | Initial tank pressure, both branches | Pa | Optional |
+| `--ullage` | Initial ullage volume, both branches | m³ | Optional |
+| `--n` | Blowdown polytropic exponent, both branches | — | Optional |
+| `--eta-weld` | Weld efficiency | — | Optional |
+| `--design-factor` | Tank design factor | — | Optional |
+| `--radius` | Cylinder radius | m | Optional |
+| `--pin` | Electric-pump inlet pressure, both branches | Pa | Optional |
+| `--eta-pump` | Electric-pump efficiency, both branches | — | Optional |
+| `--eta-drive` | Electric-pump motor efficiency, both branches | — | Optional |
+| `--meop` | Electric-pump tank MEOP, both branches | Pa | Optional |
 | `--out` | PNG path; HTML uses the same stem | — | Optional |
 | `--open` | Open the HTML page | — | Optional |
 

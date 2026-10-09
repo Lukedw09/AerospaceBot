@@ -77,6 +77,8 @@ class DesignError(Exception):
 
 def print_kv(key: str, value: object) -> None:
     if isinstance(value, float):
+        if math.isfinite(value) and abs(value) <= 1e-9:
+            value = 0.0
         text = f"{value:.8g}"
     elif isinstance(value, bool):
         text = "yes" if value else "no"
@@ -301,6 +303,7 @@ def write_png(path: Path, seed: dict, result: dict) -> None:
 
 
 def emit(seed: dict, result: dict, png: Path | None) -> None:
+    print_kv("title", PLOT_TITLE)
     print_kv("assumptions", ASSUMPTIONS)
     print_kv("architecture", result["architecture"])
     print_kv("flow_mode", result["flowMode"])
@@ -323,6 +326,11 @@ def emit(seed: dict, result: dict, png: Path | None) -> None:
             print_kv(f"p2_{name}_Pa", row["p2"])
             print_kv(f"flagged_{name}", row["flagged"])
         else:
+            src = seed[name]
+            print_kv(f"pin_{name}_Pa", src["pin"])
+            print_kv(f"eta_pump_{name}", src["eta"])
+            print_kv(f"eta_drive_{name}", src["etaDrive"])
+            print_kv(f"meop_{name}_Pa", src["meop"])
             print_kv(f"rise_{name}_Pa", row["rise"])
             print_kv(f"P_shaft_{name}_W", row["shaft"])
             print_kv(f"P_drive_{name}_W", row["drive"])
@@ -529,22 +537,92 @@ def run_check() -> int:
     return 0
 
 
+def _set_branches(seed: dict, key: str, value: float | None) -> None:
+    if value is None:
+        return
+    seed["ox"][key] = value
+    seed["fuel"][key] = value
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Bake the feed and tank design lab.")
-    parser.add_argument("--architecture", choices=("pressure", "electric"), default="pressure")
-    parser.add_argument("--flow", choices=("ratio", "branches"), default="ratio")
-    parser.add_argument("--shape", choices=("sphere", "cylinder"), default="sphere")
+    parser.add_argument("--architecture", choices=("pressure", "electric"), default="pressure", help="pressure-fed or electric pump")
+    parser.add_argument("--flow", choices=("ratio", "branches"), default="ratio", help="total flow and mixture ratio, or separate branch flows")
+    parser.add_argument("--shape", choices=("sphere", "cylinder"), default="sphere", help="tank shape")
+    parser.add_argument("--pc", type=float, default=None, help="chamber pressure [Pa]")
+    parser.add_argument("--dp-line", type=float, default=None, help="line pressure drop [Pa]")
+    parser.add_argument("--height", type=float, default=None, help="tank-to-injector height [m]")
+    parser.add_argument("--tb", type=float, default=None, help="burn time [s]")
+    parser.add_argument("--residuals", type=float, default=None, help="residual fraction")
+    parser.add_argument("--allowable", type=float, default=None, help="allowable stress [Pa]")
+    parser.add_argument("--rho-mat", type=float, default=None, help="tank material density [kg/m^3]")
+    parser.add_argument("--r", type=float, default=None, help="mixture ratio")
+    parser.add_argument("--mdot", type=float, default=None, help="total propellant flow [kg/s]")
+    parser.add_argument("--dp-inj-ox", type=float, default=None, help="oxidizer injector drop [Pa]")
+    parser.add_argument("--dp-inj-fuel", type=float, default=None, help="fuel injector drop [Pa]")
+    parser.add_argument("--cd", type=float, default=None, help="orifice discharge coefficient")
+    parser.add_argument("--orifices", type=int, default=None, help="orifice count per branch")
+    parser.add_argument("--rho-ox", type=float, default=None, help="oxidizer density [kg/m^3]")
+    parser.add_argument("--rho-fuel", type=float, default=None, help="fuel density [kg/m^3]")
+    parser.add_argument("--p0", type=float, default=None, help="initial tank pressure [Pa]")
+    parser.add_argument("--ullage", type=float, default=None, help="initial ullage volume [m^3]")
+    parser.add_argument("--n", type=float, default=None, help="blowdown polytropic exponent")
+    parser.add_argument("--eta-weld", type=float, default=None, help="weld efficiency")
+    parser.add_argument("--design-factor", type=float, default=None, help="tank design factor")
+    parser.add_argument("--radius", type=float, default=None, help="cylinder radius [m]")
+    parser.add_argument("--pin", type=float, default=None, help="electric-pump inlet pressure [Pa]")
+    parser.add_argument("--eta-pump", type=float, default=None, help="electric-pump efficiency")
+    parser.add_argument("--eta-drive", type=float, default=None, help="electric-pump motor efficiency")
+    parser.add_argument("--meop", type=float, default=None, help="electric-pump tank MEOP [Pa]")
     parser.add_argument("--out", type=str, default=None, help="PNG path; HTML uses the same stem")
     parser.add_argument("--open", action="store_true", help="open the HTML viewer in a browser")
     parser.add_argument("--check", action="store_true", help="run built-in consistency checks")
     return parser
 
 
+def seed_from_args(args: argparse.Namespace) -> dict:
+    seed = default_seed(args.architecture, args.flow, args.shape)
+    for key, value in (
+        ("pc", args.pc),
+        ("dpLine", args.dp_line),
+        ("height", args.height),
+        ("tb", args.tb),
+        ("residuals", args.residuals),
+        ("allowable", args.allowable),
+        ("rhoMat", args.rho_mat),
+        ("r", args.r),
+        ("mdot", args.mdot),
+        ("etaWeld", args.eta_weld),
+        ("designFactor", args.design_factor),
+        ("radius", args.radius),
+    ):
+        if value is not None:
+            seed[key] = value
+    if args.dp_inj_ox is not None:
+        seed["ox"]["dpInj"] = args.dp_inj_ox
+    if args.dp_inj_fuel is not None:
+        seed["fuel"]["dpInj"] = args.dp_inj_fuel
+    if args.rho_ox is not None:
+        seed["ox"]["rho"] = args.rho_ox
+    if args.rho_fuel is not None:
+        seed["fuel"]["rho"] = args.rho_fuel
+    _set_branches(seed, "cd", args.cd)
+    _set_branches(seed, "count", args.orifices)
+    _set_branches(seed, "p0", args.p0)
+    _set_branches(seed, "v0", args.ullage)
+    _set_branches(seed, "n", args.n)
+    _set_branches(seed, "pin", args.pin)
+    _set_branches(seed, "eta", args.eta_pump)
+    _set_branches(seed, "etaDrive", args.eta_drive)
+    _set_branches(seed, "meop", args.meop)
+    return seed
+
+
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     if args.check:
         return run_check()
-    seed = default_seed(args.architecture, args.flow, args.shape)
+    seed = seed_from_args(args)
     result = design_point(seed)
     if not result["ok"]:
         print(f"error: {result['error']}", file=sys.stderr)

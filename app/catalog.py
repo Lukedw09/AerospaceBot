@@ -33,6 +33,7 @@ class Flag:
     required: bool
     help: str
     repeat: bool = False
+    choices: tuple[str | int | float, ...] | None = None
 
     @property
     def schema_type(self) -> str:
@@ -130,6 +131,43 @@ def _type_name(keywords: dict[str, ast.AST]) -> tuple[str, bool]:
     return type_name, False
 
 
+def _constant_sequence(node: ast.AST) -> tuple[str | int | float, ...] | None:
+    if not isinstance(node, ast.Tuple | ast.List):
+        return None
+    values: list[str | int | float] = []
+    for elt in node.elts:
+        if not isinstance(elt, ast.Constant) or not isinstance(elt.value, str | int | float):
+            return None
+        if isinstance(elt.value, bool):
+            return None
+        values.append(elt.value)
+    return tuple(values) if values else None
+
+
+def _module_choices(tree: ast.AST) -> dict[str, tuple[str | int | float, ...]]:
+    found: dict[str, tuple[str | int | float, ...]] = {}
+    if not isinstance(tree, ast.Module):
+        return found
+    for stmt in tree.body:
+        if not isinstance(stmt, ast.Assign) or len(stmt.targets) != 1:
+            continue
+        target = stmt.targets[0]
+        if not isinstance(target, ast.Name):
+            continue
+        values = _constant_sequence(stmt.value)
+        if values is not None:
+            found[target.id] = values
+    return found
+
+
+def _choices(node: ast.AST | None, named: dict[str, tuple[str | int | float, ...]]) -> tuple[str | int | float, ...] | None:
+    if node is None:
+        return None
+    if isinstance(node, ast.Name):
+        return named.get(node.id)
+    return _constant_sequence(node)
+
+
 def _help_text(keywords: dict[str, ast.AST]) -> str:
     node = keywords.get("help")
     if isinstance(node, ast.Constant) and isinstance(node.value, str):
@@ -139,6 +177,7 @@ def _help_text(keywords: dict[str, ast.AST]) -> str:
 
 def flags_from_script(script: Path, required: set[str]) -> list[Flag]:
     tree = ast.parse(script.read_text(encoding="utf-8"))
+    named_choices = _module_choices(tree)
     found: list[Flag] = []
     seen: set[str] = set()
     for node in ast.walk(tree):
@@ -177,6 +216,7 @@ def flags_from_script(script: Path, required: set[str]) -> list[Flag]:
                 required=option in required,
                 help=_help_text(keywords),
                 repeat=repeat,
+                choices=_choices(keywords.get("choices"), named_choices),
             )
         )
     return found

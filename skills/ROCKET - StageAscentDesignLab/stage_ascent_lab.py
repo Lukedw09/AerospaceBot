@@ -489,6 +489,8 @@ def emit(seed: dict, result: dict, png: Path | None) -> None:
     print_kv("dv_design_m_s", result["dvDesign"])
     print_kv("dv_ideal_m_s", result["dvIdeal"])
     print_kv("payload_kg", result["payload"])
+    print_kv("glow_kg", seed["glow"])
+    print_kv("target_alt_m", seed["alt"])
     print_kv("stacked_mass_kg", result["stacked"])
     for index, stage in enumerate(result["stages"], start=1):
         print_kv(f"stage_{index}_mp_kg", stage["mp"])
@@ -501,8 +503,27 @@ def emit(seed: dict, result: dict, png: Path | None) -> None:
     print_kv("t_maxq_s", result["tMax"])
     print_kv("Z_maxq_m", result["zMax"])
     print_kv("q_max_interior", result["interior"])
+    warning = burnout_warning(seed, result)
+    print_kv("burnout_on_target", "no" if warning else "yes")
+    if warning:
+        print_kv("burnout_warning", warning)
     if png is not None:
         print_kv("graph", png.resolve())
+
+
+def burnout_warning(seed: dict, result: dict) -> str | None:
+    """A circular target needs burnout near the design altitude and nearly horizontal."""
+    target = float(seed["alt"])
+    altitude = float(result["Zbo"])
+    gamma = float(result["gammaBo"])
+    altitude_off = abs(altitude - target) > max(20000.0, 0.2 * abs(target))
+    steep = abs(gamma) > math.radians(15.0)
+    if not altitude_off and not steep:
+        return None
+    return (
+        f"burnout altitude {altitude:.8g} m and flight-path angle {gamma:.8g} rad "
+        f"miss the {target:.8g} m target"
+    )
 
 
 def parse_stdout(text: str) -> dict[str, str]:
@@ -749,23 +770,68 @@ def run_check() -> int:
     return 0
 
 
+def _assign_stages(seed: dict, values: list[float] | None, key: str, label: str) -> None:
+    if not values:
+        return
+    if len(values) > len(seed["stages"]):
+        raise DesignError(f"at most {len(seed['stages'])} {label} values")
+    for stage, value in zip(seed["stages"], values):
+        stage[key] = float(value)
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Bake the stage ascent design lab.")
-    parser.add_argument("--stages", type=int, choices=(1, 2, 3), default=2)
-    parser.add_argument("--mode", choices=("equal_dv", "equal_mr", "max_payload"), default="equal_dv")
-    parser.add_argument("--size", choices=("payload", "glow"), default="payload")
-    parser.add_argument("--path", choices=("kick", "gamma"), default="kick")
+    parser.add_argument("--stages", type=int, choices=(1, 2, 3), default=2, help="stage count")
+    parser.add_argument("--mode", choices=("equal_dv", "equal_mr", "max_payload"), default="equal_dv", help="propellant split")
+    parser.add_argument("--size", choices=("payload", "glow"), default="payload", help="size from payload or gross liftoff mass")
+    parser.add_argument("--path", choices=("kick", "gamma"), default="kick", help="steering law")
+    parser.add_argument("--payload", type=float, default=None, help="payload [kg]")
+    parser.add_argument("--glow", type=float, default=None, help="gross liftoff mass [kg]")
+    parser.add_argument("--alt", type=float, default=None, help="target altitude [m]")
+    parser.add_argument("--isp", type=float, action="append", default=None, help="stage specific impulse [s], in stage order")
+    parser.add_argument("--eps", type=float, action="append", default=None, help="stage structural coefficient, in stage order")
+    parser.add_argument("--tb", type=float, action="append", default=None, help="stage burn time [s], in stage order")
+    parser.add_argument("--kick", type=float, default=None, help="kick angle [rad]")
+    parser.add_argument("--gamma", type=float, default=None, help="held flight-path angle [rad]")
+    parser.add_argument("--cd", type=float, default=None, help="drag coefficient")
+    parser.add_argument("--area", type=float, default=None, help="reference area [m^2]")
     parser.add_argument("--out", type=str, default=None, help="PNG path; HTML uses the same stem")
     parser.add_argument("--open", action="store_true", help="open the HTML viewer in a browser")
     parser.add_argument("--check", action="store_true", help="run built-in consistency checks")
     return parser
 
 
+def seed_from_args(args: argparse.Namespace) -> dict:
+    seed = default_seed(args.stages, args.mode, args.size, args.path)
+    if args.payload is not None:
+        seed["payload"] = args.payload
+    if args.glow is not None:
+        seed["glow"] = args.glow
+    if args.alt is not None:
+        seed["alt"] = args.alt
+    if args.kick is not None:
+        seed["kick"] = args.kick
+    if args.gamma is not None:
+        seed["gamma"] = args.gamma
+    if args.cd is not None:
+        seed["cd"] = args.cd
+    if args.area is not None:
+        seed["area"] = args.area
+    _assign_stages(seed, args.isp, "isp", "specific impulse")
+    _assign_stages(seed, args.eps, "eps", "structural coefficient")
+    _assign_stages(seed, args.tb, "tb", "burn time")
+    return seed
+
+
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     if args.check:
         return run_check()
-    seed = default_seed(args.stages, args.mode, args.size, args.path)
+    try:
+        seed = seed_from_args(args)
+    except DesignError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
     result = design_point(seed)
     if not result["ok"]:
         print(f"error: {result['error']}", file=sys.stderr)

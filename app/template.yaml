@@ -51,6 +51,19 @@ Resources:
         BlockPublicPolicy: true
         IgnorePublicAcls: true
         RestrictPublicBuckets: true
+      LifecycleConfiguration:
+        Rules:
+          - Id: expire-results
+            Status: Enabled
+            ExpirationInDays: 2
+            Prefix: users/
+
+  ResultLinkSecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      GenerateSecretString:
+        PasswordLength: 48
+        ExcludePunctuation: true
 
   SiteBucket:
     Type: AWS::S3::Bucket
@@ -154,7 +167,12 @@ Resources:
           ACCOUNT_SITE_URL: !Sub "https://${SiteDomain}"
           DAILY_TOOL_CAP: "2000"
           TOOL_TIMEOUT_SEC: "60"
-          RESULT_LINK_HOURS: "24"
+          RESULT_LINK_HOURS: "1"
+          RESULT_LINK_SECRET: !Join
+            - ""
+            - - "{{resolve:secretsmanager:"
+              - !Ref ResultLinkSecret
+              - ":SecretString}}"
           USAGE_TIMEZONE: America/New_York
           AEROSPACE_HTTP: "1"
       Policies:

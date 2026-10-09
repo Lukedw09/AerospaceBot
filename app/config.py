@@ -45,6 +45,7 @@ class Settings:
     cognito_region: str
     public_base_url: str
     account_site_url: str
+    result_link_secret: str = ""
 
 
 def load_settings(repo_root: str) -> Settings:
@@ -55,11 +56,12 @@ def load_settings(repo_root: str) -> Settings:
         picture_bucket=os.environ.get("PICTURE_BUCKET", ""),
         daily_tool_cap=int(os.environ.get("DAILY_TOOL_CAP", "2000")),
         tool_timeout_sec=int(os.environ.get("TOOL_TIMEOUT_SEC", "60")),
-        result_link_hours=int(os.environ.get("RESULT_LINK_HOURS", "24")),
+        result_link_hours=int(os.environ.get("RESULT_LINK_HOURS", "1")),
         usage_timezone=os.environ.get("USAGE_TIMEZONE", "America/New_York"),
         cognito_user_pool_id=os.environ.get("COGNITO_USER_POOL_ID", ""),
         cognito_client_id=_client_id(),
         cognito_region=os.environ.get("COGNITO_REGION", os.environ.get("AWS_REGION", "us-east-1")),
         public_base_url=os.environ.get("PUBLIC_BASE_URL", "").rstrip("/"),
         account_site_url=os.environ.get("ACCOUNT_SITE_URL", "").rstrip("/"),
+        result_link_secret=os.environ.get("RESULT_LINK_SECRET", ""),
     )

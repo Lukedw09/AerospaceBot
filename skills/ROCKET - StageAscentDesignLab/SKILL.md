@@ -20,9 +20,9 @@ The loop sizes propellant from the LEO design delta-v, optionally replaces inert
 1. Run only after an explicit request for this lab or its interactive page. If they did not ask for it, do not run it.
 2. Convert supplied inputs to SI before describing them (m, m/s, kg, s, rad). State the converted units in the reply.
 3. Say how many stages are active, whether size is payload or liftoff mass, and which split mode is active (`equal_dv`, `equal_mr`, or `max_payload`).
-4. Say whether the loop settled, and quote design delta-v, gravity loss, drag loss, burnout altitude, burnout speed, and peak dynamic pressure.
+4. Say whether the loop settled, and quote design delta-v, gravity loss, drag loss, burnout altitude, burnout speed, and peak dynamic pressure. Quote `burnout_on_target`. When it is no, quote `burnout_warning`: burnout is not near the target altitude with a nearly horizontal flight-path angle.
 5. Say steering loss is 0. Say the LEO radius and the ascent radius. If a stage replaces inert, say the flown vacuum delta-v can differ from the design delta-v.
-6. State every default the user did not supply. Unless they set them, say the seed is two stages, equal delta-v, payload \(500\,\mathrm{kg}\), altitude \(200\,\mathrm{km}\), specific impulses \(280\,\mathrm{s}\) and \(320\,\mathrm{s}\), structural coefficients \(0.08\) and \(0.12\), burn times \(80\,\mathrm{s}\) and \(220\,\mathrm{s}\), kick \(0.05\,\mathrm{rad}\), \(C_D = 0.4\), and area \(2\,\mathrm{m}^2\). A third stage at \(300\,\mathrm{s}\), coefficient \(0.1\), and burn time \(250\,\mathrm{s}\) is unused until the count is 3. Mass budget and fairing drop are off until turned on. When the fairing drop is on, that mass is part of liftoff mass and leaves at the drop. It is not inside the printed stage inert. To repeat the flight with `ROCKET - MultiStageAscent`, add the drop mass to the inert of the stage that is burning when it drops. Burn times are shorter than a slow boost so this kick still climbs; say that when you state them.
+6. State every default the user did not supply. Pass `--payload`, `--glow`, `--alt`, `--isp`, `--eps`, `--tb`, `--kick`, `--gamma`, `--cd`, and `--area` when the user set those values. Unless they set them, say the seed is two stages, equal delta-v, payload \(500\,\mathrm{kg}\), gross liftoff mass \(80000\,\mathrm{kg}\) (used when `--size glow`), altitude \(200\,\mathrm{km}\), specific impulses \(280\,\mathrm{s}\) and \(320\,\mathrm{s}\), structural coefficients \(0.08\) and \(0.12\), burn times \(80\,\mathrm{s}\) and \(220\,\mathrm{s}\), kick \(0.05\,\mathrm{rad}\), \(C_D = 0.4\), and area \(2\,\mathrm{m}^2\). A third stage at \(300\,\mathrm{s}\), coefficient \(0.1\), and burn time \(250\,\mathrm{s}\) is unused until the count is 3. Repeat `--isp`, `--eps`, and `--tb` once per stage in order. Mass budget and fairing drop are off until turned on. When the fairing drop is on, that mass is part of liftoff mass and leaves at the drop. It is not inside the printed stage inert. To repeat the flight with `ROCKET - MultiStageAscent`, add the drop mass to the inert of the stage that is burning when it drops. Burn times are shorter than a slow boost so this kick still climbs; say that when you state them.
 7. Pass `--open` only when they ask to open the HTML file.
 8. Do not offer to run this lab again in the same conversation after they have it open, unless they ask.
 
@@ -31,15 +31,25 @@ The loop sizes propellant from the LEO design delta-v, optionally replaces inert
 Run:
 
 ```text
-python "skills/ROCKET - StageAscentDesignLab/stage_ascent_lab.py" [--stages 1|2|3] [--mode equal_dv|equal_mr|max_payload] [--size payload|glow] [--path kick|gamma] [--out <png>] [--open]
+python "skills/ROCKET - StageAscentDesignLab/stage_ascent_lab.py" [--stages 1|2|3] [--mode equal_dv|equal_mr|max_payload] [--size payload|glow] [--path kick|gamma] [--payload <kg>] [--glow <kg>] [--alt <m>] [--isp <s>] [--eps <coeff>] [--tb <s>] [--kick <rad>] [--gamma <rad>] [--cd <CD>] [--area <m^2>] [--out <png>] [--open]
 ```
 
 | Flag | Meaning | Unit | Required? |
 | --- | --- | --- | --- |
-| `--stages` | Stage count, 1 to 3 | — | Optional |
+| `--stages` | Stage count, 1, 2, or 3 | — | Optional |
 | `--mode` | `equal_dv`, `equal_mr`, or `max_payload` | — | Optional |
 | `--size` | `payload` or `glow` | — | Optional |
 | `--path` | `kick` or `gamma` | — | Optional |
+| `--payload` | Payload. Used when `--size payload` | kg | Optional |
+| `--glow` | Gross liftoff mass. Used when `--size glow` | kg | Optional |
+| `--alt` | Target altitude | m | Optional |
+| `--isp` | Specific impulse, repeated in stage order | s | Optional |
+| `--eps` | Structural coefficient, repeated in stage order | — | Optional |
+| `--tb` | Burn time, repeated in stage order | s | Optional |
+| `--kick` | Kick angle | rad | Optional |
+| `--gamma` | Held flight-path angle | rad | Optional |
+| `--cd` | Drag coefficient | — | Optional |
+| `--area` | Reference area | m² | Optional |
 | `--out` | PNG path; HTML uses the same stem | — | Optional |
 | `--open` | Open the HTML page | — | Optional |
 
@@ -49,7 +59,7 @@ python "skills/ROCKET - StageAscentDesignLab/stage_ascent_lab.py" [--stages 1|2|
 
 1. Quote the printed `key: value` stdout, including `graph:` and `viewer:`.
 2. Say whether `settled` is yes, and quote `passes`.
-3. Quote `dv_design_m_s`, `gravity_loss_m_s`, `drag_loss_m_s`, `Z_bo_m`, `V_bo_m_s`, and `q_max_Pa`.
+3. Quote `dv_design_m_s`, `gravity_loss_m_s`, `drag_loss_m_s`, `Z_bo_m`, `V_bo_m_s`, `q_max_Pa`, and `burnout_on_target`. Quote `burnout_warning` when burnout misses the target.
 4. Quote each `stage_N_mp_kg` and `stage_N_inert_kg`.
 5. Name both Earth radii.
 6. State every assumption the user did not supply.

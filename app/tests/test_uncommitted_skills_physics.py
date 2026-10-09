@@ -770,6 +770,8 @@ class Labs(unittest.TestCase):
             if data["stalled"] == "no":
                 assert_close(self, num(data, "CL"), cl, "CL")
                 assert_close(self, num(data, "CDi"), cl * cl / (math.pi * aspect * 0.85), "CDi")
+            refused = run_fail(lab, ["--naca", "2412", "--span", "-10", "--out", out])
+            self.assertIn("span must be", refused)
 
     def test_orbit_lab_matches_vis_viva(self) -> None:
         lab = script("skills", "ASTRO - OrbitDesignLab", "orbit_design_lab.py")
@@ -821,6 +823,21 @@ class Labs(unittest.TestCase):
             ascent_data = self._bake(ascent, ["--out", str(root / "ascent.png")])
             self.assertGreater(num(ascent_data, "dv_design_m_s"), 0.0)
             self.assertGreater(num(ascent_data, "stage_1_mp_kg"), 0.0)
+            self.assertEqual(ascent_data["burnout_on_target"], "no")
+            self.assertIn("miss the", ascent_data["burnout_warning"])
+            heavier = self._bake(ascent, ["--payload", "1000", "--out", str(root / "payload.png")])
+            assert_close(self, num(heavier, "payload_kg"), 1000.0, "payload")
+            glow = self._bake(ascent, ["--size", "glow", "--glow", "20000", "--out", str(root / "glow.png")])
+            assert_close(self, num(glow, "glow_kg"), 20000.0, "glow")
+            assert_close(self, num(glow, "stacked_mass_kg"), 20000.0, "stacked")
+            feed_data = self._bake(feed, ["--out", str(root / "feed-title.png")])
+            self.assertEqual(feed_data["title"], "Feed and tank design")
+            self.assertEqual(feed_data["margin_ox"], "0")
+            electric = self._bake(feed, ["--architecture", "electric", "--out", str(root / "electric.png")])
+            self.assertEqual(electric["pin_ox_Pa"], "300000")
+            self.assertEqual(electric["eta_pump_ox"], "0.65")
+            self.assertEqual(electric["eta_drive_ox"], "0.9")
+            self.assertEqual(electric["meop_ox_Pa"], "500000")
             refused = run_fail(ascent, ["--stages", "1", "--path", "gamma", "--out", str(root / "one.png")])
             self.assertIn("structural coefficient", refused)
 

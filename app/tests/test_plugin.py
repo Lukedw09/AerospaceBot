@@ -16,6 +16,7 @@ os.environ["AUTH_DISABLED"] = "1"
 from app.catalog import load_catalog, repo_root_from, tool_by_name
 from app.config import Settings
 from app.formulas import lookup_formula
+from app.pictures import result_token, verify_result_token
 from app.runner import _output_path, result_root_for, run_tool
 from app.server import (
     INSTRUCTIONS,
@@ -621,6 +622,71 @@ class LiftingEntrySchemaTests(unittest.TestCase):
             self.assertNotIn("graph:", listed.text)
         finally:
             shutil.rmtree(listed.job_dir, ignore_errors=True)
+
+
+class LabSchemaTests(unittest.TestCase):
+    def test_labs_reject_unknown_keys_and_publish_enums(self) -> None:
+        server = build_server()
+        tools = server._tool_manager._tools
+        for name in (
+            "compressible_flow_lab",
+            "wing_airfoil_lab",
+            "orbit_design_lab",
+            "stage_ascent_lab",
+            "nozzle_chamber_lab",
+            "feed_tank_lab",
+            "solid_motor_grain_lab",
+        ):
+            self.assertIs(tools[name].parameters.get("additionalProperties"), False, name)
+        mode = tools["compressible_flow_lab"].parameters["properties"]["mode"]
+        self.assertIn("normal", json.dumps(mode))
+        self.assertNotIn("normal_shock", json.dumps(mode))
+        architecture = tools["feed_tank_lab"].parameters["properties"]["architecture"]
+        self.assertIn("pressure", json.dumps(architecture))
+        self.assertIn("electric", json.dumps(architecture))
+        self.assertNotIn("pressure_fed", json.dumps(architecture))
+        size = tools["stage_ascent_lab"].parameters["properties"]["size"]
+        self.assertEqual(size["enum"], ["payload", "glow"])
+        self.assertIn("glow", tools["stage_ascent_lab"].parameters["properties"])
+        self.assertIn("pc", tools["feed_tank_lab"].parameters["properties"])
+        self.assertEqual(
+            tools["stage_ascent_lab"].parameters["properties"]["stages"]["enum"],
+            [1, 2, 3],
+        )
+        rejected = dispatch_calculation(
+            "compressible_flow_lab",
+            {"mode": "normal", "mach": 2, "gama": 1.3},
+        )
+        self.assertIn("gama", rejected)
+        self.assertIn("unknown parameter", rejected)
+        self.assertNotIn("p2_over_p1", rejected)
+
+    def test_result_links_do_not_carry_aws_credentials(self) -> None:
+        settings = Settings(
+            auth_disabled=True,
+            repo_root="",
+            usage_table="",
+            picture_bucket="pictures",
+            daily_tool_cap=20,
+            tool_timeout_sec=60,
+            result_link_hours=1,
+            usage_timezone="America/New_York",
+            cognito_user_pool_id="",
+            cognito_client_id="",
+            cognito_region="us-east-1",
+            public_base_url="https://mcp.example",
+            account_site_url="",
+            result_link_secret="test-secret",
+        )
+        token = result_token("users/abc/job/plot.png", settings, now=1_700_000_000)
+        url = f"{settings.public_base_url}/results/{token}"
+        self.assertNotIn("X-Amz-", url)
+        self.assertNotIn("AWSAccessKeyId", url)
+        self.assertEqual(verify_result_token(token, settings, now=1_700_000_000), "users/abc/job/plot.png")
+        with self.assertRaises(ValueError):
+            verify_result_token(token, settings, now=1_700_000_000 + 3601)
+        with self.assertRaises(ValueError):
+            verify_result_token(token + "x", settings, now=1_700_000_000)
 
 
 if __name__ == "__main__":

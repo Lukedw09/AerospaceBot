@@ -31,13 +31,22 @@ def print_kv(key: str, value: object) -> None:
     print(f"{key}: {text}")
 
 
+_LOADED: dict[str, object] = {}
+
+
 def load_module(folder: str, filename: str, name: str):
+    """Load a skill module once. Reloading would rebuild the 86 km density grid."""
+    cached = _LOADED.get(name)
+    if cached is not None:
+        return cached
     path = SKILLS / folder / filename
     spec = importlib.util.spec_from_file_location(name, path)
     if spec is None or spec.loader is None:
         raise ImportError(path)
     module = importlib.util.module_from_spec(spec)
+    sys.modules[name] = module
     spec.loader.exec_module(module)
+    _LOADED[name] = module
     return module
 
 

@@ -166,6 +166,14 @@ def _design_point(seed: dict, catalog: dict) -> dict:
     if curves is not None:
         polar = naca.polar_for(digits, catalog, seed["re"])
     source = "report824" if polar is not None else "thin_airfoil"
+    winggeo.validate(
+        float(seed["span"]),
+        float(seed["root"]),
+        float(seed["tip"]),
+        None if seed["sweep"] is None else float(seed["sweep"]),
+        None if seed["sweepAt"] is None else float(seed["sweepAt"]),
+        bool(seed["sweepAtGiven"]),
+    )
     plan = winggeo.planform_from(
         float(seed["span"]),
         float(seed["root"]),

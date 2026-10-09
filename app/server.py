@@ -8,7 +8,7 @@ import os
 import sys
 import time
 from contextvars import ContextVar
-from typing import Annotated, Any
+from typing import Annotated, Any, Literal
 
 from pydantic import AliasChoices, BaseModel, ConfigDict, Field
 from starlette.requests import Request
@@ -72,6 +72,7 @@ def _with_request_base(settings: Settings, request: Request) -> Settings:
         daily_tool_cap=settings.daily_tool_cap,
         tool_timeout_sec=settings.tool_timeout_sec,
         result_link_hours=settings.result_link_hours,
+        result_link_secret=settings.result_link_secret,
         usage_timezone=settings.usage_timezone,
         cognito_user_pool_id=settings.cognito_user_pool_id,
         cognito_client_id=settings.cognito_client_id,
@@ -110,10 +111,9 @@ def dispatch_calculation(name: str, arguments: dict[str, Any]) -> str:
     tool = tool_by_name(load_catalog(root), name)
     if tool is None:
         return "that tool is not in the library"
-    if name == "lifting_entry_trajectory":
-        message = _unknown_parameter_message(arguments, _parameter_names(tool))
-        if message:
-            return f"error: {message}"
+    message = _unknown_parameter_message(arguments, _parameter_names(tool))
+    if message:
+        return f"error: {message}"
     if _too_large(arguments):
         return "those inputs are too large"
     identity = _identity.get()
@@ -195,15 +195,33 @@ def _python_type(flag_type: str) -> type:
     return {"float": float, "int": int, "bool": bool, "string": str}[flag_type]
 
 
+def _choice_type(flag: Flag) -> Any:
+    values = tuple(flag.choices or ())
+    if len(values) == 1:
+        return Literal[values[0]]
+    return Literal.__getitem__(values)
+
+
 def _annotation(flag: Flag) -> Any:
     if flag.type_name == "bank_schedule":
         base: Any = list[_BankPoint] | str
+    elif flag.choices:
+        base = _choice_type(flag)
     else:
         inner = _python_type(flag.type_name)
-        base = list[inner] if flag.repeat else inner
+        base = inner
+    if flag.repeat and flag.type_name != "bank_schedule":
+        base = list[base]
     extras: dict[str, Any] = {}
-    if flag.help:
-        extras["description"] = flag.help
+    description = flag.help
+    if flag.choices:
+        allowed = "Allowed values: " + ", ".join(str(item) for item in flag.choices) + "."
+        if description:
+            description = description.rstrip(".") + ". " + allowed
+        else:
+            description = allowed
+    if description:
+        extras["description"] = description
     if flag.cli_name != flag.dest:
         extras["alias"] = flag.cli_name
         extras["validation_alias"] = AliasChoices(flag.cli_name, flag.dest)
@@ -277,11 +295,10 @@ def build_server():
 
     for tool in load_catalog():
         mcp.add_tool(_handler_for(tool), name=tool.name, description=tool.description)
-        if tool.name == "lifting_entry_trajectory":
-            _forbid_extra_fields(
-                mcp._tool_manager._tools[tool.name],
-                _parameter_names(tool),
-            )
+        _forbid_extra_fields(
+            mcp._tool_manager._tools[tool.name],
+            _parameter_names(tool),
+        )
 
     def list_tools() -> str:
         """List aerospace tool names and the skill each one belongs to."""
@@ -320,6 +337,25 @@ def build_server():
         "/.well-known/openid-configuration",
     ):
         mcp.custom_route(path, methods=["GET"])(auth_server_metadata)
+
+    @mcp.custom_route("/results/{token}", methods=["GET"])
+    async def result_file(request: Request) -> Response:
+        from botocore.exceptions import ClientError
+
+        from app.pictures import read_result, verify_result_token
+
+        current = _settings()
+        try:
+            key = verify_result_token(request.path_params["token"], current)
+        except ValueError as exc:
+            return JSONResponse({"error": str(exc)}, status_code=403)
+        try:
+            body, media = read_result(key, current)
+        except ClientError:
+            return JSONResponse({"error": "not found"}, status_code=404)
+        except ValueError as exc:
+            return JSONResponse({"error": str(exc)}, status_code=404)
+        return Response(body, media_type=media)
 
     @mcp.custom_route("/account/public-config", methods=["GET"])
     async def public_config(request: Request) -> Response:
@@ -448,6 +484,7 @@ def _settings_for_scope(scope, settings: Settings) -> Settings:
         daily_tool_cap=settings.daily_tool_cap,
         tool_timeout_sec=settings.tool_timeout_sec,
         result_link_hours=settings.result_link_hours,
+        result_link_secret=settings.result_link_secret,
         usage_timezone=settings.usage_timezone,
         cognito_user_pool_id=settings.cognito_user_pool_id,
         cognito_client_id=settings.cognito_client_id,
