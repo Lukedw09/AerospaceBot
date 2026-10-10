@@ -96,6 +96,7 @@ Cursor agent skills for aerospace engineering: checked formulas and small physic
 | [`ASTRO - J2SecularRates`](skills/ASTRO%20-%20J2SecularRates) | Run `j2_secular_rates.py` for first-order \(J_2\) nodal and apsidal rates and the sun-synchronous inclination of an Earth ellipse, from the same elements, NORAD two-line element set, or inertial state as GroundTrackEarth or PlaneChangeImpulse. Writes a PNG of those rates against inclination. |
 | [`ASTRO - AerodynamicDragDeltaV`](skills/ASTRO%20-%20AerodynamicDragDeltaV) | Run `aerodynamic_drag_delta_v.py` for drag acceleration and delta-v over one circular revolution at constant density. Density comes from altitude; `--rho` is an override. Optional PNG of delta-v per revolution versus altitude. |
 | [`ASTRO - VacuumPropellantMass`](skills/ASTRO%20-%20VacuumPropellantMass) | Run `vacuum_propellant_mass.py` for propellant and wet mass from a dry mass, one exhaust speed or specific impulse, and a sum of named vacuum delta-v contributions. Optional growth applies only to that dry mass. Optional PNG. |
+| [`ASTRO - CheckSolution`](skills/ASTRO%20-%20CheckSolution) | PROTOTYPE. Run `check_solution.py` to check a typed rocket-equation or two-impulse Hohmann solution, one step per line. Verdicts are deterministic. The final number is compared with `vacuum_propellant_mass` or `hohmann_transfer`. Hint mode names the line and the error type and does not give a corrected line. |
 | [`ATMOS - Standard1976`](skills/ATMOS%20-%20Standard1976) | Run `standard_1976.py` for 1976 U.S. Standard Atmosphere temperature, pressure, density, speed of sound, and geometric pressure scale height at one geometric altitude from sea level through 86 km. |
 | [`ATMOS - KineticTemperatureAbove86km`](skills/ATMOS%20-%20KineticTemperatureAbove86km) | Run `kinetic_temperature_above_86km.py` for 1976 kinetic temperature and temperature-segment name at one geometric altitude from 86 km through 1000 km. Optional PNG of temperature versus altitude. Does not print pressure or density. |
 | [`ATMOS - DensityAbove86km`](skills/ATMOS%20-%20DensityAbove86km) | Run `density_above_86km.py` for 1976 mass density, pressure, and species number densities from just above 86 km through 1000 km. Mean solar activity. Optional PNG of density versus altitude. At or below 86 km, use Standard1976. |
@@ -543,6 +544,10 @@ skills/
   ASTRO - VacuumPropellantMass/
     SKILL.md
     vacuum_propellant_mass.py  # propellant from a sum of vacuum delta-v pieces (optional PNG)
+  ASTRO - CheckSolution/
+    SKILL.md
+    check_solution.py      # PROTOTYPE line checker for the rocket equation and Hohmann (key: value stdout)
+    dev_set.json           # small development set for the unit tests, not a scoring set
   AERO - AirplanePerformanceParameters/
     SKILL.md
     airplane_performance.py  # stall, L/D, range and endurance speeds, sea-level climb
@@ -761,6 +766,7 @@ skills/
 - **ADCS - MagneticTorquerSizing** — Python 3 standard library for the point result. Optional `--out` needs `matplotlib`. Pass `--torque` and `--b-field`. Optional `--mag-angle` defaults to \(\pi/2\). Coil current needs both `--turns` and `--area`. Optional `--m-max` and `--i-max` print margins. The field is an input.
 - **ASTRO - AerodynamicDragDeltaV** — Python 3 standard library for the point result. Optional `--out` needs `matplotlib`. Pass `--alt`, `--mass`, `--cd`, and `--area`. Density comes from altitude unless `--rho` is set.
 - **ASTRO - VacuumPropellantMass** — Python 3 standard library for the point result. Optional `--out` needs `matplotlib`. Pass `--dry`, at least one `--dv`, and exactly one of `--isp` or `--ve`. Optional `--growth` applies only to the dry mass.
+- **ASTRO - CheckSolution** — PROTOTYPE. Python 3 with `sympy` and `pint`. Typed text only. Pass `--family` (`rocket_equation` or `hohmann`), `--target`, and `--solution` (one step per line, LaTeX or plain math with units). Rocket givens are `--m0-kg`, `--mf-kg`, `--mp-kg`, `--dry-kg`, `--ve-m-s`, `--isp-s`, `--dv-m-s`, and `--growth`. Hohmann givens are `--r1-m` and `--r2-m`, or `--h1-m` and `--h2-m`, or `--alt-m` and `--ecc`, plus optional `--R0-m`. `--mode` is `hint` only. A line the checker cannot decide is `can't verify`. The final number is compared with `vacuum_propellant_mass` or `hohmann_transfer`.
 - **ROCKET - ElectricPropulsionDeltaV** — Python 3 standard library for the point result. Optional `--out` needs `matplotlib`. Pass `--dry`, `--thrust`, `--dv`, and exactly one of `--isp` or `--ve`. Optional `--eta` and `--duty` default to 1. Propellant uses the same vacuum rocket equation. `tb_s` is calendar time.
 - **ROCKET - PressurantBlowdown** — Python 3 standard library for the point result. Optional `--out` needs `matplotlib`. Pass `--p0`, `--v0`, and `--v-expelled`. Optional `--n` defaults to 1. Optional `--p-min` prints `above_floor`. Pressurant mass needs both `--temperature` and `--r-specific`.
 - **ATMOS - TransportProperties** — Python 3 standard library only. Viscosity, conductivity, and mean particle speed from temperature. Altitude mode reuses `ATMOS - Standard1976` through 86 km. Density-dependent lengths need altitude or temperature plus pressure. It does not use the NASA Glenn three-zone fit.
@@ -968,6 +974,8 @@ python "skills/ASTRO - AerodynamicDragDeltaV/aerodynamic_drag_delta_v.py" --alt 
 python "skills/ASTRO - AerodynamicDragDeltaV/aerodynamic_drag_delta_v.py" --check
 python "skills/ASTRO - VacuumPropellantMass/vacuum_propellant_mass.py" --dry 80 --isp 220 --name transfer --dv 120 --name drag --dv 30
 python "skills/ASTRO - VacuumPropellantMass/vacuum_propellant_mass.py" --check
+python "skills/ASTRO - CheckSolution/check_solution.py" --family rocket_equation --target delta_v --m0-kg 1000 --mf-kg 200 --ve-m-s 3000 --solution $'\Delta v = v_e \\ln\\frac{m_0}{m_f}\n\\Delta v = 3000\\,\\mathrm{m/s}\\,\\ln\\frac{1000}{200}'
+python "skills/ASTRO - CheckSolution/check_solution.py" --check
 python "skills/COMMS - PassDataVolume/pass_data_volume.py" --bits 2e9 --duration 480 --overhead 1.2
 python "skills/COMMS - PassDataVolume/pass_data_volume.py" --check
 python "skills/ATMOS - TransportProperties/transport_properties.py" --alt 11000
