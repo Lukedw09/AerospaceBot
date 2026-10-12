@@ -157,7 +157,11 @@ def _source_catalog() -> dict[str, dict[str, str]]:
     global _source_rows
     if _source_rows is not None:
         return _source_rows
-    text = (repo_root_from() / "sources.md").read_text(encoding="utf-8")
+    path = repo_root_from() / "sources.md"
+    if not path.is_file():
+        _source_rows = {}
+        return _source_rows
+    text = path.read_text(encoding="utf-8")
     rows: dict[str, dict[str, str]] = {}
     for line in text.splitlines():
         if not line.startswith("|"):
@@ -585,12 +589,18 @@ def run_turn(kept: list[dict[str, str]], store: UsageStore, sub: str, key: str, 
                     _log_provider(exc, key)
                     output = "that tool failed"
             finished.append((item, output))
+            sources: list[dict[str, str]] = []
+            if not item["error"]:
+                try:
+                    sources = sources_for(str(item["name"]))
+                except OSError:
+                    sources = []
             details.append(
                 {
                     "tool": item["name"],
                     "arguments": item["arguments"],
                     "output": output,
-                    "sources": [] if item["error"] else sources_for(str(item["name"])),
+                    "sources": sources,
                 }
             )
             plots.extend(plots_from(str(item["name"]), output))

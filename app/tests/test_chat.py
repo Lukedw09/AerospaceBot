@@ -6,6 +6,7 @@ import asyncio
 import json
 import os
 import unittest
+from pathlib import Path
 from unittest import mock
 
 from app.auth import Identity
@@ -405,6 +406,37 @@ class ChatTests(unittest.TestCase):
         self.assertEqual(data["details"][0]["output"], "that tool failed")
         self.assertEqual(data["answer"], "The tool failed.")
         self.assertNotIn("plot exploded", text)
+        self.assert_key_hidden(text, headers)
+
+    def test_missing_source_catalog_still_answers(self) -> None:
+        import app.chat as chat
+
+        def grok(messages, *_args, **_kwargs):
+            if any(item.get("role") == "tool" for item in messages):
+                return final("Transfer is ready.")
+            return tool_call("hohmann_transfer", {"r1_km": 6778})
+
+        saved = chat._source_rows
+        chat._source_rows = None
+        env = {"AUTH_DISABLED": "1", "GROK_API_KEY": SENTINEL, "GROK_MODEL": "grok-test"}
+        try:
+            with mock.patch.dict(os.environ, env, clear=False):
+                with mock.patch("app.chat.complete", side_effect=grok):
+                    with mock.patch("app.chat._run_tool", return_value="delta-v 3.9 km/s"):
+                        with mock.patch("app.chat.repo_root_from", return_value=Path("/no/such/root")):
+                            status, data, text, headers = call(
+                                self.app,
+                                "POST",
+                                "/api/chat",
+                                {"messages": [{"role": "user", "content": "Show an example Hohmann."}]},
+                            )
+        finally:
+            chat._source_rows = saved
+        self.assertEqual(status, 200)
+        self.assertEqual(data["answer"], "Transfer is ready.")
+        self.assertEqual(data["details"][0]["output"], "delta-v 3.9 km/s")
+        self.assertEqual(data["details"][0]["sources"], [])
+        self.assertNotIn("FileNotFoundError", text)
         self.assert_key_hidden(text, headers)
 
     def test_tool_followup_sends_empty_content(self) -> None:

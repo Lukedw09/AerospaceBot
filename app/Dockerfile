@@ -15,5 +15,6 @@ RUN pip install --no-cache-dir -r /tmp/requirements.txt
 
 COPY app /var/task/app
 COPY skills /var/task/skills
+COPY sources.md /var/task/sources.md
 
 CMD ["python", "-m", "app.server"]
