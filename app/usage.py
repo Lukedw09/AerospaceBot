@@ -9,6 +9,8 @@ from zoneinfo import ZoneInfo
 from app.config import Settings
 
 FREE_PLAN = "free"
+UNLIMITED_PLAN = "unlimited"
+UNLIMITED_DAILY_CAP = 1_000_000
 
 
 @dataclass
@@ -35,6 +37,27 @@ class UsageStore:
         zone = ZoneInfo(self.settings.usage_timezone)
         return datetime.now(zone).date().isoformat()
 
+    def ensure_plans(self) -> None:
+        """Create plan rows when missing. Free stays at the configured daily cap."""
+        table = self.table()
+        if table is None:
+            return
+        for name, cap in (
+            (FREE_PLAN, self.settings.daily_tool_cap),
+            (UNLIMITED_PLAN, UNLIMITED_DAILY_CAP),
+        ):
+            key = {"pk": f"plan#{name}", "sk": "plan"}
+            if table.get_item(Key=key).get("Item"):
+                continue
+            table.put_item(
+                Item={
+                    "pk": f"plan#{name}",
+                    "sk": "plan",
+                    "daily_cap": cap,
+                    "pictures": True,
+                }
+            )
+
     def ensure_account(self, sub: str, email: str) -> None:
         table = self.table()
         if table is None:
@@ -57,6 +80,7 @@ class UsageStore:
         table = self.table()
         plan_name = FREE_PLAN
         if table is not None:
+            self.ensure_plans()
             account = table.get_item(Key={"pk": f"account#{sub}", "sk": "account"}).get("Item")
             if account:
                 plan_name = str(account.get("plan") or FREE_PLAN)

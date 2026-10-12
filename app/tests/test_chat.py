@@ -445,6 +445,78 @@ class ChatTests(unittest.TestCase):
         self.assertNotIn("did not answer", data.get("error", ""))
         self.assert_key_hidden(text, headers)
 
+    def test_tool_call_uses_responses_api(self) -> None:
+        requests: list[tuple[str, bytes]] = []
+
+        class Response:
+            def __init__(self, body: bytes) -> None:
+                self.body = body
+
+            def read(self) -> bytes:
+                return self.body
+
+            def __enter__(self) -> "ChatTests.test_tool_call_uses_responses_api.<locals>.Response":
+                return self
+
+            def __exit__(self, *_args: object) -> bool:
+                return False
+
+        def urlopen(request: object, timeout: float = 70) -> Response:
+            del timeout
+            url = str(getattr(request, "full_url"))
+            data = getattr(request, "data")
+            requests.append((url, data if isinstance(data, bytes) else b""))
+            if len(requests) == 1:
+                body = {
+                    "id": "resp_1",
+                    "output": [
+                        {
+                            "type": "function_call",
+                            "name": "not_a_real_tool",
+                            "arguments": "{}",
+                            "call_id": "call_abc",
+                        }
+                    ],
+                }
+            else:
+                body = {
+                    "id": "resp_2",
+                    "output": [
+                        {
+                            "type": "message",
+                            "role": "assistant",
+                            "content": [{"type": "output_text", "text": "Example ready."}],
+                        }
+                    ],
+                }
+            return Response(json.dumps(body).encode("utf-8"))
+
+        env = {"AUTH_DISABLED": "1", "GROK_API_KEY": SENTINEL, "GROK_MODEL": "grok-4.7"}
+        with mock.patch.dict(os.environ, env, clear=False):
+            with mock.patch("app.chat.urllib.request.urlopen", side_effect=urlopen):
+                status, data, text, headers = call(
+                    self.app,
+                    "POST",
+                    "/api/chat",
+                    {"messages": [{"role": "user", "content": "Call a tool for an example."}]},
+                )
+        self.assertEqual(status, 200)
+        self.assertEqual(data["answer"], "Example ready.")
+        self.assertEqual(data["details"][0]["tool"], "not_a_real_tool")
+        self.assertEqual(len(requests), 2)
+        self.assertTrue(requests[0][0].endswith("/v1/responses"))
+        first = json.loads(requests[0][1].decode("utf-8"))
+        self.assertEqual(first["reasoning"], {"effort": "low"})
+        self.assertEqual(first["tools"][0]["type"], "function")
+        self.assertIn("name", first["tools"][0])
+        self.assertNotIn("function", first["tools"][0])
+        second = json.loads(requests[1][1].decode("utf-8"))
+        self.assertEqual(second["previous_response_id"], "resp_1")
+        self.assertEqual(second["input"][0]["type"], "function_call_output")
+        self.assertEqual(second["input"][0]["call_id"], "call_abc")
+        self.assertIn("not in the library", second["input"][0]["output"])
+        self.assert_key_hidden(text, headers)
+
     def test_grok_failure_hides_the_key(self) -> None:
         def grok(*_args, **_kwargs):
             raise RuntimeError(SENTINEL)

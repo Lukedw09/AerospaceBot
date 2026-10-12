@@ -1106,3 +1106,19 @@ SI is the working system (Pa, m², N). Skills convert other units before calling
 ## License
 
 Proprietary. See [LICENSE](LICENSE). All rights reserved; no open-source license is granted.
+
+## Unlimited plan (admin)
+
+The usage table stores plan rows as `pk=plan#<name>`, `sk=plan`, with `daily_cap`. The free plan is 50 calls per day. An `unlimited` plan (cap 1_000_000) is seeded the same way when the usage store runs.
+
+Grant or revoke it for a signed-in Cognito user (AWS credentials must reach the user pool and `USAGE_TABLE`):
+
+```bash
+# Grant
+python -m app.set_plan --email user@example.com --plan unlimited
+
+# Revoke (back to free)
+python -m app.set_plan --email user@example.com --plan free
+```
+
+Set `COGNITO_USER_POOL_ID`, `USAGE_TABLE`, and region (`COGNITO_REGION` or `AWS_REGION`). The script prints the old and new plan. The Account page shows the assigned plan and its daily cap after the next load.

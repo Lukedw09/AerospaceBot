@@ -20,7 +20,7 @@ from app.config import grok_api_key, grok_model
 from app.runner import result_root_for
 from app.usage import UsageStore
 
-GROK_URL = "https://api.x.ai/v1/chat/completions"
+GROK_URL = "https://api.x.ai/v1/responses"
 GROK_TIMEOUT_SEC = 70
 TURN_BUDGET_SEC = 100
 MAX_MESSAGE_CHARS = 8000
@@ -52,9 +52,10 @@ _catalog_by_name: dict[str, Any] | None = None
 class GrokError(Exception):
     """The chat provider failed. The message is intentionally empty."""
 
-    def __init__(self, reason: str = "") -> None:
+    def __init__(self, reason: str = "", status: int = 0) -> None:
         super().__init__()
         self.reason = reason
+        self.status = status
 
 
 def _scrub(value: Any, key: str) -> Any:
@@ -304,6 +305,112 @@ def _log_provider(exc: BaseException, key: str) -> str:
     return reason
 
 
+def _responses_tools(tools: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """grok-4.7 function tools put name and parameters on the tool itself."""
+    converted: list[dict[str, Any]] = []
+    for tool in tools:
+        function = tool.get("function") if isinstance(tool, dict) else None
+        if not isinstance(function, dict):
+            continue
+        converted.append(
+            {
+                "type": "function",
+                "name": function.get("name") or "",
+                "description": function.get("description") or "",
+                "parameters": function.get("parameters") or {"type": "object", "properties": {}},
+            }
+        )
+    return converted
+
+
+def _request_body(messages: list[dict[str, Any]], tools: list[dict[str, Any]], model: str) -> dict[str, Any]:
+    """Build a Responses API body. A tool round continues the stored response."""
+    response_id = ""
+    outputs: list[dict[str, str]] = []
+    for item in messages:
+        if item.get("role") == "assistant" and item.get("response_id"):
+            response_id = str(item["response_id"])
+        if item.get("role") != "tool":
+            continue
+        text = item.get("content")
+        if not isinstance(text, str) or not text:
+            text = " "
+        outputs.append(
+            {
+                "type": "function_call_output",
+                "call_id": str(item.get("tool_call_id") or ""),
+                "output": text,
+            }
+        )
+    body: dict[str, Any] = {
+        "model": model,
+        "tools": _responses_tools(tools),
+        "tool_choice": "auto",
+        "reasoning": {"effort": "low"},
+    }
+    if response_id and outputs:
+        body["previous_response_id"] = response_id
+        body["input"] = outputs
+        return body
+    conversation: list[dict[str, str]] = []
+    for item in messages:
+        role = item.get("role")
+        if role not in {"system", "user", "assistant"} or item.get("tool_calls"):
+            continue
+        content = item.get("content")
+        if not isinstance(content, str) or not content:
+            continue
+        conversation.append({"role": role, "content": content})
+    body["input"] = conversation
+    return body
+
+
+def _message_from_response(data: dict[str, Any]) -> dict[str, Any]:
+    output = data.get("output")
+    if isinstance(output, list):
+        text_parts: list[str] = []
+        tool_calls: list[dict[str, Any]] = []
+        for index, item in enumerate(output):
+            if not isinstance(item, dict):
+                continue
+            kind = item.get("type")
+            if kind == "function_call":
+                arguments = item.get("arguments")
+                if not isinstance(arguments, str):
+                    arguments = json.dumps(arguments if isinstance(arguments, dict) else {})
+                tool_calls.append(
+                    {
+                        "id": str(item.get("call_id") or item.get("id") or f"call_{index}"),
+                        "type": "function",
+                        "function": {"name": str(item.get("name") or ""), "arguments": arguments},
+                    }
+                )
+                continue
+            if kind != "message":
+                continue
+            content = item.get("content")
+            if isinstance(content, str):
+                text_parts.append(content)
+            elif isinstance(content, list):
+                for part in content:
+                    if isinstance(part, str):
+                        text_parts.append(part)
+                    elif isinstance(part, dict) and part.get("type") in {"output_text", "text"}:
+                        text_parts.append(str(part.get("text") or ""))
+        return {
+            "role": "assistant",
+            "content": "".join(text_parts),
+            "tool_calls": tool_calls,
+            "response_id": str(data.get("id") or ""),
+        }
+    message = data["choices"][0]["message"]
+    if not isinstance(message, dict):
+        raise TypeError("chat response had no message")
+    copied = dict(message)
+    copied["response_id"] = str(data.get("id") or "")
+    return copied
+
+
 def complete(
     messages: list[dict[str, Any]],
     tools: list[dict[str, Any]],
@@ -311,15 +418,7 @@ def complete(
     key: str,
     timeout: float = GROK_TIMEOUT_SEC,
 ) -> dict[str, Any]:
-    payload = json.dumps(
-        {
-            "model": model,
-            "messages": messages,
-            "tools": tools,
-            "tool_choice": "auto",
-            "reasoning_effort": "low",
-        }
-    ).encode("utf-8")
+    payload = json.dumps(_request_body(messages, tools, model)).encode("utf-8")
     request = urllib.request.Request(
         GROK_URL,
         data=payload,
@@ -333,7 +432,11 @@ def complete(
         with urllib.request.urlopen(request, timeout=timeout) as response:
             raw = response.read()
         data = json.loads(raw.decode("utf-8"))
-        message = data["choices"][0]["message"]
+        if not isinstance(data, dict):
+            raise TypeError("chat response was not an object")
+        message = _message_from_response(data)
+    except urllib.error.HTTPError as exc:
+        raise GrokError(_log_provider(exc, key), status=int(exc.code)) from None
     except (urllib.error.URLError, TimeoutError, OSError, KeyError, IndexError, TypeError, json.JSONDecodeError) as exc:
         raise GrokError(_log_provider(exc, key)) from None
     if not isinstance(message, dict):
@@ -382,7 +485,10 @@ def run_turn(kept: list[dict[str, str]], store: UsageStore, sub: str, key: str, 
             if details:
                 answer = "The tool ran, but the summary did not come back."
                 break
-            return _json({"error": "The chat service did not answer."}, 502, key)
+            error = "The chat service did not answer."
+            if exc.status:
+                error = f"The chat service did not answer (HTTP {exc.status})."
+            return _json({"error": error}, 502, key)
         except Exception as exc:
             _log_provider(exc, key)
             if details:
@@ -457,9 +563,8 @@ def run_turn(kept: list[dict[str, str]], store: UsageStore, sub: str, key: str, 
                 for item, _output in finished
             ],
         }
-        reasoning = message.get("reasoning_content")
-        if isinstance(reasoning, str) and reasoning:
-            assistant_message["reasoning_content"] = reasoning
+        if message.get("response_id"):
+            assistant_message["response_id"] = str(message["response_id"])
         grok_messages.append(assistant_message)
         for item, output in finished:
             grok_messages.append(
