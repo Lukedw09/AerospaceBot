@@ -114,6 +114,16 @@ def final(text: str) -> dict[str, object]:
     return {"role": "assistant", "content": text, "tool_calls": []}
 
 
+def _has_additional_properties(node: object) -> bool:
+    if isinstance(node, dict):
+        if "additionalProperties" in node:
+            return True
+        return any(_has_additional_properties(value) for value in node.values())
+    if isinstance(node, list):
+        return any(_has_additional_properties(item) for item in node)
+    return False
+
+
 class ChatTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
@@ -510,6 +520,7 @@ class ChatTests(unittest.TestCase):
         self.assertEqual(first["tools"][0]["type"], "function")
         self.assertIn("name", first["tools"][0])
         self.assertNotIn("function", first["tools"][0])
+        self.assertFalse(_has_additional_properties(first["tools"]))
         second = json.loads(requests[1][1].decode("utf-8"))
         self.assertEqual(second["previous_response_id"], "resp_1")
         self.assertEqual(second["input"][0]["type"], "function_call_output")

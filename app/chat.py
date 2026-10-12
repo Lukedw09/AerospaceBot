@@ -116,13 +116,24 @@ def _tools() -> tuple[list[dict[str, Any]], dict[str, list[str]]]:
     return openai, names
 
 
+def _drop_additional_properties(node: Any) -> None:
+    """xAI rejects additionalProperties: false. Object schemas are already closed."""
+    if isinstance(node, dict):
+        if node.get("additionalProperties") is False:
+            node.pop("additionalProperties", None)
+        for value in node.values():
+            _drop_additional_properties(value)
+    elif isinstance(node, list):
+        for item in node:
+            _drop_additional_properties(item)
+
+
 def _parameters(schema: dict[str, Any]) -> dict[str, Any]:
-    """Copy a tool schema into a form the chat API can compile."""
+    """Copy a tool schema into a form the Responses API can compile."""
     copied = json.loads(json.dumps(schema))
     if not isinstance(copied, dict):
         copied = {"type": "object", "properties": {}}
     copied.setdefault("type", "object")
-    copied["additionalProperties"] = False
     properties = copied.get("properties")
     if isinstance(properties, dict):
         for prop in properties.values():
@@ -137,6 +148,7 @@ def _parameters(schema: dict[str, Any]) -> dict[str, Any]:
                 prop["type"] = "string"
                 if isinstance(description, str) and description:
                     prop["description"] = description
+    _drop_additional_properties(copied)
     return copied
 
 
