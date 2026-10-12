@@ -379,9 +379,15 @@ def run_turn(kept: list[dict[str, str]], store: UsageStore, sub: str, key: str, 
         except GrokError as exc:
             if exc.reason == "key":
                 return _json({"error": "The xAI API key was rejected."}, 502, key)
+            if details:
+                answer = "The tool ran, but the summary did not come back."
+                break
             return _json({"error": "The chat service did not answer."}, 502, key)
         except Exception as exc:
             _log_provider(exc, key)
+            if details:
+                answer = "The tool ran, but the summary did not come back."
+                break
             return _json({"error": "The chat service did not answer."}, 502, key)
         content = message.get("content") or ""
         if not isinstance(content, str):
@@ -438,20 +444,23 @@ def run_turn(kept: list[dict[str, str]], store: UsageStore, sub: str, key: str, 
             answer = limit
             stopped = "limit"
             break
-        grok_messages.append(
-            {
-                "role": "assistant",
-                "content": content or None,
-                "tool_calls": [
-                    {
-                        "id": item["id"],
-                        "type": "function",
-                        "function": {"name": item["name"], "arguments": item["raw"]},
-                    }
-                    for item, _output in finished
-                ],
-            }
-        )
+        # xAI rejects a tool-call turn when content is null or omitted.
+        assistant_message: dict[str, Any] = {
+            "role": "assistant",
+            "content": content,
+            "tool_calls": [
+                {
+                    "id": item["id"],
+                    "type": "function",
+                    "function": {"name": item["name"], "arguments": item["raw"]},
+                }
+                for item, _output in finished
+            ],
+        }
+        reasoning = message.get("reasoning_content")
+        if isinstance(reasoning, str) and reasoning:
+            assistant_message["reasoning_content"] = reasoning
+        grok_messages.append(assistant_message)
         for item, output in finished:
             grok_messages.append(
                 {

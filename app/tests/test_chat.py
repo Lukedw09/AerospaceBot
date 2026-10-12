@@ -397,6 +397,54 @@ class ChatTests(unittest.TestCase):
         self.assertNotIn("plot exploded", text)
         self.assert_key_hidden(text, headers)
 
+    def test_tool_followup_sends_empty_content(self) -> None:
+        seen: list[list[dict[str, object]]] = []
+
+        def grok(messages, *_args, **_kwargs):
+            seen.append(messages)
+            if len(seen) == 1:
+                return {"role": "assistant", "content": None, "tool_calls": tool_call("not_a_real_tool", {})["tool_calls"]}
+            return final("Example ready.")
+
+        env = {"AUTH_DISABLED": "1", "GROK_API_KEY": SENTINEL, "GROK_MODEL": "grok-test"}
+        with mock.patch.dict(os.environ, env, clear=False):
+            with mock.patch("app.chat.complete", side_effect=grok):
+                status, data, text, headers = call(
+                    self.app,
+                    "POST",
+                    "/api/chat",
+                    {"messages": [{"role": "user", "content": "Provide an example."}]},
+                )
+        self.assertEqual(status, 200)
+        self.assertEqual(data["answer"], "Example ready.")
+        followup = [item for item in seen[1] if item.get("tool_calls")]
+        self.assertEqual(followup[0]["content"], "")
+        self.assertIsInstance(followup[0]["content"], str)
+        self.assert_key_hidden(text, headers)
+
+    def test_summary_failure_keeps_the_tool_result(self) -> None:
+        from app.chat import GrokError
+
+        def grok(messages, *_args, **_kwargs):
+            if any(item.get("role") == "tool" for item in messages):
+                raise GrokError()
+            return tool_call("not_a_real_tool", {})
+
+        env = {"AUTH_DISABLED": "1", "GROK_API_KEY": SENTINEL, "GROK_MODEL": "grok-test"}
+        with mock.patch.dict(os.environ, env, clear=False):
+            with mock.patch("app.chat.complete", side_effect=grok):
+                status, data, text, headers = call(
+                    self.app,
+                    "POST",
+                    "/api/chat",
+                    {"messages": [{"role": "user", "content": "Provide an example and include a png."}]},
+                )
+        self.assertEqual(status, 200)
+        self.assertEqual(data["details"][0]["output"], "that tool is not in the library")
+        self.assertIn("summary did not come back", data["answer"])
+        self.assertNotIn("did not answer", data.get("error", ""))
+        self.assert_key_hidden(text, headers)
+
     def test_grok_failure_hides_the_key(self) -> None:
         def grok(*_args, **_kwargs):
             raise RuntimeError(SENTINEL)
