@@ -1082,6 +1082,12 @@ body[data-page="chat"] .foot { display: none; }
 
 .chat-sources a { color: var(--amber); }
 
+.chat-shell .katex {
+  overflow-wrap: normal;
+  word-break: normal;
+  font-size: 1.05em;
+}
+
 @media (max-width: 900px) {
   .chat-shell .bot {
     height: auto;

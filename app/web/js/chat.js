@@ -106,16 +106,42 @@
 
   function protectMath(text) {
     const blocks = [];
+    const hold = (display, tex) => {
+      blocks.push({ display: display, tex: tex });
+      return "ASTRAEUSMATH" + (blocks.length - 1) + "END";
+    };
     const saved = String(text)
-      .replace(/\$\$([\s\S]+?)\$\$/g, (_, tex) => {
-        blocks.push({ display: true, tex: tex });
-        return "ASTRAEUSMATH" + (blocks.length - 1) + "END";
-      })
-      .replace(/\\\(([\s\S]+?)\\\)/g, (_, tex) => {
-        blocks.push({ display: false, tex: tex });
-        return "ASTRAEUSMATH" + (blocks.length - 1) + "END";
-      });
+      .replace(/\$\$([\s\S]+?)\$\$/g, (_, tex) => hold(true, tex))
+      .replace(/\\\[([\s\S]+?)\\\]/g, (_, tex) => hold(true, tex))
+      .replace(/\\\(([\s\S]+?)\\\)/g, (_, tex) => hold(false, tex));
     return { saved: saved, blocks: blocks };
+  }
+
+  function fillMath(node, text) {
+    const packed = protectMath(text);
+    if (!packed.blocks.length || !window.katex) {
+      node.textContent = text;
+      return;
+    }
+    packed.saved.split(/(ASTRAEUSMATH\d+END)/).forEach((part) => {
+      const match = part.match(/^ASTRAEUSMATH(\d+)END$/);
+      if (!match) {
+        if (part) node.appendChild(document.createTextNode(part));
+        return;
+      }
+      const block = packed.blocks[Number(match[1])];
+      const span = document.createElement("span");
+      if (!block) return;
+      try {
+        span.innerHTML = window.katex.renderToString(block.tex, {
+          displayMode: block.display,
+          throwOnError: false
+        });
+      } catch (error) {
+        span.textContent = block.tex;
+      }
+      node.appendChild(span);
+    });
   }
 
   function renderMarkdown(text) {
@@ -146,12 +172,32 @@
     return p;
   }
 
+  function shortenMath(text, limit) {
+    const packed = protectMath(String(text || "").replace(/\s+/g, " ").trim());
+    let saved = packed.saved;
+    const sentence = saved.indexOf(". ");
+    if (sentence > 40 && sentence < 220) saved = saved.slice(0, sentence + 1);
+    else if (saved.length > limit) {
+      let cut = saved.slice(0, limit - 1);
+      const open = cut.lastIndexOf("ASTRAEUSMATH");
+      const close = cut.lastIndexOf("END");
+      if (open !== -1 && open > close) cut = cut.slice(0, open);
+      saved = cut.replace(/\s+$/, "") + "…";
+    }
+    return restoreMath(saved, packed.blocks);
+  }
+
+  function restoreMath(saved, blocks) {
+    return saved.replace(/ASTRAEUSMATH(\d+)END/g, (_, index) => {
+      const block = blocks[Number(index)];
+      if (!block) return "";
+      return (block.display ? "\\[" : "\\(") + block.tex + (block.display ? "\\]" : "\\)");
+    });
+  }
+
   function sourceTitle(source) {
     const id = source.id ? source.id + ". " : "";
-    let document = String(source.document || "").replace(/\s+/g, " ").trim();
-    const sentence = document.indexOf(". ");
-    if (sentence > 40 && sentence < 220) document = document.slice(0, sentence + 1);
-    else if (document.length > 180) document = document.slice(0, 177) + "…";
+    const document = shortenMath(source.document || "", 180);
     return id + (document || "Source");
   }
 
@@ -171,10 +217,10 @@
         link.href = source.href;
         link.rel = "noopener";
         link.target = "_blank";
-        link.textContent = label;
+        fillMath(link, label);
         item.appendChild(link);
       } else {
-        item.textContent = label;
+        fillMath(item, label);
       }
       list.appendChild(item);
     });
@@ -187,7 +233,7 @@
       const term = el("dt");
       term.textContent = row.key || "note";
       const value = el("dd");
-      value.textContent = row.value;
+      fillMath(value, row.value);
       list.append(term, value);
     });
     return list;
@@ -214,7 +260,11 @@
       const key = match[1];
       const value = match[2].trim();
       if (key === "assumptions") {
-        assumptions = value.split(";").map(clause).filter(Boolean);
+        const packed = protectMath(value);
+        assumptions = packed.saved
+          .split(";")
+          .map((part) => clause(restoreMath(part, packed.blocks)))
+          .filter(Boolean);
         return;
       }
       if (key === "graph" || key === "viewer" || key === "coefficients_graph" || key === "polar_graph") return;
@@ -230,7 +280,7 @@
     const list = el("ul");
     items.forEach((item) => {
       const line = el("li");
-      line.textContent = item;
+      fillMath(line, item);
       list.appendChild(line);
     });
     wrap.append(summary, list);
@@ -253,10 +303,10 @@
       const title = el("p", "who");
       title.textContent = detail.tool || "tool";
       block.appendChild(title);
-      const inputs = Object.entries(detail.arguments || {}).map(([key, value]) => ({
-        key: key,
-        value: typeof value === "string" ? value : JSON.stringify(value)
-      }));
+      const inputs = Object.entries(detail.arguments || {}).map(([key, value]) => {
+        const raw = typeof value === "string" ? value : JSON.stringify(value);
+        return { key: key, value: raw == null ? "" : raw };
+      });
       block.appendChild(sectionLabel("Inputs"));
       if (inputs.length) block.appendChild(pairList(inputs));
       else {

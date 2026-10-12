@@ -185,4 +185,6 @@ async def handle_post(request) -> object:
         )
     except FeedbackError as exc:
         return JSONResponse({"error": exc.message}, status_code=exc.status)
+    except Exception:
+        return JSONResponse({"error": "feedback was not saved"}, status_code=502)
     return JSONResponse({"ok": True})
