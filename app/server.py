@@ -7,6 +7,7 @@ import json
 import os
 import sys
 import time
+from pathlib import Path
 from contextvars import ContextVar
 from typing import Annotated, Any, Literal
 
@@ -420,6 +421,18 @@ def build_server():
             return JSONResponse({"error": str(exc)}, status_code=401)
         return JSONResponse({"message": message})
 
+    @mcp.custom_route("/api/chat/status", methods=["GET"])
+    async def chat_status(request: Request) -> Response:
+        from app.chat import handle_status
+
+        return await handle_status(request)
+
+    @mcp.custom_route("/api/chat", methods=["POST"])
+    async def chat_post(request: Request) -> Response:
+        from app.chat import handle_post
+
+        return await handle_post(request)
+
     return mcp
 
 
@@ -554,6 +567,77 @@ async def _empty(send, status: int, settings: Settings) -> None:
     await send({"type": "http.response.body", "body": b""})
 
 
+_API_PREFIXES = ("/api", "/account", "/mcp", "/results", "/.well-known")
+
+_MEDIA = {
+    ".html": "text/html; charset=utf-8",
+    ".css": "text/css; charset=utf-8",
+    ".js": "text/javascript; charset=utf-8",
+    ".png": "image/png",
+    ".svg": "image/svg+xml",
+    ".ico": "image/x-icon",
+    ".webp": "image/webp",
+    ".txt": "text/plain; charset=utf-8",
+    ".json": "application/json",
+}
+
+
+def _site_file(web: Path, url_path: str) -> Path | None:
+    if url_path in {"/chat", "/chat/"}:
+        url_path = "/chat.html"
+    relative = "index.html" if url_path in {"", "/"} else url_path.lstrip("/")
+    if not relative or relative.endswith("/"):
+        return None
+    root = web.resolve()
+    candidate = (web / relative).resolve()
+    try:
+        candidate.relative_to(root)
+    except ValueError:
+        return None
+    if candidate.is_file():
+        return candidate
+    return None
+
+
+class _Site:
+    """Serve app/web when it is on disk. Lambda does not copy that folder."""
+
+    def __init__(self, app: Any, web: Path) -> None:
+        self.app = app
+        self.web = web
+
+    async def __call__(self, scope, receive, send) -> None:
+        if scope.get("type") != "http":
+            await self.app(scope, receive, send)
+            return
+        path = scope.get("path", "")
+        if any(path == prefix or path.startswith(prefix + "/") for prefix in _API_PREFIXES):
+            await self.app(scope, receive, send)
+            return
+        method = scope.get("method", "GET")
+        if method not in {"GET", "HEAD"}:
+            await self.app(scope, receive, send)
+            return
+        file = _site_file(self.web, path)
+        if file is None:
+            await self.app(scope, receive, send)
+            return
+        payload = file.read_bytes()
+        body = b"" if method == "HEAD" else payload
+        media = _MEDIA.get(file.suffix.lower(), "application/octet-stream")
+        await send(
+            {
+                "type": "http.response.start",
+                "status": 200,
+                "headers": [
+                    (b"content-type", media.encode("ascii")),
+                    (b"content-length", str(len(payload)).encode("ascii")),
+                ],
+            }
+        )
+        await send({"type": "http.response.body", "body": body})
+
+
 def http_app():
     settings = _settings()
     mcp = build_server()
@@ -562,7 +646,11 @@ def http_app():
         json_response=True,
         host="0.0.0.0",
     )
-    return _Guard(starlette, settings)
+    guarded = _Guard(starlette, settings)
+    web = Path(__file__).resolve().parent / "web"
+    if web.is_dir():
+        return _Site(guarded, web)
+    return guarded
 
 
 def main() -> None:

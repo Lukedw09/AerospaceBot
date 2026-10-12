@@ -129,11 +129,15 @@ def cw_rk4(
     zd0: float,
     steps: int = 40000,
 ) -> tuple[float, float, float, float]:
-    """Integrate x-double-dot = 2 n z-dot, z-double-dot = 3 n^2 z - 2 n x-dot."""
+    """Integrate x-double-dot = -2 n z-dot, z-double-dot = 3 n^2 z + 2 n x-dot.
+
+    x is along-track with the chief velocity and z is outward. An outward deputy
+    drifts backward, and the closed ellipse uses along-track rate -2 n z.
+    """
 
     def deriv(state: tuple[float, float, float, float]) -> tuple[float, float, float, float]:
         _x, z, xd, zd = state
-        return (xd, zd, 2.0 * motion * zd, 3.0 * motion * motion * z - 2.0 * motion * xd)
+        return (xd, zd, -2.0 * motion * zd, 3.0 * motion * motion * z + 2.0 * motion * xd)
 
     if time_s == 0.0:
         return (x0, z0, xd0, zd0)
@@ -415,7 +419,7 @@ class ClohessyWiltshirePhysics(unittest.TestCase):
                 assert_close(self, num(data, key), value, key, rel=1e-4, abs_tol=1e-3)
             assert_close(self, num(data, "dv_null_x_m_s"), -xd0, "null along-track")
             assert_close(self, num(data, "dv_null_z_m_s"), -zd0, "null radial")
-            assert_close(self, num(data, "dv_hold_x_m_s"), 2.0 * motion * z0 - xd0, "hold along-track")
+            assert_close(self, num(data, "dv_hold_x_m_s"), -2.0 * motion * z0 - xd0, "hold along-track")
             assert_close(self, num(data, "dv_hold_z_m_s"), -zd0, "hold radial")
 
     def test_closed_ellipse_returns_and_drift_rate(self) -> None:
@@ -425,7 +429,7 @@ class ClohessyWiltshirePhysics(unittest.TestCase):
         z0 = 200.0
         hold = run(
             self.program,
-            ["--alt", "500000", "--x", "0", "--z", str(z0), "--xdot", str(2.0 * motion * z0), "--zdot", "0", "--time", str(period)],
+            ["--alt", "500000", "--x", "0", "--z", str(z0), "--xdot", str(-2.0 * motion * z0), "--zdot", "0", "--time", str(period)],
         )
         assert_close(self, num(hold, "x_m"), 0.0, "closed ellipse x after one rev", abs_tol=1e-3)
         assert_close(self, num(hold, "z_m"), z0, "closed ellipse z after one rev", abs_tol=1e-3)
@@ -439,7 +443,7 @@ class ClohessyWiltshirePhysics(unittest.TestCase):
                 "--z",
                 str(z0),
                 "--xdot",
-                str(2.0 * motion * z0),
+                str(-2.0 * motion * z0),
                 "--zdot",
                 "0",
                 "--time",
@@ -447,9 +451,9 @@ class ClohessyWiltshirePhysics(unittest.TestCase):
             ],
         )
         assert_close(self, num(quarter, "z_m"), 0.0, "quarter-rev radial", abs_tol=1e-2)
-        assert_close(self, num(quarter, "x_m"), 2.0 * z0, "quarter-rev along-track", abs_tol=1e-2)
+        assert_close(self, num(quarter, "x_m"), -2.0 * z0, "quarter-rev along-track", abs_tol=1e-2)
 
-        # Zero relative velocity at a radial offset has secular drift 6 n z.
+        # Zero relative velocity at an outward offset drifts backward, -6 n z t.
         # At an integer number of chief revolutions the bounded terms vanish.
         one = run(
             self.program,
@@ -459,7 +463,7 @@ class ClohessyWiltshirePhysics(unittest.TestCase):
             self.program,
             ["--a", str(radius), "--x", "0", "--z", str(z0), "--xdot", "0", "--zdot", "0", "--time", str(5.0 * period)],
         )
-        per_rev = 12.0 * math.pi * z0
+        per_rev = -12.0 * math.pi * z0
         assert_close(self, num(one, "x_m"), per_rev, "one-rev drift", rel=1e-4, abs_tol=1e-2)
         assert_close(self, num(five, "x_m") - num(one, "x_m"), 4.0 * per_rev, "later drift", rel=1e-4, abs_tol=1e-2)
 

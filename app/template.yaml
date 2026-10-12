@@ -152,7 +152,7 @@ Resources:
     Properties:
       PackageType: Image
       MemorySize: 1024
-      Timeout: 90
+      Timeout: 180
       FunctionUrlConfig:
         AuthType: NONE
       Environment:
@@ -165,7 +165,9 @@ Resources:
           COGNITO_DOMAIN: !Sub "https://${UserPoolDomain}.auth.${AWS::Region}.amazoncognito.com"
           PUBLIC_BASE_URL: !Sub "https://mcp.${SiteDomain}"
           ACCOUNT_SITE_URL: !Sub "https://${SiteDomain}"
-          DAILY_TOOL_CAP: "2000"
+          DAILY_TOOL_CAP: "50"
+          GROK_API_KEY_PARAMETER: /astraeus/grok-api-key
+          GROK_MODEL: grok-4.7
           TOOL_TIMEOUT_SEC: "60"
           RESULT_LINK_HOURS: "1"
           RESULT_LINK_SECRET: !Join
@@ -190,10 +192,38 @@ Resources:
                 - cognito-idp:AdminUserGlobalSignOut
                 - cognito-idp:AdminDeleteUser
               Resource: !GetAtt UserPool.Arn
+            - Effect: Allow
+              Action:
+                - ssm:GetParameter
+              Resource: !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/astraeus/grok-api-key"
+            - Effect: Allow
+              Action:
+                - kms:Decrypt
+              Resource: "*"
+              Condition:
+                StringEquals:
+                  kms:ViaService: !Sub "ssm.${AWS::Region}.amazonaws.com"
     Metadata:
       Dockerfile: app/Dockerfile
       DockerContext: ..
       DockerTag: aerospace-plugin
+
+  RewriteChat:
+    Type: AWS::CloudFront::Function
+    Properties:
+      Name: !Sub "${AWS::StackName}-chat-rewrite"
+      AutoPublish: true
+      FunctionConfig:
+        Comment: Serve chat.html at /chat
+        Runtime: cloudfront-js-2.0
+      FunctionCode: |
+        function handler(event) {
+          var request = event.request;
+          if (request.uri === "/chat" || request.uri === "/chat/") {
+            request.uri = "/chat.html";
+          }
+          return request;
+        }
 
   ForwardHost:
     Type: AWS::CloudFront::Function
@@ -258,13 +288,25 @@ Resources:
             CustomOriginConfig:
               HTTPSPort: 443
               OriginProtocolPolicy: https-only
-              OriginReadTimeout: 60
+              OriginReadTimeout: 120
         DefaultCacheBehavior:
           TargetOriginId: site
           ViewerProtocolPolicy: redirect-to-https
           Compress: true
           CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6
+          FunctionAssociations:
+            - EventType: viewer-request
+              FunctionARN: !GetAtt RewriteChat.FunctionARN
         CacheBehaviors:
+          - PathPattern: /api*
+            TargetOriginId: api
+            ViewerProtocolPolicy: https-only
+            AllowedMethods: [GET, HEAD, OPTIONS, PUT, PATCH, POST, DELETE]
+            CachePolicyId: 4135ea2d-6df8-44a3-9df3-4b5a84be39ad
+            OriginRequestPolicyId: b689b0a8-53d0-40ab-baf2-68738e2966ac
+            FunctionAssociations:
+              - EventType: viewer-request
+                FunctionARN: !GetAtt ForwardHost.FunctionARN
           - PathPattern: /account*
             TargetOriginId: api
             ViewerProtocolPolicy: https-only

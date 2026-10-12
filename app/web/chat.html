@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Chat — Astraeus</title>
+  <meta name="description" content="Ask Astraeus. Answers quote the aerospace tools.">
+  <meta name="theme-color" content="#07090f">
+  <link rel="icon" href="/favicon.png" type="image/png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.css">
+  <link rel="stylesheet" href="/css/site.css">
+</head>
+<body data-page="chat">
+  <a class="skip" href="#main">Skip to content</a>
+  <div class="stars" aria-hidden="true"></div>
+  <header class="nav">
+    <a class="brand" href="/">
+      <span class="brand-mark"><img src="/assets/astraeus.png" alt=""></span>
+      <span>Astraeus</span>
+    </a>
+    <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="nav-links">Menu</button>
+    <nav class="nav-links" id="nav-links">
+      <a href="/install.html" data-page="install">Install</a>
+      <a href="/docs.html" data-page="docs">Docs</a>
+      <a href="/pricing.html" data-page="pricing">Pricing</a>
+      <a href="/faq.html" data-page="faq">FAQ</a>
+      <a href="/chat" data-page="chat">Chat</a>
+      <a href="/profile.html" data-nav="account" hidden>Account</a>
+      <button class="nav-signin" type="button" data-nav="signin" data-open-signin>Sign in</button>
+    </nav>
+  </header>
+  <main id="main" class="chat-shell">
+    <p id="status" class="banner" role="status"></p>
+    <section class="bot" aria-label="Astraeus chat">
+      <div class="bot-bar">
+        <h1 class="bot-title">Astraeus</h1>
+        <span class="bot-plugin">chat</span>
+      </div>
+      <div class="bot-thread" id="thread"></div>
+      <p class="chat-remaining" id="remaining"></p>
+      <div class="chat-gate" id="gate">
+        <button class="btn btn-primary" type="button" data-open-signin>Sign in to chat</button>
+      </div>
+      <form class="bot-compose" id="compose" hidden>
+        <textarea id="draft" rows="2" placeholder="Message Astraeus" aria-label="Message Astraeus"></textarea>
+        <button type="submit" aria-label="Send">↑</button>
+      </form>
+    </section>
+  </main>
+  <footer class="foot">
+    <div><strong>Astraeus</strong><span>astraeus.de-wet.com</span></div>
+    <p>Aerospace plugin for Cursor and Grok Bot.</p>
+  </footer>
+  <script src="https://cdn.jsdelivr.net/npm/marked@4.3.0/marked.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dompurify@3.2.4/dist/purify.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.js"></script>
+  <script src="/js/auth.js"></script>
+  <script src="/js/site.js"></script>
+  <script src="/js/chat.js"></script>
+</body>
+</html>

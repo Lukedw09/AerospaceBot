@@ -38,6 +38,7 @@ jobs:
       GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
       META_APP_ID: ${{ secrets.META_APP_ID }}
       META_APP_SECRET: ${{ secrets.META_APP_SECRET }}
+      XAI_APIKEY: ${{ secrets.XAI_APIKEY }}
     steps:
       - uses: actions/checkout@v4
       - uses: aws-actions/configure-aws-credentials@v4

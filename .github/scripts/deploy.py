@@ -6,6 +6,7 @@ import json
 import os
 import subprocess
 import sys
+import tempfile
 import time
 import urllib.parse
 import urllib.request
@@ -314,12 +315,60 @@ def stack_output(stack_name: str, key: str) -> str:
     return value
 
 
+GROK_PARAMETER = "/astraeus/grok-api-key"
+
+
+def store_grok_key(region: str) -> None:
+    """Write the xAI key to SSM. The value is not printed."""
+    key = os.environ.get("XAI_APIKEY", "").strip()
+    if not key:
+        raise SystemExit("Missing GitHub secrets: XAI_APIKEY")
+    payload = json.dumps(
+        {
+            "Name": GROK_PARAMETER,
+            "Value": key,
+            "Type": "SecureString",
+            "Overwrite": True,
+        }
+    )
+    handle = tempfile.NamedTemporaryFile(prefix="grok-parameter-", suffix=".json", delete=False)
+    path = handle.name
+    try:
+        handle.write(payload.encode("utf-8"))
+        handle.close()
+        os.chmod(path, 0o600)
+        result = subprocess.run(
+            [
+                "aws",
+                "ssm",
+                "put-parameter",
+                "--region",
+                region,
+                "--cli-input-json",
+                "file://" + path,
+            ],
+            text=True,
+            capture_output=True,
+        )
+    finally:
+        try:
+            os.remove(path)
+        except OSError:
+            pass
+    if result.returncode != 0:
+        detail = (result.stderr or result.stdout or "ssm put-parameter failed").replace(key, "[redacted]")
+        print(detail, file=sys.stderr)
+        raise SystemExit(result.returncode)
+    print(f"Stored {GROK_PARAMETER}")
+
+
 def main() -> None:
     required = [
         "GOOGLE_CLIENT_ID",
         "GOOGLE_CLIENT_SECRET",
         "META_APP_ID",
         "META_APP_SECRET",
+        "XAI_APIKEY",
     ]
     missing = [name for name in required if not os.environ.get(name, "").strip()]
     if missing:
@@ -340,6 +389,7 @@ def main() -> None:
         ]
     )
     prepare_stack(stack_name, zone_id)
+    store_grok_key(region)
     run(["sam", "build", "--template-file", "app/template.yaml"])
     run(
         [

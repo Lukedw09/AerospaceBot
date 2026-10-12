@@ -11,6 +11,7 @@ def _flag(name: str) -> bool:
 
 
 _ssm_client_id = ""
+_ssm_grok_key = ""
 
 
 def _client_id() -> str:
@@ -28,6 +29,42 @@ def _client_id() -> str:
 
     _ssm_client_id = str(boto3.client("ssm").get_parameter(Name=name)["Parameter"]["Value"])
     return _ssm_client_id
+
+
+def _real_grok_key(value: str) -> str:
+    key = value.strip().strip('"').strip("'").strip()
+    if not key or (key.startswith("<") and key.endswith(">")):
+        return ""
+    if key.lower() in {"your xai key", "paste-the-key-from-console.x.ai", "xai-..."}:
+        return ""
+    return key
+
+
+def grok_api_key() -> str:
+    """Env value for local runs. The deployed function reads a SecureString from SSM."""
+    global _ssm_grok_key
+    direct = _real_grok_key(os.environ.get("GROK_API_KEY", ""))
+    if direct:
+        return direct
+    if _ssm_grok_key:
+        return _ssm_grok_key
+    name = os.environ.get("GROK_API_KEY_PARAMETER", "").strip()
+    if not name:
+        return ""
+    import boto3
+
+    _ssm_grok_key = str(
+        boto3.client("ssm").get_parameter(Name=name, WithDecryption=True)["Parameter"]["Value"]
+    )
+    return _ssm_grok_key
+
+
+def grok_model() -> str:
+    """Current chat model. grok-4 is the previous name and is not in the model list."""
+    model = os.environ.get("GROK_MODEL", "").strip()
+    if not model or model == "grok-4":
+        return "grok-4.7"
+    return model
 
 
 @dataclass(frozen=True)
@@ -54,7 +91,7 @@ def load_settings(repo_root: str) -> Settings:
         repo_root=repo_root,
         usage_table=os.environ.get("USAGE_TABLE", ""),
         picture_bucket=os.environ.get("PICTURE_BUCKET", ""),
-        daily_tool_cap=int(os.environ.get("DAILY_TOOL_CAP", "2000")),
+        daily_tool_cap=int(os.environ.get("DAILY_TOOL_CAP", "50")),
         tool_timeout_sec=int(os.environ.get("TOOL_TIMEOUT_SEC", "60")),
         result_link_hours=int(os.environ.get("RESULT_LINK_HOURS", "1")),
         usage_timezone=os.environ.get("USAGE_TIMEZONE", "America/New_York"),

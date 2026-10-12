@@ -742,6 +742,145 @@ details p { margin: 0.6rem 0 0.2rem; }
   .outputs-pair, .outputs-more { grid-template-columns: 1fr; }
 }
 
+body[data-page="chat"] {
+  height: 100svh;
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.chat-shell {
+  flex: 1;
+  min-height: 0;
+  width: min(52rem, calc(100% - 2rem));
+  margin: 0 auto;
+  padding: 1rem 0 0.75rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.chat-shell .bot {
+  width: 100%;
+  flex: 1;
+  min-height: 0;
+  height: auto;
+  border-right: 1px solid var(--line);
+  border-radius: 1.25rem;
+}
+
+.chat-shell h1.bot-title {
+  font-size: 1.35rem;
+  line-height: 1;
+}
+
+.chat-remaining {
+  margin: 0;
+  padding: 0.45rem 1rem 0;
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 0.75rem;
+}
+
+.chat-remaining:empty { display: none; }
+
+.chat-gate { padding: 0.85rem 1rem 1rem; }
+
+.chat-shell .bot-compose textarea {
+  flex: 1;
+  resize: vertical;
+  min-height: 2.75rem;
+  max-height: 8rem;
+  background: #121826;
+  border: 1px solid var(--line);
+  border-radius: 1rem;
+  padding: 0.7rem 0.9rem;
+  color: var(--ink);
+  font: inherit;
+}
+
+.chat-shell .bot-compose button {
+  align-self: end;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.chat-shell .prose h1,
+.chat-shell .prose h2,
+.chat-shell .prose h3 {
+  font-size: 1.15rem;
+  letter-spacing: -0.03em;
+  line-height: 1.25;
+  margin: 0.8rem 0 0.35rem;
+}
+
+.chat-shell .prose h1 { font-size: 1.35rem; }
+
+.chat-shell .prose p { margin: 0.35rem 0; }
+
+.chat-shell .prose ul,
+.chat-shell .prose ol {
+  margin: 0.35rem 0;
+  padding-left: 1.2rem;
+}
+
+.chat-shell .prose pre {
+  overflow: auto;
+  margin: 0.55rem 0;
+  padding: 0.7rem 0.8rem;
+  background: #07090f;
+  border-left: 2px solid var(--orange);
+}
+
+.chat-shell .prose code { font-family: var(--mono); font-size: 0.85em; }
+
+.chat-shell .prose table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 0.6rem 0;
+  font-size: 0.88rem;
+}
+
+.chat-shell .prose th,
+.chat-shell .prose td {
+  border: 1px solid var(--line);
+  padding: 0.3rem 0.45rem;
+  text-align: left;
+}
+
+.chat-shell .prose a { color: var(--amber); }
+
+.chat-plots {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin-top: 0.7rem;
+}
+
+.chat-plots img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.4rem;
+  background: #07090f;
+}
+
+.chat-details {
+  border: 0;
+  padding: 0.45rem 0 0;
+}
+
+.chat-details summary { font-weight: 500; font-size: 0.92rem; }
+
+.chat-detail { margin-top: 0.7rem; }
+
+@media (max-width: 900px) {
+  .chat-shell .bot {
+    height: auto;
+    min-height: 0;
+    margin-bottom: 0;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   .stars::before, .stars::after, .hero-copy > *, .tool.is-running .tool-dot {
