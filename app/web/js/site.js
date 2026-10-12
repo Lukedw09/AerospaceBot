@@ -61,9 +61,11 @@
       if (link.dataset.page === page) link.setAttribute("aria-current", "page");
     });
     const account = document.querySelector("[data-nav='account']");
+    const admin = document.querySelector("[data-nav='admin']");
     const signin = document.querySelector("[data-nav='signin']");
     const signedIn = AstraeusAuth.hasSession();
     if (account) account.hidden = !signedIn;
+    if (admin) admin.hidden = !(signedIn && AstraeusAuth.isAdmin());
     if (signin) signin.hidden = signedIn;
     const toggle = document.querySelector(".nav-toggle");
     const nav = document.querySelector(".nav");
@@ -116,6 +118,8 @@
   async function loadAccount() {
     const account = await AstraeusAuth.api("/account", "GET");
     document.getElementById("who").textContent = account.email || account.sub;
+    const admin = document.querySelector("[data-nav='admin']");
+    if (admin) admin.hidden = !AstraeusAuth.isAdminEmail(account.email);
     document.getElementById("plan").textContent = String(account.plan);
     const used = Number(account.used_today);
     const cap = Number(account.daily_cap);

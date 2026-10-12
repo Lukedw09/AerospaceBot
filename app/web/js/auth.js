@@ -120,6 +120,27 @@
     return JSON.stringify(snippet, null, 2);
   }
 
+  function sessionEmail() {
+    const token = storage.getItem("id") || "";
+    const payload = token.split(".")[1];
+    if (!payload) return "";
+    try {
+      const padded = payload.replaceAll("-", "+").replaceAll("_", "/") + "=".repeat((4 - (payload.length % 4)) % 4);
+      const claims = JSON.parse(atob(padded));
+      return String(claims.email || "");
+    } catch (error) {
+      return "";
+    }
+  }
+
+  function isAdminEmail(email) {
+    return String(email || "").trim().toLowerCase() === "lukedw09@gmail.com";
+  }
+
+  function isAdmin() {
+    return isAdminEmail(sessionEmail());
+  }
+
   function hasSession() {
     return Boolean(storage.getItem("access"));
   }
@@ -161,6 +182,9 @@
     api,
     snippetText,
     hasSession,
+    sessionEmail,
+    isAdminEmail,
+    isAdmin,
     clearSession,
     completeRedirect,
     safeReturnPath

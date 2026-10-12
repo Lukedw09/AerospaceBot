@@ -7,9 +7,10 @@ import os
 import unittest
 from unittest import mock
 
+from app.auth import Identity
 from app.catalog import repo_root_from
 from app.config import load_settings
-from app.feedback import FeedbackError, fields_from_payload, format_feedback, history_from_payload
+from app.feedback import FeedbackError, fields_from_payload, format_feedback, history_from_payload, is_admin
 from app.list_feedback import main
 from app.server import http_app
 from app.tests.test_chat import call
@@ -149,7 +150,47 @@ class FeedbackTests(unittest.TestCase):
     def test_format_empty(self) -> None:
         self.assertEqual(format_feedback([]), "No feedback.")
 
-    def test_chat_page_wires_votes(self) -> None:
+    def test_admin_page_is_private(self) -> None:
+        self.assertTrue(is_admin("Lukedw09@gmail.com"))
+        self.assertFalse(is_admin("pilot@example.com"))
+        env = {"AUTH_DISABLED": "", "USAGE_TABLE": "usage-test"}
+        other = Identity(sub="other", email="pilot@example.com", username="pilot")
+        admin = Identity(sub="owner", email="lukedw09@gmail.com", username="owner")
+        with mock.patch.dict(os.environ, env, clear=False):
+            status, data, _text, _headers = call(self.app, "GET", "/api/admin/feedback")
+            self.assertEqual(status, 401)
+            self.assertEqual(data["error"], "sign-in is required")
+            with mock.patch("app.server.verify_access_token", return_value=other):
+                status, data, _text, _headers = call(
+                    self.app, "GET", "/api/admin/feedback", token="test-token"
+                )
+            self.assertEqual(status, 403)
+            fake = FakeTable()
+            fake.put_item(
+                Item={
+                    "pk": "feedback",
+                    "sk": "2026-10-12T12:00:00.000000Z#b",
+                    "created": "2026-10-12T12:00:00.000000Z",
+                    "email": "pilot@example.com",
+                    "reason": "wrong density",
+                    "history": HISTORY,
+                    "sub": "pilot",
+                }
+            )
+            with mock.patch("app.server.verify_access_token", return_value=admin):
+                with mock.patch.object(UsageStore, "table", lambda self: fake):
+                    status, data, _text, _headers = call(
+                        self.app, "GET", "/api/admin/feedback", token="test-token"
+                    )
+        self.assertEqual(status, 200)
+        self.assertEqual(data["items"][0]["reason"], "wrong density")
+        self.assertEqual(data["items"][0]["history"][0]["content"], "density at 10 km")
+        self.assertNotIn("sub", data["items"][0])
+        html = (ROOT / "app" / "web" / "admin.html").read_text(encoding="utf-8")
+        self.assertIn("Administrator", html)
+        self.assertIn("/api/admin/feedback", html)
+        index = (ROOT / "app" / "web" / "index.html").read_text(encoding="utf-8")
+        self.assertIn('data-nav="admin" hidden', index)
         chat_js = (ROOT / "app" / "web" / "js" / "chat.js").read_text(encoding="utf-8")
         self.assertIn("Thumbs up", chat_js)
         self.assertIn("Thumbs down", chat_js)

@@ -638,8 +638,10 @@
       if (error.status === 401) {
         AstraeusAuth.clearSession();
         const account = document.querySelector("[data-nav='account']");
+        const admin = document.querySelector("[data-nav='admin']");
         const signin = document.querySelector("[data-nav='signin']");
         if (account) account.hidden = true;
+        if (admin) admin.hidden = true;
         if (signin) signin.hidden = false;
         showSignedOut();
       }
@@ -665,8 +667,10 @@
       if (error.status === 401) {
         AstraeusAuth.clearSession();
         const account = document.querySelector("[data-nav='account']");
+        const admin = document.querySelector("[data-nav='admin']");
         const signin = document.querySelector("[data-nav='signin']");
         if (account) account.hidden = true;
+        if (admin) admin.hidden = true;
         if (signin) signin.hidden = false;
         showSignedOut();
         return;

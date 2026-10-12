@@ -439,6 +439,12 @@ def build_server():
 
         return await handle_feedback(request)
 
+    @mcp.custom_route("/api/admin/feedback", methods=["GET"])
+    async def admin_feedback(request: Request) -> Response:
+        from app.feedback import handle_list
+
+        return await handle_list(request)
+
     return mcp
 
 

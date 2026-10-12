@@ -10,6 +10,7 @@ from app.config import Settings
 from app.usage import UsageStore
 
 PK = "feedback"
+ADMIN_EMAIL = "lukedw09@gmail.com"
 MAX_REASON = 2000
 MAX_TURN_CHARS = 8000
 MAX_HISTORY_MESSAGES = 80
@@ -108,6 +109,31 @@ def save_feedback(
     return item
 
 
+def is_admin(email: str) -> bool:
+    return email.strip().lower() == ADMIN_EMAIL
+
+
+def public_item(item: dict[str, object]) -> dict[str, object]:
+    history = item.get("history")
+    turns: list[dict[str, str]] = []
+    if isinstance(history, list):
+        for turn in history:
+            if not isinstance(turn, dict):
+                continue
+            role = turn.get("role")
+            if role not in {"user", "assistant"}:
+                continue
+            turns.append({"role": str(role), "content": str(turn.get("content") or "")})
+    return {
+        "created": str(item.get("created") or ""),
+        "email": str(item.get("email") or ""),
+        "reason": str(item.get("reason") or ""),
+        "history": turns,
+        "user_message": str(item.get("user_message") or ""),
+        "message": str(item.get("message") or ""),
+    }
+
+
 def list_feedback(settings: Settings, limit: int = 50) -> list[dict[str, object]]:
     table = UsageStore(settings).table()
     if table is None:
@@ -188,3 +214,25 @@ async def handle_post(request) -> object:
     except Exception:
         return JSONResponse({"error": "feedback was not saved"}, status_code=502)
     return JSONResponse({"ok": True})
+
+
+async def handle_list(request) -> object:
+    from starlette.responses import JSONResponse
+
+    from app.auth import TokenError
+    from app.server import _identity_from_request, _settings
+
+    settings = _settings()
+    if settings.auth_disabled:
+        return JSONResponse({"error": "sign-in is required"}, status_code=401)
+    try:
+        identity = _identity_from_request(request)
+    except TokenError as exc:
+        return JSONResponse({"error": str(exc)}, status_code=401)
+    if not is_admin(identity.email):
+        return JSONResponse({"error": "not available"}, status_code=403)
+    try:
+        items = list_feedback(settings, 50)
+    except FeedbackError as exc:
+        return JSONResponse({"error": exc.message}, status_code=exc.status)
+    return JSONResponse({"items": [public_item(item) for item in items]})

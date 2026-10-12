@@ -690,6 +690,25 @@ h2 {
 
 .panel p { margin: 0 0 0.85rem; color: var(--ink); }
 
+.admin-list { display: flex; flex-direction: column; gap: 1rem; margin-top: 1.5rem; }
+
+.admin-note .reason {
+  margin: 0.35rem 0 0.8rem;
+  color: var(--ink);
+}
+
+.admin-chat {
+  margin: 0;
+  padding: 0.7rem 0.8rem;
+  background: #07090f;
+  border-left: 2px solid var(--orange);
+  white-space: pre-wrap;
+  font-family: var(--mono);
+  font-size: 0.82rem;
+  line-height: 1.55;
+  color: var(--ink);
+}
+
 .meter {
   height: 2px;
   background: rgba(244, 241, 234, 0.16);
