@@ -150,6 +150,8 @@ class ChatTests(unittest.TestCase):
         status, _data, text, headers = call(self.app, "GET", "/chat")
         self.assertEqual(status, 200)
         self.assertIn("Sign in to chat", text)
+        self.assertIn("/js/share.js", text)
+        self.assertIn('id="share-note"', text)
         media = {key.decode("latin1"): value.decode("latin1") for key, value in headers}
         self.assertIn("text/html", media.get("content-type", ""))
 
@@ -438,6 +440,24 @@ class ChatTests(unittest.TestCase):
         self.assertEqual(data["details"][0]["sources"], [])
         self.assertNotIn("FileNotFoundError", text)
         self.assert_key_hidden(text, headers)
+
+    def test_sources_follow_named_tools_only(self) -> None:
+        import app.chat as chat
+
+        saved = chat._source_rows
+        chat._source_rows = None
+        try:
+            shaft = chat.sources_for("circular_shaft_torsion")
+            density = chat.sources_for("density_above_86km")
+            plane = chat.sources_for("plane_change_impulse")
+            hohmann = chat.sources_for("hohmann_transfer")
+        finally:
+            chat._source_rows = saved
+        self.assertIn("V81", [item["id"] for item in shaft])
+        self.assertNotIn("scope", shaft[0])
+        self.assertIn("V5", [item["id"] for item in density])
+        self.assertIn("V109", [item["id"] for item in plane])
+        self.assertEqual(hohmann, [])
 
     def test_tool_followup_sends_empty_content(self) -> None:
         seen: list[list[dict[str, object]]] = []

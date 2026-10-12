@@ -174,7 +174,8 @@ def _source_catalog() -> dict[str, dict[str, str]]:
         if found:
             href = found.group(1)
         document = re.sub(r"\[([^\]]+)\]\([^)]+\)", r"\1", cells[1])
-        rows[cells[0]] = {"id": cells[0], "document": document, "href": href}
+        scope = cells[3] if len(cells) > 3 else ""
+        rows[cells[0]] = {"id": cells[0], "document": document, "href": href, "scope": scope}
     _source_rows = rows
     return rows
 
@@ -186,13 +187,27 @@ def _catalog_tool(name: str) -> Any:
     return _catalog_by_name.get(name)
 
 
+def _skill_folder(script: Path) -> Path:
+    for candidate in [script.parent, *script.parent.parents]:
+        if (candidate / "SKILL.md").is_file():
+            return candidate
+        if candidate.name == "skills":
+            break
+    return script.parent
+
+
+def _public_source(row: dict[str, str]) -> dict[str, str]:
+    return {"id": row["id"], "document": row["document"], "href": row["href"]}
+
+
 def sources_for(name: str) -> list[dict[str, str]]:
+    """Sources named for this tool in sources.md, or cited by its skill files."""
     if name in {"list_tools", "lookup_formula"}:
         return []
     tool = _catalog_tool(name)
     if tool is None:
         return []
-    folder = tool.script.parent
+    folder = _skill_folder(tool.script)
     cited = folder / "sources.md"
     if cited.is_file():
         text = cited.read_text(encoding="utf-8")
@@ -202,12 +217,21 @@ def sources_for(name: str) -> list[dict[str, str]]:
     catalog = _source_catalog()
     found: list[dict[str, str]] = []
     seen: set[str] = set()
-    for match in re.finditer(r"\bV\d+\b", text):
-        source_id = match.group(0)
+
+    def add(source_id: str) -> None:
         if source_id in seen or source_id not in catalog:
-            continue
+            return
         seen.add(source_id)
-        found.append(catalog[source_id])
+        found.append(_public_source(catalog[source_id]))
+
+    for match in re.finditer(r"\bV\d+\b", text):
+        add(match.group(0))
+    needle = f"`{name}`"
+    folder_name = folder.name
+    for source_id, row in catalog.items():
+        blob = row["document"] + "\n" + row.get("scope", "")
+        if folder_name in blob or needle in blob:
+            add(source_id)
     return found
 
 

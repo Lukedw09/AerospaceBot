@@ -433,6 +433,12 @@ def build_server():
 
         return await handle_post(request)
 
+    @mcp.custom_route("/api/chat/feedback", methods=["POST"])
+    async def chat_feedback(request: Request) -> Response:
+        from app.feedback import handle_post as handle_feedback
+
+        return await handle_feedback(request)
+
     return mcp
 
 

@@ -29,11 +29,23 @@
     return config;
   }
 
+  function safeReturnPath(value) {
+    if (!value || typeof value !== "string") return "/profile.html";
+    if (!value.startsWith("/") || value.startsWith("//")) return "/profile.html";
+    return value;
+  }
+
   async function startLogin(provider, linking) {
     const current = await loadConfig();
     const verifier = b64url(randomBytes());
     storage.setItem("verifier", verifier);
     storage.setItem("linking", linking ? "1" : "");
+    if (!linking) {
+      const here = window.location.pathname + window.location.search + window.location.hash;
+      storage.setItem("return_to", safeReturnPath(here));
+    } else {
+      storage.removeItem("return_to");
+    }
     const params = new URLSearchParams({
       client_id: current.client_id,
       response_type: "code",
@@ -112,6 +124,12 @@
     return Boolean(storage.getItem("access"));
   }
 
+  function clearSession() {
+    ["access", "id", "verifier", "linking", "return_to"].forEach((key) => {
+      storage.removeItem(key);
+    });
+  }
+
   async function completeRedirect() {
     const params = new URLSearchParams(window.location.search);
     if (params.get("error")) {
@@ -123,12 +141,16 @@
     history.replaceState({}, "", "/");
     if (storage.getItem("linking") === "1" && storage.getItem("access")) {
       storage.removeItem("linking");
+      storage.removeItem("return_to");
       await api("/account/link", "POST", { id_token: tokens.id_token });
-    } else {
-      storage.setItem("access", tokens.access_token);
-      storage.setItem("id", tokens.id_token);
+      window.location.replace("/profile.html");
+      return true;
     }
-    window.location.replace("/profile.html");
+    storage.setItem("access", tokens.access_token);
+    storage.setItem("id", tokens.id_token);
+    const returnTo = safeReturnPath(storage.getItem("return_to"));
+    storage.removeItem("return_to");
+    window.location.replace(returnTo);
     return true;
   }
 
@@ -139,6 +161,8 @@
     api,
     snippetText,
     hasSession,
-    completeRedirect
+    clearSession,
+    completeRedirect,
+    safeReturnPath
   };
 })();
