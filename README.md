@@ -2,26 +2,6 @@
 
 Cursor agent skills for aerospace engineering: checked formulas and small physics programs the bot can run and report, instead of reinventing equations or redrawing plots by hand.
 
-## Chat
-
-The site chat is at `/chat`. Sign in with Google or Meta. The free plan allows 50 calls a day. A chat message counts as one call, and each aerospace tool that message runs counts as one more. Account shows how many you have used.
-
-To run that page on this PC with no AWS, close anything else on port 8080, including `app/preview.ps1`, and use PowerShell from the repository root:
-
-```powershell
-cd C:\Users\luked\Documents\AerospaceBot
-Remove-Item Env:USAGE_TABLE, Env:PICTURE_BUCKET, Env:GROK_API_KEY_PARAMETER -ErrorAction SilentlyContinue
-$env:AEROSPACE_HTTP = "1"
-$env:AUTH_DISABLED = "1"
-$env:GROK_API_KEY = "paste-the-key-from-console.x.ai"
-$env:GROK_MODEL = "grok-4.7"
-python -m app.server
-```
-
-Open http://localhost:8080/chat. The page does not ask you to sign in. The counter stays at 50 because calls are not stored without a usage table. `GROK_API_KEY` must be the key from [console.x.ai](https://console.x.ai), the same value stored as the GitHub secret `XAI_APIKEY`. Press Ctrl+C to stop.
-
-A push to `main` stores the GitHub secret `XAI_APIKEY` as the SecureString `/astraeus/grok-api-key`. The function reads that parameter. The key is not written into the stack or the site.
-
 ## Skills
 
 | Skill | Purpose |

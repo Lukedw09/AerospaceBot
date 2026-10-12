@@ -369,6 +369,34 @@ class ChatTests(unittest.TestCase):
         self.assertIn("console.x.ai", data["error"])
         self.assert_key_hidden(text, headers)
 
+    def test_tool_crash_returns_json(self) -> None:
+        calls = {"n": 0}
+
+        def grok(*_args, **_kwargs):
+            calls["n"] += 1
+            if calls["n"] == 1:
+                return tool_call("hohmann_transfer", {"r1": 1, "r2": 2})
+            return final("The tool failed.")
+
+        def boom(*_args, **_kwargs):
+            raise RuntimeError("plot exploded")
+
+        env = {"AUTH_DISABLED": "1", "GROK_API_KEY": SENTINEL, "GROK_MODEL": "grok-test"}
+        with mock.patch.dict(os.environ, env, clear=False):
+            with mock.patch("app.chat.complete", side_effect=grok):
+                with mock.patch("app.chat._run_tool", side_effect=boom):
+                    status, data, text, headers = call(
+                        self.app,
+                        "POST",
+                        "/api/chat",
+                        {"messages": [{"role": "user", "content": "show an example"}]},
+                    )
+        self.assertEqual(status, 200)
+        self.assertEqual(data["details"][0]["output"], "that tool failed")
+        self.assertEqual(data["answer"], "The tool failed.")
+        self.assertNotIn("plot exploded", text)
+        self.assert_key_hidden(text, headers)
+
     def test_grok_failure_hides_the_key(self) -> None:
         def grok(*_args, **_kwargs):
             raise RuntimeError(SENTINEL)
@@ -390,7 +418,7 @@ class ChatTests(unittest.TestCase):
         calls = {"n": 0}
         seen: list[str] = []
 
-        def grok(_messages, tools, _model, _key):
+        def grok(_messages, tools, _model, _key, timeout=70):
             calls["n"] += 1
             if calls["n"] == 1:
                 seen.extend(tool["function"]["name"] for tool in tools)

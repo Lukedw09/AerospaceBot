@@ -81,6 +81,9 @@
       try {
         data = JSON.parse(text);
       } catch (error) {
+        if (path.indexOf("/api/chat") === 0) {
+          throw new Error("The chat service did not answer.");
+        }
         throw new Error("The account service did not answer.");
       }
     }

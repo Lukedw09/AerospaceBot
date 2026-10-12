@@ -750,12 +750,15 @@ body[data-page="chat"] {
   overflow: hidden;
 }
 
+body[data-page="chat"] .foot { display: none; }
+
 .chat-shell {
   flex: 1;
+  align-self: stretch;
   min-height: 0;
-  width: min(52rem, calc(100% - 2rem));
-  margin: 0 auto;
-  padding: 1rem 0 0.75rem;
+  width: auto;
+  margin: 0;
+  padding: 0.75rem 1.25rem 1rem;
   display: flex;
   flex-direction: column;
 }

@@ -6,6 +6,7 @@ import base64
 import json
 import re
 import sys
+import time
 import urllib.error
 import urllib.request
 from pathlib import Path
@@ -20,7 +21,8 @@ from app.runner import result_root_for
 from app.usage import UsageStore
 
 GROK_URL = "https://api.x.ai/v1/chat/completions"
-GROK_TIMEOUT_SEC = 120
+GROK_TIMEOUT_SEC = 70
+TURN_BUDGET_SEC = 100
 MAX_MESSAGE_CHARS = 8000
 MAX_CONVERSATION_CHARS = 100_000
 MAX_TOOL_ROUNDS = 8
@@ -302,7 +304,13 @@ def _log_provider(exc: BaseException, key: str) -> str:
     return reason
 
 
-def complete(messages: list[dict[str, Any]], tools: list[dict[str, Any]], model: str, key: str) -> dict[str, Any]:
+def complete(
+    messages: list[dict[str, Any]],
+    tools: list[dict[str, Any]],
+    model: str,
+    key: str,
+    timeout: float = GROK_TIMEOUT_SEC,
+) -> dict[str, Any]:
     payload = json.dumps(
         {
             "model": model,
@@ -322,7 +330,7 @@ def complete(messages: list[dict[str, Any]], tools: list[dict[str, Any]], model:
         method="POST",
     )
     try:
-        with urllib.request.urlopen(request, timeout=GROK_TIMEOUT_SEC) as response:
+        with urllib.request.urlopen(request, timeout=timeout) as response:
             raw = response.read()
         data = json.loads(raw.decode("utf-8"))
         message = data["choices"][0]["message"]
@@ -353,9 +361,21 @@ def run_turn(kept: list[dict[str, str]], store: UsageStore, sub: str, key: str, 
     rounds = 0
     answer = ""
     stopped = ""
+    content = ""
+    deadline = time.monotonic() + TURN_BUDGET_SEC
     while True:
+        left = deadline - time.monotonic()
+        if left < 15:
+            if not answer:
+                answer = content.strip()
+            if not answer and details:
+                answer = "The tool ran, but there was not enough time left to summarize it."
+            if not answer:
+                answer = "That request took too long. Ask for one calculation at a time."
+            stopped = stopped or "time"
+            break
         try:
-            message = complete(grok_messages, tools, model, key)
+            message = complete(grok_messages, tools, model, key, timeout=min(GROK_TIMEOUT_SEC, max(5.0, left - 8)))
         except GrokError as exc:
             if exc.reason == "key":
                 return _json({"error": "The xAI API key was rejected."}, 502, key)
@@ -396,7 +416,11 @@ def run_turn(kept: list[dict[str, str]], store: UsageStore, sub: str, key: str, 
             if item["error"]:
                 output = str(item["error"])
             else:
-                output = _run_tool(str(item["name"]), item["arguments"])
+                try:
+                    output = _run_tool(str(item["name"]), item["arguments"])
+                except Exception as exc:
+                    _log_provider(exc, key)
+                    output = "that tool failed"
             finished.append((item, output))
             details.append(
                 {
@@ -527,5 +551,8 @@ async def handle_post(request: Request) -> JSONResponse:
     marker = _identity.set(identity)
     try:
         return run_turn(kept, store, sub, key, model)
+    except Exception as exc:
+        _log_provider(exc, key)
+        return _json({"error": "The chat service did not answer."}, 502, key)
     finally:
         _identity.reset(marker)
