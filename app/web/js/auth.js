@@ -82,7 +82,8 @@
         data = JSON.parse(text);
       } catch (error) {
         if (path.indexOf("/api/chat") === 0) {
-          throw new Error("The chat service did not answer.");
+          const status = response.status ? " (HTTP " + response.status + ")" : "";
+          throw new Error("The chat service did not answer" + status + ".");
         }
         throw new Error("The account service did not answer.");
       }

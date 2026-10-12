@@ -50,12 +50,13 @@ _catalog_by_name: dict[str, Any] | None = None
 
 
 class GrokError(Exception):
-    """The chat provider failed. The message is intentionally empty."""
+    """The chat provider failed. detail is safe to show; it never contains the key."""
 
-    def __init__(self, reason: str = "", status: int = 0) -> None:
+    def __init__(self, reason: str = "", status: int = 0, detail: str = "") -> None:
         super().__init__()
         self.reason = reason
         self.status = status
+        self.detail = detail
 
 
 def _scrub(value: Any, key: str) -> Any:
@@ -299,8 +300,27 @@ def _conversation(payload: Any) -> tuple[list[dict[str, str]], str | None]:
     return kept, None
 
 
-def _log_provider(exc: BaseException, key: str) -> str:
+def _error_text(raw: str) -> str:
+    message = raw.strip()
+    try:
+        data = json.loads(raw)
+    except json.JSONDecodeError:
+        data = None
+    if isinstance(data, dict):
+        err = data.get("error")
+        if isinstance(err, dict):
+            message = str(err.get("error") or err.get("message") or "")
+        elif isinstance(err, str):
+            message = err
+        elif isinstance(data.get("message"), str):
+            message = str(data["message"])
+    return " ".join(message.split())[:300]
+
+
+def _log_provider(exc: BaseException, key: str) -> tuple[str, str]:
+    """Log a provider failure. Returns (key_reason, public_detail)."""
     reason = ""
+    public = type(exc).__name__
     if isinstance(exc, urllib.error.HTTPError):
         try:
             raw = exc.read().decode("utf-8", errors="replace")
@@ -308,13 +328,27 @@ def _log_provider(exc: BaseException, key: str) -> str:
             raw = ""
         if "Incorrect API key" in raw:
             reason = "key"
-        detail = f"HTTP {exc.code} {raw[:400]}"
+        if key:
+            raw = raw.replace(key, "[redacted]")
+        public = _error_text(raw)
+        logged = f"HTTP {exc.code} {raw[:400]}"
     else:
-        detail = f"{type(exc).__name__}: {exc}"
+        logged = f"{type(exc).__name__}: {exc}"
     if key:
-        detail = detail.replace(key, "[redacted]")
-    print("chat provider failed: " + detail[:500], file=sys.stderr)
-    return reason
+        logged = logged.replace(key, "[redacted]")
+    print("chat provider failed: " + logged[:500], file=sys.stderr)
+    return reason, public
+
+
+def _failure_message(exc: GrokError) -> str:
+    detail = " ".join((exc.detail or "").split())
+    if exc.status and detail:
+        return f"The chat service did not answer (HTTP {exc.status}): {detail}"
+    if exc.status:
+        return f"The chat service did not answer (HTTP {exc.status})."
+    if detail:
+        return f"The chat service did not answer: {detail}"
+    return "The chat service did not answer."
 
 
 def _responses_tools(tools: list[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -446,14 +480,22 @@ def complete(
         data = json.loads(raw.decode("utf-8"))
         if not isinstance(data, dict):
             raise TypeError("chat response was not an object")
+        failed = data.get("error")
+        if str(data.get("status") or "") == "failed" or (failed and not data.get("output")):
+            text = failed if isinstance(failed, str) else ""
+            if isinstance(failed, dict):
+                text = str(failed.get("message") or failed.get("error") or "")
+            raise GrokError(detail=_error_text(text or "the provider failed"))
         message = _message_from_response(data)
     except urllib.error.HTTPError as exc:
-        raise GrokError(_log_provider(exc, key), status=int(exc.code)) from None
+        reason, detail = _log_provider(exc, key)
+        raise GrokError(reason, status=int(exc.code), detail=detail) from None
     except (urllib.error.URLError, TimeoutError, OSError, KeyError, IndexError, TypeError, json.JSONDecodeError) as exc:
-        raise GrokError(_log_provider(exc, key)) from None
+        _reason, detail = _log_provider(exc, key)
+        raise GrokError(detail=detail) from None
     if not isinstance(message, dict):
-        _log_provider(TypeError("chat response had no message"), key)
-        raise GrokError()
+        _reason, detail = _log_provider(TypeError("chat response had no message"), key)
+        raise GrokError(detail=detail)
     return message
 
 
@@ -497,16 +539,13 @@ def run_turn(kept: list[dict[str, str]], store: UsageStore, sub: str, key: str, 
             if details:
                 answer = "The tool ran, but the summary did not come back."
                 break
-            error = "The chat service did not answer."
-            if exc.status:
-                error = f"The chat service did not answer (HTTP {exc.status})."
-            return _json({"error": error}, 502, key)
+            return _json({"error": _failure_message(exc)}, 502, key)
         except Exception as exc:
-            _log_provider(exc, key)
+            _reason, detail = _log_provider(exc, key)
             if details:
                 answer = "The tool ran, but the summary did not come back."
                 break
-            return _json({"error": "The chat service did not answer."}, 502, key)
+            return _json({"error": _failure_message(GrokError(detail=detail))}, 502, key)
         content = message.get("content") or ""
         if not isinstance(content, str):
             content = ""
@@ -678,7 +717,7 @@ async def handle_post(request: Request) -> JSONResponse:
     try:
         return run_turn(kept, store, sub, key, model)
     except Exception as exc:
-        _log_provider(exc, key)
-        return _json({"error": "The chat service did not answer."}, 502, key)
+        _reason, detail = _log_provider(exc, key)
+        return _json({"error": _failure_message(GrokError(detail=detail))}, 502, key)
     finally:
         _identity.reset(marker)

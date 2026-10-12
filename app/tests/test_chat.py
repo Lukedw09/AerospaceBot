@@ -542,7 +542,40 @@ class ChatTests(unittest.TestCase):
                     {"messages": [{"role": "user", "content": "hello"}]},
                 )
         self.assertEqual(status, 502)
-        self.assertEqual(data["error"], "The chat service did not answer.")
+        self.assertIn("did not answer", data["error"])
+        self.assertIn("RuntimeError", data["error"])
+        self.assert_key_hidden(text, headers)
+
+    def test_provider_http_error_is_shown(self) -> None:
+        import io
+        import urllib.error
+
+        body = json.dumps(
+            {"code": "invalid-argument", "error": "Schema validation failed: lifting_entry " + SENTINEL}
+        ).encode("utf-8")
+
+        def urlopen(*_args, **_kwargs):
+            raise urllib.error.HTTPError(
+                "https://api.x.ai/v1/responses",
+                400,
+                "Bad Request",
+                hdrs=None,
+                fp=io.BytesIO(body),
+            )
+
+        env = {"AUTH_DISABLED": "1", "GROK_API_KEY": SENTINEL, "GROK_MODEL": "grok-4.7"}
+        with mock.patch.dict(os.environ, env, clear=False):
+            with mock.patch("app.chat.urllib.request.urlopen", side_effect=urlopen):
+                status, data, text, headers = call(
+                    self.app,
+                    "POST",
+                    "/api/chat",
+                    {"messages": [{"role": "user", "content": "Call a tool."}]},
+                )
+        self.assertEqual(status, 502)
+        self.assertIn("HTTP 400", data["error"])
+        self.assertIn("Schema validation failed", data["error"])
+        self.assertNotIn(SENTINEL, data["error"])
         self.assert_key_hidden(text, headers)
 
     def test_hohmann_transfer_end_to_end(self) -> None:
