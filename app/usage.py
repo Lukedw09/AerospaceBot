@@ -11,6 +11,7 @@ from app.config import Settings
 FREE_PLAN = "free"
 UNLIMITED_PLAN = "unlimited"
 UNLIMITED_DAILY_CAP = 1_000_000
+OWNER_EMAIL = "lukedw09@gmail.com"
 
 
 @dataclass
@@ -36,6 +37,9 @@ class UsageStore:
     def today(self) -> str:
         zone = ZoneInfo(self.settings.usage_timezone)
         return datetime.now(zone).date().isoformat()
+
+    def _owner(self, email: str) -> bool:
+        return email.strip().lower() == OWNER_EMAIL
 
     def ensure_plans(self) -> None:
         """Create plan rows when missing. Free stays at the configured daily cap."""
@@ -76,14 +80,18 @@ class UsageStore:
             }
         )
 
-    def plan_cap(self, sub: str) -> tuple[str, int, bool]:
+    def plan_cap(self, sub: str, email: str = "") -> tuple[str, int, bool]:
         table = self.table()
         plan_name = FREE_PLAN
+        account_email = ""
         if table is not None:
             self.ensure_plans()
             account = table.get_item(Key={"pk": f"account#{sub}", "sk": "account"}).get("Item")
             if account:
+                account_email = str(account.get("email") or "")
                 plan_name = str(account.get("plan") or FREE_PLAN)
+            if self._owner(email) or self._owner(account_email):
+                return UNLIMITED_PLAN, UNLIMITED_DAILY_CAP, True
             plan = table.get_item(Key={"pk": f"plan#{plan_name}", "sk": "plan"}).get("Item")
             if plan:
                 return (
@@ -91,6 +99,8 @@ class UsageStore:
                     int(plan.get("daily_cap", self.settings.daily_tool_cap)),
                     bool(plan.get("pictures", True)),
                 )
+        if self._owner(email):
+            return UNLIMITED_PLAN, UNLIMITED_DAILY_CAP, True
         return plan_name, self.settings.daily_tool_cap, True
 
     def used_today(self, sub: str) -> int:
@@ -106,7 +116,7 @@ class UsageStore:
         if not self.settings.usage_table:
             return Decision(True, "", sub, email)
         self.ensure_account(sub, email)
-        _plan, cap, _pictures = self.plan_cap(sub)
+        _plan, cap, _pictures = self.plan_cap(sub, email)
         used = self.used_today(sub)
         if used >= cap:
             return Decision(
@@ -131,12 +141,12 @@ class UsageStore:
             ExpressionAttributeValues={":one": 1},
         )
 
-    def snapshot(self, sub: str) -> dict[str, object]:
+    def snapshot(self, sub: str, email: str = "") -> dict[str, object]:
         table = self.table()
         account = {}
         if table is not None:
             account = table.get_item(Key={"pk": f"account#{sub}", "sk": "account"}).get("Item") or {}
-        plan_name, cap, pictures = self.plan_cap(sub)
+        plan_name, cap, pictures = self.plan_cap(sub, email or str(account.get("email") or ""))
         return {
             "sub": sub,
             "email": account.get("email", ""),

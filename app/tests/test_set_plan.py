@@ -180,6 +180,30 @@ class SetPlanTests(unittest.TestCase):
         self.assertEqual(name, UNLIMITED_PLAN)
         self.assertEqual(cap, UNLIMITED_DAILY_CAP)
 
+    def test_owner_email_is_unlimited_without_a_plan_change(self) -> None:
+        fake = FakeTable()
+        fake.items[(f"account#{SUB}", "account")] = {
+            "pk": f"account#{SUB}",
+            "sk": "account",
+            "sub": SUB,
+            "email": "lukedw09@gmail.com",
+            "plan": FREE_PLAN,
+        }
+        fake.items[(f"plan#{FREE_PLAN}", "plan")] = {
+            "pk": f"plan#{FREE_PLAN}",
+            "sk": "plan",
+            "daily_cap": 50,
+            "pictures": True,
+        }
+        with mock.patch.object(UsageStore, "table", lambda self: fake):
+            store = UsageStore(_settings())
+            name, cap, _pictures = store.plan_cap(SUB)
+            decision = store.check(SUB, "Lukedw09@gmail.com")
+        self.assertEqual(name, UNLIMITED_PLAN)
+        self.assertEqual(cap, UNLIMITED_DAILY_CAP)
+        self.assertTrue(decision.allowed)
+        self.assertEqual(fake.items[(f"account#{SUB}", "account")]["plan"], FREE_PLAN)
+
 
 if __name__ == "__main__":
     unittest.main()

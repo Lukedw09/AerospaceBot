@@ -75,8 +75,8 @@ def _json(body: dict[str, Any], status: int, key: str = "") -> JSONResponse:
     return JSONResponse(_scrub(body, key), status_code=status)
 
 
-def _usage(store: UsageStore, sub: str) -> dict[str, int]:
-    snap = store.snapshot(sub)
+def _usage(store: UsageStore, sub: str, email: str = "") -> dict[str, int]:
+    snap = store.snapshot(sub, email)
     used = int(snap["used_today"])
     cap = int(snap["daily_cap"])
     return {"used_today": used, "daily_cap": cap, "remaining": max(0, cap - used)}
@@ -705,7 +705,7 @@ async def handle_status(request: Request) -> JSONResponse:
     except TokenError as exc:
         return _json({"error": str(exc)}, 401)
     store = UsageStore(settings)
-    body = {"sign_in_required": True, **_usage(store, identity.sub)}
+    body = {"sign_in_required": True, **_usage(store, identity.sub, identity.email)}
     return _json(body, 200)
 
 

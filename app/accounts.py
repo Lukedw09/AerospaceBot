@@ -46,7 +46,7 @@ def profile(identity: Identity, settings: Settings, store: UsageStore) -> dict[s
     if not linked and identity.username and "_" in identity.username:
         provider, _, user_id = identity.username.partition("_")
         linked = [{"provider": provider, "userId": user_id}]
-    snapshot = store.snapshot(identity.sub)
+    snapshot = store.snapshot(identity.sub, identity.email)
     snapshot["username"] = identity.username
     snapshot["enabled"] = bool(user.get("Enabled", True))
     snapshot["linked"] = linked
