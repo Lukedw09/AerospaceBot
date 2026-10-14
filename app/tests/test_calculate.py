@@ -10,7 +10,15 @@ import time
 import unittest
 from pathlib import Path
 
-from app.calculate import CalcError, calculate_request, evaluate
+from app.calculate import (
+    CalcError,
+    _NAMES,
+    _SYMBOLS,
+    _TEMPERATURE,
+    _canonical,
+    calculate_request,
+    evaluate,
+)
 from app.server import CALCULATE_DESCRIPTION
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -112,6 +120,115 @@ class CalculateTests(unittest.TestCase):
         elapsed = float(elapsed_line.split()[1])
         self.assertLess(elapsed, 1.0)
         self.assertNotIn("result:", completed.stdout)
+
+    def test_si_prefix_case_pairs(self) -> None:
+        cases = (
+            ("mPa", "Pa", 0.001),
+            ("MPa", "Pa", 1_000_000.0),
+            ("mm", "m", 0.001),
+            ("Mm", "km", 1000.0),
+            ("ms", "s", 0.001),
+            ("Ms", "s", 1_000_000.0),
+            ("mN", "N", 0.001),
+            ("MN", "N", 1_000_000.0),
+            ("mg", "kg", 1e-6),
+            ("Mg", "kg", 1000.0),
+        )
+        for src, dst, expected in cases:
+            with self.subTest(src=src, dst=dst):
+                fields = _fields(calculate_request(value=1, from_unit=src, to_unit=dst))
+                self.assertAlmostEqual(float(fields["result"]), expected, places=9)
+        for left, right in (("mPa", "MPa"), ("mm", "Mm"), ("ms", "Ms"), ("mN", "MN"), ("mg", "Mg")):
+            self.assertNotEqual(_canonical(left), _canonical(right))
+
+    def test_symbol_keys_do_not_collapse(self) -> None:
+        seen: dict[str, str] = {}
+        for symbol in (*_SYMBOLS, *_TEMPERATURE):
+            key = _canonical(symbol)
+            self.assertNotIn(key, seen, f"{symbol} and {seen.get(key)} collapse to {key}")
+            seen[key] = symbol
+        for name, target in _NAMES.items():
+            self.assertIn(target, seen, name)
+        folded: dict[str, list[str]] = {}
+        for symbol in seen:
+            folded.setdefault(symbol.casefold(), []).append(symbol)
+        collisions = {key: values for key, values in folded.items() if len(values) > 1}
+        self.assertGreaterEqual(len(collisions), 5)
+        for values in collisions.values():
+            self.assertEqual(len({_canonical(value) for value in values}), len(values))
+
+    def test_ambiguous_spellings_do_not_guess(self) -> None:
+        for spelling in ("MM", "mpa", "MS", "mn", "MG", "KN"):
+            with self.subTest(spelling=spelling):
+                text = calculate_request(value=1, from_unit=spelling, to_unit="m")
+                self.assertIn("ambiguous unit", text)
+                self.assertNotIn("result:", text)
+
+    def test_whole_word_names_ignore_case(self) -> None:
+        for name in ("meters", "Meters", "METERS"):
+            with self.subTest(name=name):
+                fields = _fields(calculate_request(value=2, from_unit=name, to_unit="m"))
+                self.assertEqual(fields["result"], "2")
+                self.assertEqual(fields["units"], "m")
+
+    def test_kelvin_below_absolute_zero_errors(self) -> None:
+        text = calculate_request(value=-5, from_unit="K", to_unit="C")
+        self.assertIn("absolute zero", text)
+        self.assertNotIn("result:", text)
+        zero = _fields(calculate_request(value=0, from_unit="K", to_unit="C"))
+        self.assertEqual(zero["result"], "-273.15")
+
+    def test_fahrenheit_below_absolute_zero_errors(self) -> None:
+        text = calculate_request(value=-500, from_unit="F", to_unit="C")
+        self.assertIn("absolute zero", text)
+        self.assertNotIn("result:", text)
+
+    def test_added_units_match_published_factors(self) -> None:
+        exact = {
+            ("ft/s^2", "m/s^2"): 0.3048,
+            ("g0", "m/s^2"): 9.80665,
+            ("GPa", "Pa"): 1_000_000_000.0,
+            ("MN", "N"): 1_000_000.0,
+            ("mN", "N"): 0.001,
+            ("g", "kg"): 0.001,
+            ("mg", "g"): 0.001,
+            ("AU", "m"): 149_597_870_700.0,
+            ("kJ", "J"): 1000.0,
+            ("MJ", "J"): 1_000_000.0,
+            ("kW", "W"): 1000.0,
+            ("MW", "W"): 1_000_000.0,
+            ("rpm", "deg/s"): 6.0,
+        }
+        for (src, dst), expected in exact.items():
+            with self.subTest(src=src, dst=dst):
+                fields = _fields(calculate_request(value=1, from_unit=src, to_unit=dst))
+                self.assertEqual(float(fields["result"]), expected)
+        close = {
+            ("m/s^2", "ft/s^2"): 1.0 / 0.3048,
+            ("kts", "m/s"): 1852.0 / 3600.0,
+            ("kn", "m/s"): 1852.0 / 3600.0,
+            ("J", "kJ"): 0.001,
+            ("W", "kW"): 0.001,
+            ("deg/s", "rad/s"): math.pi / 180.0,
+            ("rad/s", "deg/s"): 180.0 / math.pi,
+            ("rpm", "rad/s"): 2.0 * math.pi / 60.0,
+        }
+        for (src, dst), expected in close.items():
+            with self.subTest(src=src, dst=dst):
+                fields = _fields(calculate_request(value=1, from_unit=src, to_unit=dst))
+                self.assertAlmostEqual(float(fields["result"]), expected, places=9)
+
+    def test_gram_and_standard_gravity_are_different(self) -> None:
+        gram = _fields(calculate_request(value=1, from_unit="g", to_unit="kg"))
+        self.assertEqual(gram["result"], "0.001")
+        gravity = _fields(calculate_request(value=1, from_unit="g0", to_unit="m/s^2"))
+        self.assertEqual(gravity["result"], "9.80665")
+        crossed = calculate_request(value=1, from_unit="g", to_unit="m/s^2")
+        self.assertIn("cannot convert", crossed)
+        self.assertNotIn("result:", crossed)
+        capital = calculate_request(value=1, from_unit="G", to_unit="kg")
+        self.assertTrue(capital.startswith("error:"))
+        self.assertNotIn("result:", capital)
 
     def test_deadline_rejects_before_evaluating(self) -> None:
         with self.assertRaises(CalcError) as caught:

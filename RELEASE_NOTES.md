@@ -4,7 +4,8 @@ Tool calls can do arithmetic and unit conversion, and the daily cap fails closed
 
 - `calculate` is on `/mcp` and `/api/chat`.
 - Expressions use a restricted AST walker, not `eval` or `exec`: `+ - * / ** %`, parentheses, `sqrt`, trig and inverse trig, `atan2`, `log`, `log10`, `exp`, `radians`, `degrees`, `pi`, and `e`.
-- Unit conversion covers length, time, speed, mass, force, pressure, angle, and temperature.
+- Unit conversion covers length, time, speed, acceleration, mass, force, pressure, angle, angular speed, temperature, energy, and power.
+- Symbols and SI prefixes are case-sensitive (`m` milli, `M` mega). Ambiguous spellings such as `MM` and `mpa` error instead of guessing. Temperature readings below absolute zero error.
 - Exponents above 1000, results over 10,000 digits, and evaluations past about one second are rejected. `9**9**9` returns immediately.
 - The tool prints `input`, `result`, and `units` for Show details.
 - The chat prompt requires `calculate` for any arithmetic or unit conversion, including seconds to minutes, km/s to ft/s, and degrees to radians.

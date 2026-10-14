@@ -1,7 +1,10 @@
 """Safe arithmetic and unit conversion for the calculate tool.
 
 No eval or exec. Expressions walk a restricted AST. Unit conversion uses a
-fixed table (length, time, speed, mass, force, pressure, angle, temperature).
+fixed table. Symbols and SI prefixes are case-sensitive: m means milli and M
+means mega. Whole-word names such as "meters" match in any case. An ambiguous
+or unknown symbol is an error. Temperature conversions are absolute readings
+and reject values below absolute zero.
 """
 
 from __future__ import annotations
@@ -46,53 +49,111 @@ _CONSTANTS = {"pi": math.pi, "e": math.e}
 _BINOPS = (ast.Add, ast.Sub, ast.Mult, ast.Div, ast.Mod, ast.Pow)
 
 # factor: multiply by this to reach the SI unit of the dimension.
-_QUANTITIES: dict[str, tuple[str, float]] = {
+# Keys are exact symbols. Do not lowercase them: mPa and MPa are different.
+_FOOT_M = 0.3048
+_STD_GRAVITY = 9.80665  # standard gravity, m/s^2, exact by convention
+_KNOT_MPS = 1852.0 / 3600.0
+_LBF_N = 0.45359237 * _STD_GRAVITY
+_PSI_PA = _LBF_N / (0.0254 ** 2)
+_AU_M = 149_597_870_700.0
+
+_SYMBOLS: dict[str, tuple[str, float]] = {
     "m": ("length", 1.0),
     "km": ("length", 1000.0),
     "cm": ("length", 0.01),
     "mm": ("length", 0.001),
-    "ft": ("length", 0.3048),
+    "Mm": ("length", 1_000_000.0),
+    "ft": ("length", _FOOT_M),
     "in": ("length", 0.0254),
     "yd": ("length", 0.9144),
     "mi": ("length", 1609.344),
     "nmi": ("length", 1852.0),
+    "AU": ("length", _AU_M),
     "s": ("time", 1.0),
     "ms": ("time", 0.001),
+    "Ms": ("time", 1_000_000.0),
     "us": ("time", 1e-6),
     "ns": ("time", 1e-9),
     "min": ("time", 60.0),
     "h": ("time", 3600.0),
     "day": ("time", 86400.0),
+    "sec": ("time", 1.0),
+    "secs": ("time", 1.0),
+    "msec": ("time", 0.001),
+    "mins": ("time", 60.0),
+    "hr": ("time", 3600.0),
+    "hrs": ("time", 3600.0),
     "m/s": ("speed", 1.0),
     "km/s": ("speed", 1000.0),
-    "ft/s": ("speed", 0.3048),
+    "ft/s": ("speed", _FOOT_M),
     "km/h": ("speed", 1000.0 / 3600.0),
     "mph": ("speed", 1609.344 / 3600.0),
-    "knot": ("speed", 1852.0 / 3600.0),
+    "kn": ("speed", _KNOT_MPS),
+    "kt": ("speed", _KNOT_MPS),
+    "kts": ("speed", _KNOT_MPS),
+    "knot": ("speed", _KNOT_MPS),
+    "knots": ("speed", _KNOT_MPS),
+    "m/sec": ("speed", 1.0),
+    "m/second": ("speed", 1.0),
+    "mps": ("speed", 1.0),
+    "km/sec": ("speed", 1000.0),
+    "km/second": ("speed", 1000.0),
+    "kps": ("speed", 1000.0),
+    "ft/sec": ("speed", _FOOT_M),
+    "ft/second": ("speed", _FOOT_M),
+    "feet/s": ("speed", _FOOT_M),
+    "feet/sec": ("speed", _FOOT_M),
+    "feet/second": ("speed", _FOOT_M),
+    "fps": ("speed", _FOOT_M),
+    "km/hr": ("speed", 1000.0 / 3600.0),
+    "km/hour": ("speed", 1000.0 / 3600.0),
+    "kph": ("speed", 1000.0 / 3600.0),
+    "mi/h": ("speed", 1609.344 / 3600.0),
+    "mi/hr": ("speed", 1609.344 / 3600.0),
     "kg": ("mass", 1.0),
     "g": ("mass", 0.001),
+    "mg": ("mass", 1e-6),
+    "Mg": ("mass", 1000.0),
     "lb": ("mass", 0.45359237),
+    "lbs": ("mass", 0.45359237),
     "lbm": ("mass", 0.45359237),
     "slug": ("mass", 14.59390294),
     "N": ("force", 1.0),
     "kN": ("force", 1000.0),
-    "lbf": ("force", 4.4482216152605),
-    "kgf": ("force", 9.80665),
+    "mN": ("force", 0.001),
+    "MN": ("force", 1_000_000.0),
+    "lbf": ("force", _LBF_N),
+    "kgf": ("force", _STD_GRAVITY),
     "Pa": ("pressure", 1.0),
     "kPa": ("pressure", 1_000.0),
     "MPa": ("pressure", 1_000_000.0),
+    "GPa": ("pressure", 1_000_000_000.0),
+    "mPa": ("pressure", 0.001),
     "bar": ("pressure", 100_000.0),
     "atm": ("pressure", 101_325.0),
-    "psi": ("pressure", 6894.757293168361),
+    "psi": ("pressure", _PSI_PA),
     "deg": ("angle", math.pi / 180.0),
     "rad": ("angle", 1.0),
     "arcmin": ("angle", math.pi / (180.0 * 60.0)),
     "arcsec": ("angle", math.pi / (180.0 * 3600.0)),
+    "m/s^2": ("acceleration", 1.0),
+    "ft/s^2": ("acceleration", _FOOT_M),
+    "g0": ("acceleration", _STD_GRAVITY),
+    "rad/s": ("angular_speed", 1.0),
+    "deg/s": ("angular_speed", math.pi / 180.0),
+    "rpm": ("angular_speed", 2.0 * math.pi / 60.0),
+    "J": ("energy", 1.0),
+    "kJ": ("energy", 1_000.0),
+    "MJ": ("energy", 1_000_000.0),
+    "W": ("power", 1.0),
+    "kW": ("power", 1_000.0),
+    "MW": ("power", 1_000_000.0),
 }
 
-_TEMPERATURE = {"c", "f", "k", "r"}
+_TEMPERATURE = {"C", "F", "K", "R"}
 
-_ALIASES = {
+# Whole words only. Lookup is case-insensitive. Values are symbol keys above.
+_NAMES = {
     "meter": "m",
     "meters": "m",
     "metre": "m",
@@ -103,8 +164,16 @@ _ALIASES = {
     "kilometres": "km",
     "centimeter": "cm",
     "centimeters": "cm",
+    "centimetre": "cm",
+    "centimetres": "cm",
     "millimeter": "mm",
     "millimeters": "mm",
+    "millimetre": "mm",
+    "millimetres": "mm",
+    "megameter": "Mm",
+    "megameters": "Mm",
+    "megametre": "Mm",
+    "megametres": "Mm",
     "foot": "ft",
     "feet": "ft",
     "inch": "in",
@@ -113,111 +182,88 @@ _ALIASES = {
     "yards": "yd",
     "mile": "mi",
     "miles": "mi",
-    "nmi": "nmi",
     "nauticalmile": "nmi",
-    "sec": "s",
-    "secs": "s",
+    "nauticalmiles": "nmi",
+    "astronomicalunit": "AU",
+    "astronomicalunits": "AU",
     "second": "s",
     "seconds": "s",
-    "msec": "ms",
     "millisecond": "ms",
     "milliseconds": "ms",
-    "us": "us",
-    "µs": "us",
+    "megasecond": "Ms",
+    "megaseconds": "Ms",
     "microsecond": "us",
     "microseconds": "us",
-    "ns": "ns",
     "nanosecond": "ns",
     "nanoseconds": "ns",
-    "min": "min",
-    "mins": "min",
     "minute": "min",
     "minutes": "min",
-    "hr": "h",
-    "hrs": "h",
     "hour": "h",
     "hours": "h",
     "day": "day",
     "days": "day",
-    "m/s": "m/s",
-    "m/sec": "m/s",
-    "m/second": "m/s",
-    "mps": "m/s",
-    "km/s": "km/s",
-    "km/sec": "km/s",
-    "km/second": "km/s",
-    "kps": "km/s",
-    "ft/s": "ft/s",
-    "ft/sec": "ft/s",
-    "ft/second": "ft/s",
-    "feet/s": "ft/s",
-    "feet/sec": "ft/s",
-    "feet/second": "ft/s",
-    "fps": "ft/s",
-    "km/h": "km/h",
-    "km/hr": "km/h",
-    "km/hour": "km/h",
-    "kph": "km/h",
-    "mph": "mph",
-    "mi/h": "mph",
-    "mi/hr": "mph",
-    "knot": "knot",
-    "knots": "knot",
-    "kt": "knot",
-    "kn": "knot",
-    "kg": "kg",
+    "knot": "kn",
+    "knots": "kn",
     "kilogram": "kg",
     "kilograms": "kg",
-    "g": "g",
     "gram": "g",
     "grams": "g",
-    "lb": "lb",
-    "lbs": "lb",
+    "milligram": "mg",
+    "milligrams": "mg",
+    "megagram": "Mg",
+    "megagrams": "Mg",
     "pound": "lb",
     "pounds": "lb",
-    "lbm": "lbm",
     "slug": "slug",
     "slugs": "slug",
-    "n": "N",
     "newton": "N",
     "newtons": "N",
     "kilonewton": "kN",
     "kilonewtons": "kN",
-    "lbf": "lbf",
-    "kgf": "kgf",
-    "pa": "Pa",
+    "millinewton": "mN",
+    "millinewtons": "mN",
+    "meganewton": "MN",
+    "meganewtons": "MN",
     "pascal": "Pa",
     "pascals": "Pa",
-    "kpa": "kPa",
-    "mpa": "MPa",
-    "bar": "bar",
-    "atm": "atm",
+    "kilopascal": "kPa",
+    "kilopascals": "kPa",
+    "megapascal": "MPa",
+    "megapascals": "MPa",
+    "gigapascal": "GPa",
+    "gigapascals": "GPa",
+    "millipascal": "mPa",
+    "millipascals": "mPa",
     "atmosphere": "atm",
-    "psi": "psi",
-    "deg": "deg",
+    "atmospheres": "atm",
     "degree": "deg",
     "degrees": "deg",
-    "rad": "rad",
     "radian": "rad",
     "radians": "rad",
-    "arcmin": "arcmin",
     "arcminute": "arcmin",
     "arcminutes": "arcmin",
-    "arcsec": "arcsec",
     "arcsecond": "arcsec",
     "arcseconds": "arcsec",
-    "c": "c",
-    "celsius": "c",
-    "degc": "c",
-    "f": "f",
-    "fahrenheit": "f",
-    "degf": "f",
-    "k": "k",
-    "kelvin": "k",
-    "degk": "k",
-    "r": "r",
-    "rankine": "r",
-    "degr": "r",
+    "celsius": "C",
+    "fahrenheit": "F",
+    "kelvin": "K",
+    "rankine": "R",
+    "degc": "C",
+    "degf": "F",
+    "degk": "K",
+    "degr": "R",
+    "joule": "J",
+    "joules": "J",
+    "kilojoule": "kJ",
+    "kilojoules": "kJ",
+    "megajoule": "MJ",
+    "megajoules": "MJ",
+    "watt": "W",
+    "watts": "W",
+    "kilowatt": "kW",
+    "kilowatts": "kW",
+    "megawatt": "MW",
+    "megawatts": "MW",
 }
 
 
@@ -437,7 +483,13 @@ def _convert(value: int | float, from_unit: str, to_unit: str) -> int | float:
     if not math.isfinite(number):
         raise CalcError("value is too large to convert")
     if src.dimension == "temperature":
-        result = _from_kelvin(_to_kelvin(number, src.token), dst.token)
+        kelvin = _to_kelvin(number, src.token)
+        # Snap float noise around absolute zero. A reading below that is refused.
+        if kelvin < -1e-9:
+            raise CalcError("temperature is below absolute zero")
+        if kelvin < 0:
+            kelvin = 0.0
+        result = _from_kelvin(kelvin, dst.token)
     else:
         result = number * src.factor / dst.factor
     return _real(result)
@@ -447,7 +499,7 @@ def _lookup(unit: str) -> _Unit:
     token = _canonical(unit)
     if token in _TEMPERATURE:
         return _Unit(token, "temperature", 1.0)
-    found = _QUANTITIES.get(token)
+    found = _SYMBOLS.get(token)
     if found is None:
         raise CalcError(f"unknown unit {unit!r}")
     dimension, factor = found
@@ -455,42 +507,52 @@ def _lookup(unit: str) -> _Unit:
 
 
 def _canonical(unit: str) -> str:
+    """Return the symbol key for unit. Raises CalcError if unknown or ambiguous."""
+    return _resolve_symbol(_normalize(unit), unit)
+
+
+def _normalize(unit: str) -> str:
     text = unit.strip().replace("°", "deg").replace("º", "deg").replace("μ", "u").replace("µ", "u")
     text = text.replace("_", "")
     text = re.sub(r"\s+per\s+", "/", text, flags=re.IGNORECASE)
     text = re.sub(r"\s*/\s*", "/", text)
-    text = re.sub(r"\s+", "", text)
-    # kN keeps the capital N. Lowercase kn is a knot.
-    if text in {"N"}:
-        return "N"
-    if text.lower() == "kn" and "N" in text:
-        return "kN"
-    if text in {"Pa", "kPa", "MPa"}:
+    return re.sub(r"\s+", "", text)
+
+
+def _resolve_symbol(text: str, original: str) -> str:
+    if text in _SYMBOLS or text in _TEMPERATURE:
         return text
-    compact = text.lower()
-    return _ALIASES.get(compact, compact)
+    if text.isalpha():
+        named = _NAMES.get(text.casefold())
+        if named is not None:
+            return named
+    folded = text.casefold()
+    matches = [symbol for symbol in (*_SYMBOLS, *_TEMPERATURE) if symbol.casefold() == folded]
+    if len(matches) > 1:
+        raise CalcError(f"ambiguous unit {original!r}")
+    raise CalcError(f"unknown unit {original!r}")
 
 
 def _to_kelvin(value: float, token: str) -> float:
-    if token == "k":
+    if token == "K":
         return value
-    if token == "c":
+    if token == "C":
         return value + 273.15
-    if token == "f":
+    if token == "F":
         return (value - 32.0) * 5.0 / 9.0 + 273.15
-    if token == "r":
+    if token == "R":
         return value * 5.0 / 9.0
     raise CalcError(f"unknown unit {token!r}")
 
 
 def _from_kelvin(value: float, token: str) -> float:
-    if token == "k":
+    if token == "K":
         return value
-    if token == "c":
+    if token == "C":
         return value - 273.15
-    if token == "f":
+    if token == "F":
         return (value - 273.15) * 9.0 / 5.0 + 32.0
-    if token == "r":
+    if token == "R":
         return value * 9.0 / 5.0
     raise CalcError(f"unknown unit {token!r}")
 
