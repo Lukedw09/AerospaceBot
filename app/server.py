@@ -52,7 +52,10 @@ CALCULATE_DESCRIPTION = (
     "asin, acos, atan, atan2, log, log10, exp, radians, degrees, pi, and e. "
     "Pass value, from_unit, and to_unit to convert a number. "
     "Pass expression with from_unit and to_unit to convert that result. "
-    "The result lines are input, result, and units."
+    "The result lines are input, result, and units. "
+    "Temperature conversions convert absolute readings only. "
+    "A temperature difference such as a 10 °C rise is 18 °F, not 50 °F, "
+    "so a difference should be scaled by 9/5 by hand and not passed as a °C to °F conversion."
 )
 
 

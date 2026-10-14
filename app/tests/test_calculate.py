@@ -11,6 +11,7 @@ import unittest
 from pathlib import Path
 
 from app.calculate import CalcError, calculate_request, evaluate
+from app.server import CALCULATE_DESCRIPTION
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -25,6 +26,14 @@ def _fields(text: str) -> dict[str, str]:
 
 
 class CalculateTests(unittest.TestCase):
+    def test_description_limits_temperature_to_absolute_readings(self) -> None:
+        self.assertIn(
+            "Temperature conversions convert absolute readings only. "
+            "A temperature difference such as a 10 °C rise is 18 °F, not 50 °F, "
+            "so a difference should be scaled by 9/5 by hand and not passed as a °C to °F conversion.",
+            CALCULATE_DESCRIPTION,
+        )
+
     def test_seconds_to_minutes(self) -> None:
         fields = _fields(calculate_request(value=120, from_unit="s", to_unit="min"))
         self.assertEqual(fields["input"], "120 s")
