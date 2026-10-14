@@ -35,7 +35,7 @@ A positive altitude solves the same speed equation by bisection. Escape speed at
 3. Radius and density: pass `--radius` and `--rho`. Optional `--alt`.
 4. A preset stands in for density, or for mass and radius when `--body` is the only body input. Do not also pass a typed value for a quantity the preset is supplying.
 5. Pass exactly one of those modes. Do not invent a radius, mass, density, speed, or altitude.
-6. The PNG is drawn unless `--no-plot` is set. `--compare` names the reference body. Otherwise the reference is the smallest preset that is still larger than the custom body.
+6. One PNG is drawn unless `--no-plot` is set. `--compare` names the reference body. Otherwise the reference is the smallest preset that is still larger than the custom body. A surface orbit that would hide on that scale is enlarged in an inset on that same PNG.
 
 ## Flags
 
@@ -64,7 +64,7 @@ Pass exactly one input mode. `--body` and a typed value for the same quantity is
 
 Presets, smallest first: Deimos, Phobos, Mimas, Enceladus, Vesta, Ceres, Pluto, the Moon, Mercury, Mars, Venus, Earth, Neptune, Uranus, Saturn, Jupiter. Deimos, Phobos, Mimas, and Enceladus take mean radius and mean density from the JPL satellite table; the stored mass is the sphere mass of those two printed numbers. Vesta's mean radius is half the JPL SBDB effective diameter. The Moon is the NASA NSSDCA Moon Fact Sheet. Ceres, Pluto, and the planets are the JPL planetary physical-parameter table. Each preset keeps that page's URL.
 
-Every successful run without `--no-plot` writes one PNG. The custom body and the reference body are circles to scale, each labeled with its diameter. The orbit is a dashed circle at the stated altitude. The title note is "Idealized: uniform sphere, no atmosphere, no terrain". `graph:` is the PNG.
+Every successful run without `--no-plot` writes one PNG and prints one `graph:` line. The custom body and the reference body are circles to scale, each labeled with its diameter. The orbit is a dashed circle at the stated altitude. When that altitude is too small to see beside the reference body, the same PNG carries an enlarged inset of the custom body and its orbit. The title note is "Idealized: uniform sphere, no atmosphere, no terrain". `orbit_inset` is `yes` when that inset is drawn.
 
 ## What to report
 
@@ -73,5 +73,5 @@ Every successful run without `--no-plot` writes one PNG. The custom body and the
 3. Report `body_radius_m`, `body_diameter_m`, `body_mass_kg`, `density_kg_m3`, `surface_gravity_m_s2`, and `mu_m3_s2`.
 4. Report `orbit_radius_m`, `altitude_m`, `circular_speed_m_s`, `escape_speed_at_orbit_m_s`, `escape_speed_surface_m_s`, `period_s`, and `period_h`.
 5. Report `density_source` and `G_m3_kg_s2`. `typed` means the user supplied the density, or the mass and radius. Any other text is the preset citation.
-6. Report `compare_body` when it is printed. That is the reference circle in the PNG.
+6. Report `compare_body` when it is printed. That is the reference circle in the PNG. Report `orbit_inset` when it is printed. `yes` means the enlarged orbit is in that same PNG.
 7. If a required piece of the chosen mode is missing, say so. Do not fill it in.
