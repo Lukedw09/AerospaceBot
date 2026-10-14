@@ -1,0 +1,200 @@
+{
+  "description": "Development set only. Not a scoring set and not a benchmark. About twenty worked rocket-equation and Hohmann examples, some with one planted error. Do not tune the checker against any set outside this file.",
+  "cases": [
+    {
+      "id": "rocket_dv_latex_correct",
+      "correct_solution": true,
+      "planted": null,
+      "family": "rocket_equation",
+      "target": "delta_v",
+      "givens": {"m0_kg": 1000, "mf_kg": 200, "ve_m_s": 3000},
+      "solution": "\\Delta v = v_e \\ln\\frac{m_0}{m_f}\n\\Delta v = 3000\\,\\mathrm{m/s}\\,\\ln\\frac{1000}{200}\n",
+      "expect": {"verdicts": ["correct", "correct"], "error_types": [], "final_check": "match"}
+    },
+    {
+      "id": "rocket_propellant_correct",
+      "correct_solution": true,
+      "planted": null,
+      "family": "rocket_equation",
+      "target": "propellant_mass",
+      "givens": {"m0_kg": 1000, "mf_kg": 200, "ve_m_s": 3000},
+      "solution": "mp = m0 - mf\nmp = 800 kg\n",
+      "expect": {"verdicts": ["correct", "correct"], "error_types": [], "final_check": "match"}
+    },
+    {
+      "id": "rocket_exhaust_correct",
+      "correct_solution": true,
+      "planted": null,
+      "family": "rocket_equation",
+      "target": "exhaust_speed",
+      "givens": {"isp_s": 300},
+      "solution": "ve = Isp * g0\n",
+      "expect": {"verdicts": ["correct"], "error_types": [], "final_check": "match"}
+    },
+    {
+      "id": "rocket_growth_correct",
+      "correct_solution": true,
+      "planted": null,
+      "family": "rocket_equation",
+      "target": "propellant_mass",
+      "givens": {"dry_kg": 80, "growth": 0.1, "isp_s": 220, "dv_m_s": 1000},
+      "solution": "ve = isp * g0\nmf = dry*(1+growth)\nmp = mf*(exp(dv/ve)-1)\n",
+      "expect": {"verdicts": ["correct", "correct", "correct"], "error_types": [], "final_check": "match"}
+    },
+    {
+      "id": "rocket_mass_ratio_correct",
+      "correct_solution": true,
+      "planted": null,
+      "family": "rocket_equation",
+      "target": "mass_ratio",
+      "givens": {"m0_kg": 1000, "mf_kg": 200, "ve_m_s": 3000},
+      "solution": "dv = ve*ln(m0/mf)\nmr = exp(dv/ve)\n",
+      "expect": {"verdicts": ["correct", "correct"], "error_types": [], "final_check": "match"}
+    },
+    {
+      "id": "rocket_catalogue_mr_correct",
+      "correct_solution": true,
+      "planted": null,
+      "family": "rocket_equation",
+      "target": "mass_ratio_final_over_initial",
+      "givens": {"m0_kg": 1000, "mf_kg": 200, "ve_m_s": 3000},
+      "solution": "mr = mf/m0\n",
+      "expect": {"verdicts": ["correct"], "error_types": [], "final_check": "match"}
+    },
+    {
+      "id": "hohmann_outward_correct",
+      "correct_solution": true,
+      "planted": null,
+      "family": "hohmann",
+      "target": "dv_total",
+      "givens": {"r1_m": 6774200, "r2_m": 7374200},
+      "solution": "mu = g0*R0**2\nvc1 = sqrt(mu/r1)\nvc2 = sqrt(mu/r2)\na = (r1 + r2)/2\nvt1 = sqrt(mu*(2/r1 - 1/a))\nvt2 = sqrt(mu*(2/r2 - 1/a))\ndv1 = abs(vt1 - vc1)\ndv2 = abs(vt2 - vc2)\ndv = dv1 + dv2\ntof = pi*sqrt(a**3/mu)\n",
+      "expect": {"verdicts": ["correct", "correct", "correct", "correct", "correct", "correct", "correct", "correct", "correct", "correct"], "error_types": [], "final_check": "match"}
+    },
+    {
+      "id": "hohmann_inward_correct",
+      "correct_solution": true,
+      "planted": null,
+      "family": "hohmann",
+      "target": "dv_total",
+      "givens": {"r1_m": 42164000, "r2_m": 6774200},
+      "solution": "mu = g0*R0**2\nvc1 = sqrt(mu/r1)\nvc2 = sqrt(mu/r2)\na = (r1+r2)/2\nvt1 = sqrt(mu*(2/r1 - 1/a))\nvt2 = sqrt(mu*(2/r2 - 1/a))\ndv1 = vc1 - vt1\ndv2 = vt2 - vc2\ndv = dv1 + dv2\n",
+      "expect": {"verdicts": ["correct", "correct", "correct", "correct", "correct", "correct", "correct", "correct", "correct"], "error_types": [], "final_check": "match"}
+    },
+    {
+      "id": "hohmann_altitudes_correct",
+      "correct_solution": true,
+      "planted": null,
+      "family": "hohmann",
+      "target": "time_of_flight",
+      "givens": {"h1_m": 400000, "h2_m": 1000000},
+      "solution": "r1 = R0 + h1\nr2 = R0 + h2\nmu = g0*R0**2\na = (r1+r2)/2\ntof = pi*sqrt(a**3/mu)\n",
+      "expect": {"verdicts": ["correct", "correct", "correct", "correct", "correct"], "error_types": [], "final_check": "match"}
+    },
+    {
+      "id": "hohmann_ecc_correct",
+      "correct_solution": true,
+      "planted": null,
+      "family": "hohmann",
+      "target": "dv_total",
+      "givens": {"alt_m": 400000, "ecc": 0.2},
+      "solution": "r1 = R0 + alt\nr2 = r1*(1+ecc)/(1-ecc)\nmu = g0*R0**2\na = (r1+r2)/2\nvc1 = sqrt(mu/r1)\nvt1 = sqrt(mu*(2/r1 - 1/a))\nvc2 = sqrt(mu/r2)\nvt2 = sqrt(mu*(2/r2 - 1/a))\ndv = abs(vt1-vc1)+abs(vt2-vc2)\n",
+      "expect": {"verdicts": ["correct", "correct", "correct", "correct", "correct", "correct", "correct", "correct", "correct"], "error_types": [], "final_check": "match"}
+    },
+    {
+      "id": "rocket_arithmetic",
+      "correct_solution": false,
+      "planted": "arithmetic",
+      "family": "rocket_equation",
+      "target": "delta_v",
+      "givens": {"m0_kg": 1000, "mf_kg": 200, "ve_m_s": 3000},
+      "solution": "dv = ve * ln(m0/mf) = 5000 m/s\n",
+      "expect": {"verdicts": ["error"], "error_types": ["arithmetic"], "final_check": "mismatch"}
+    },
+    {
+      "id": "rocket_sign",
+      "correct_solution": false,
+      "planted": "sign",
+      "family": "rocket_equation",
+      "target": "delta_v",
+      "givens": {"m0_kg": 1000, "mf_kg": 200, "ve_m_s": 3000},
+      "solution": "dv = ve * ln(mf/m0)\n",
+      "expect": {"verdicts": ["error"], "error_types": ["sign"], "final_check": "mismatch"}
+    },
+    {
+      "id": "rocket_wrong_formula",
+      "correct_solution": false,
+      "planted": "wrong formula",
+      "family": "rocket_equation",
+      "target": "delta_v",
+      "givens": {"m0_kg": 1000, "mf_kg": 200, "ve_m_s": 3000},
+      "solution": "dv = ve * (m0/mf)\n",
+      "expect": {"verdicts": ["error"], "error_types": ["wrong formula"], "final_check": "mismatch"}
+    },
+    {
+      "id": "rocket_algebra",
+      "correct_solution": false,
+      "planted": "algebra",
+      "family": "rocket_equation",
+      "target": "delta_v",
+      "givens": {"m0_kg": 1000, "mf_kg": 200, "ve_m_s": 3000},
+      "solution": "dv = ve * ln(m0/mf)\nm0/mf = dv/ve\n",
+      "expect": {"verdicts": ["correct", "error"], "error_types": ["algebra"], "final_check": "match"}
+    },
+    {
+      "id": "rocket_units",
+      "correct_solution": false,
+      "planted": "units",
+      "family": "rocket_equation",
+      "target": "delta_v",
+      "givens": {"m0_kg": 1000, "mf_kg": 200, "ve_m_s": 3000},
+      "solution": "dv = ve * ln(m0/mf) = 4828.31 kg\n",
+      "expect": {"verdicts": ["error"], "error_types": ["units"], "final_check": "can't verify"}
+    },
+    {
+      "id": "rocket_approximation",
+      "correct_solution": false,
+      "planted": "approximation",
+      "family": "rocket_equation",
+      "target": "delta_v",
+      "givens": {"m0_kg": 1000, "mf_kg": 200, "ve_m_s": 3000},
+      "solution": "dv = ve * ln(m0/mf) = 4800 m/s\n",
+      "expect": {"verdicts": ["approximation"], "error_types": [], "final_check": "approximate"}
+    },
+    {
+      "id": "rocket_prose",
+      "correct_solution": false,
+      "planted": "can't verify",
+      "family": "rocket_equation",
+      "target": "delta_v",
+      "givens": {"m0_kg": 1000, "mf_kg": 200, "ve_m_s": 3000},
+      "solution": "dv = ve * ln(m0/mf)\nthe rocket is very efficient\n",
+      "expect": {"verdicts": ["correct", "can't verify"], "error_types": [], "final_check": "match"}
+    },
+    {
+      "id": "hohmann_wrong_formula",
+      "correct_solution": false,
+      "planted": "wrong formula",
+      "family": "hohmann",
+      "target": "dv_total",
+      "givens": {"r1_m": 6774200, "r2_m": 42164000},
+      "solution": "vc1 = sqrt(mu/r1)\nvc2 = sqrt(mu/r2)\ndv = vc2 - vc1\n",
+      "expect": {"verdicts": ["correct", "correct", "error"], "error_types": ["wrong formula"], "final_check": "mismatch"}
+    },
+    {
+      "id": "hohmann_unlocated_final",
+      "correct_solution": false,
+      "planted": "unlocated",
+      "family": "hohmann",
+      "target": "dv_total",
+      "givens": {"r1_m": 6774200, "r2_m": 42164000},
+      "solution": "mu = g0*R0**2\nvc1 = sqrt(mu/r1)\nvc2 = sqrt(mu/r2)\ngap = vc2 - vc1\nanswer = gap\n",
+      "expect": {
+        "verdicts": ["correct", "correct", "correct", "correct", "correct"],
+        "error_types": [],
+        "final_check": "mismatch",
+        "note_contains": "Final answer doesn't match. Likely a setup or formula error. Couldn't locate the line."
+      }
+    }
+  ]
+}

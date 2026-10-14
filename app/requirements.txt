@@ -7,3 +7,5 @@ starlette
 numpy
 matplotlib
 tzdata
+sympy
+pint
