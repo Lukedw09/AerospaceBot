@@ -176,6 +176,7 @@ Resources:
               - !Ref ResultLinkSecret
               - ":SecretString}}"
           USAGE_TIMEZONE: America/New_York
+          OWNER_UNLIMITED_EMAILS: lukedw09@gmail.com
           AEROSPACE_HTTP: "1"
       Policies:
         - DynamoDBCrudPolicy:

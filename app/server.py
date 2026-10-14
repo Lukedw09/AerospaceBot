@@ -24,21 +24,35 @@ from app.auth import (
     verify_access_token,
     verify_id_token,
 )
+from app.calculate import calculate_request
 from app.catalog import Flag, Tool, load_catalog, repo_root_from, tool_by_name
-from app.config import Settings, load_settings
+from app.config import Settings, assert_no_usage_bypass_on_lambda, load_settings
 from app.formulas import lookup_formula
 from app.pictures import publish, rewrite
 from app.runner import release_job, run_tool
-from app.usage import UsageStore
+from app.usage import UsageError, UsageStore
 
 _identity: ContextVar[Identity | None] = ContextVar("identity", default=None)
 
 INSTRUCTIONS = (
     "For aerospace formulas and calculations, use these tools. "
-    "Pass only values the user gave, after converting to the units named on the tool. "
+    "Pass only values the user gave, in the units named on the tool. "
+    "For arithmetic or a unit conversion, call calculate and quote its result. Do not do that math yourself. "
     "If a tool returns an error about a missing or illegal input, ask for that input. "
     "Quote the tool's key: value lines. Do not recompute them. "
     "If no tool fits, say so. Do not invent a formula."
+)
+
+CALCULATE_DESCRIPTION = (
+    "Evaluate arithmetic or convert units. "
+    "Use this for every arithmetic step and every unit conversion, "
+    "including seconds to minutes, km/s to ft/s, and degrees to radians. "
+    "Do not do that math yourself. "
+    "expression supports + - * / ** %, parentheses, sqrt, sin, cos, tan, "
+    "asin, acos, atan, atan2, log, log10, exp, radians, degrees, pi, and e. "
+    "Pass value, from_unit, and to_unit to convert a number. "
+    "Pass expression with from_unit and to_unit to convert that result. "
+    "The result lines are input, result, and units."
 )
 
 
@@ -80,6 +94,8 @@ def _with_request_base(settings: Settings, request: Request) -> Settings:
         cognito_region=settings.cognito_region,
         public_base_url=base,
         account_site_url=settings.account_site_url or base,
+        usage_cap_dev_bypass=settings.usage_cap_dev_bypass,
+        owner_unlimited_emails=settings.owner_unlimited_emails,
     )
 
 
@@ -106,6 +122,35 @@ def _too_large(arguments: dict[str, Any]) -> bool:
     return len(encoded) > 8000
 
 
+def _usage_subject() -> tuple[str | None, str]:
+    """Return (refusal, sub). A refusal means the tool must not run.
+
+    USAGE_CAP_DEV_BYPASS skips the cap. AUTH_DISABLED does not.
+    """
+    settings = _settings()
+    identity = _identity.get()
+    if not settings.auth_disabled and identity is None:
+        return "Sign in is required.", ""
+    sub = identity.sub if identity is not None else "local"
+    if settings.usage_cap_dev_bypass:
+        return None, sub
+    email = identity.email if identity is not None else ""
+    decision = _store().check(sub, email)
+    if not decision.allowed:
+        return decision.message, sub
+    return None, sub
+
+
+def _usage_commit(sub: str, count: bool) -> str | None:
+    if not count or not sub or _settings().usage_cap_dev_bypass:
+        return None
+    try:
+        _store().commit(sub)
+    except UsageError as exc:
+        return str(exc)
+    return None
+
+
 def dispatch_calculation(name: str, arguments: dict[str, Any]) -> str:
     settings = _settings()
     root = repo_root_from()
@@ -117,14 +162,9 @@ def dispatch_calculation(name: str, arguments: dict[str, Any]) -> str:
         return f"error: {message}"
     if _too_large(arguments):
         return "those inputs are too large"
-    identity = _identity.get()
-    store = _store()
-    if not settings.auth_disabled:
-        if identity is None:
-            return "Sign in is required."
-        decision = store.check(identity.sub, identity.email)
-        if not decision.allowed:
-            return decision.message
+    refusal, sub = _usage_subject()
+    if refusal:
+        return refusal
     started = time.perf_counter()
     result = run_tool(
         tool,
@@ -134,16 +174,17 @@ def dispatch_calculation(name: str, arguments: dict[str, Any]) -> str:
     )
     try:
         elapsed = time.perf_counter() - started
-        sub = identity.sub if identity else "local"
+        logged = sub or "local"
         if result.exit_code == 0:
-            links = publish(result.files, sub, settings)
+            links = publish(result.files, logged, settings)
             text = rewrite(result.text, links)
         else:
             text = result.text
-        if not settings.auth_disabled and identity is not None and not result.missing_input:
-            store.commit(identity.sub)
+        failure = _usage_commit(sub, not result.missing_input)
+        if failure:
+            return failure
         print(
-            f"tool {name} sub {sub} exit {result.exit_code} seconds {elapsed:.3f}",
+            f"tool {name} sub {logged} exit {result.exit_code} seconds {elapsed:.3f}",
             file=sys.stderr,
         )
         return text
@@ -155,17 +196,11 @@ def dispatch_formula(
     formula_id: str,
     values_json: dict[str, object] | str | None = None,
 ) -> str:
-    settings = _settings()
-    identity = _identity.get()
-    store = _store()
-    if not settings.auth_disabled:
-        if identity is None:
-            return "Sign in is required."
-        decision = store.check(identity.sub, identity.email)
-        if not decision.allowed:
-            return decision.message
     if values_json is not None and _too_large({"values_json": values_json}):
         return "those inputs are too large"
+    refusal, sub = _usage_subject()
+    if refusal:
+        return refusal
     root = repo_root_from()
     text = lookup_formula(
         root / "skills" / "FormulaCatalouge" / "formulas.md",
@@ -173,8 +208,25 @@ def dispatch_formula(
         formula_id,
         values_json,
     )
-    if not settings.auth_disabled and identity is not None and text != "that formula is not allowed":
-        store.commit(identity.sub)
+    failure = _usage_commit(sub, text != "that formula is not allowed")
+    if failure:
+        return failure
+    return text
+
+
+def dispatch_calculate(
+    expression: str | None = None,
+    value: float | str | None = None,
+    from_unit: str | None = None,
+    to_unit: str | None = None,
+) -> str:
+    refusal, sub = _usage_subject()
+    if refusal:
+        return refusal
+    text = calculate_request(expression, value, from_unit, to_unit)
+    failure = _usage_commit(sub, True)
+    if failure:
+        return failure
     return text
 
 
@@ -312,11 +364,38 @@ def build_server():
         """Return an allowed formula. formula_id must be listed in checks/check.md. values_json is an optional object of symbol names to numbers. partial and integral records are not evaluated."""
         return dispatch_formula(formula_id, values_json)
 
+    def calculate(
+        expression: Annotated[
+            str | None,
+            Field(description="One arithmetic expression using pi, e, and the listed math functions."),
+        ] = None,
+        value: Annotated[
+            float | None,
+            Field(description="Number to convert. Omit when expression is set."),
+        ] = None,
+        from_unit: Annotated[
+            str | None,
+            Field(description="Unit of value or of the expression result. Examples: s, km/s, deg, kg, N, Pa, C."),
+        ] = None,
+        to_unit: Annotated[
+            str | None,
+            Field(description="Unit to convert to. Examples: min, ft/s, rad, lb, lbf, psi, F."),
+        ] = None,
+    ) -> str:
+        return dispatch_calculate(expression, value, from_unit, to_unit)
+
+    calculate.__doc__ = CALCULATE_DESCRIPTION
+
     mcp.add_tool(list_tools, name="list_tools", description=list_tools.__doc__ or "")
     mcp.add_tool(
         lookup_formula_tool,
         name="lookup_formula",
         description=lookup_formula_tool.__doc__ or "",
+    )
+    mcp.add_tool(calculate, name="calculate", description=CALCULATE_DESCRIPTION)
+    _forbid_extra_fields(
+        mcp._tool_manager._tools["calculate"],
+        ["expression", "from_unit", "to_unit", "value"],
     )
 
     async def resource_metadata(request: Request) -> Response:
@@ -516,6 +595,8 @@ def _settings_for_scope(scope, settings: Settings) -> Settings:
         cognito_region=settings.cognito_region,
         public_base_url=base,
         account_site_url=settings.account_site_url or base,
+        usage_cap_dev_bypass=settings.usage_cap_dev_bypass,
+        owner_unlimited_emails=settings.owner_unlimited_emails,
     )
 
 
@@ -651,6 +732,7 @@ class _Site:
 
 
 def http_app():
+    assert_no_usage_bypass_on_lambda()
     settings = _settings()
     mcp = build_server()
     starlette = mcp.streamable_http_app(
@@ -666,6 +748,7 @@ def http_app():
 
 
 def main() -> None:
+    assert_no_usage_bypass_on_lambda()
     http = os.environ.get("AEROSPACE_HTTP", "").strip() in {"1", "true", "yes"}
     if http:
         import uvicorn

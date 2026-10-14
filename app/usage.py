@@ -1,7 +1,8 @@
-"""Daily tool-call counter. DynamoDB when configured, otherwise no limit."""
+"""Daily tool-call counter. DynamoDB when configured. Unconfigured or broken stores refuse."""
 
 from __future__ import annotations
 
+import sys
 from dataclasses import dataclass
 from datetime import datetime
 from zoneinfo import ZoneInfo
@@ -12,6 +13,8 @@ FREE_PLAN = "free"
 UNLIMITED_PLAN = "unlimited"
 UNLIMITED_DAILY_CAP = 1_000_000
 OWNER_EMAIL = "lukedw09@gmail.com"
+UNCONFIGURED_MESSAGE = "Usage tracking is not configured, so this tool call was refused."
+FAILED_MESSAGE = "Usage tracking failed, so this tool call was refused."
 
 
 @dataclass
@@ -20,6 +23,19 @@ class Decision:
     message: str
     sub: str
     email: str
+
+
+class UsageError(Exception):
+    """The usage store could not be read or updated. Callers must refuse the tool."""
+
+
+def owner_emails_for(settings: Settings) -> set[str]:
+    """Emails on the unlimited plan. An empty setting keeps the built-in owner."""
+    raw = settings.owner_unlimited_emails.strip()
+    if not raw:
+        return {OWNER_EMAIL}
+    found = {part.strip().lower() for part in raw.split(",") if part.strip()}
+    return found or {OWNER_EMAIL}
 
 
 class UsageStore:
@@ -39,7 +55,7 @@ class UsageStore:
         return datetime.now(zone).date().isoformat()
 
     def _owner(self, email: str) -> bool:
-        return email.strip().lower() == OWNER_EMAIL
+        return email.strip().lower() in owner_emails_for(self.settings)
 
     def ensure_plans(self) -> None:
         """Create plan rows when missing. Free stays at the configured daily cap."""
@@ -113,11 +129,17 @@ class UsageStore:
         return int(item.get("count", 0))
 
     def check(self, sub: str, email: str) -> Decision:
-        if not self.settings.usage_table:
+        if self.settings.usage_cap_dev_bypass:
             return Decision(True, "", sub, email)
-        self.ensure_account(sub, email)
-        _plan, cap, _pictures = self.plan_cap(sub, email)
-        used = self.used_today(sub)
+        if not self.settings.usage_table:
+            return Decision(False, UNCONFIGURED_MESSAGE, sub, email)
+        try:
+            self.ensure_account(sub, email)
+            _plan, cap, _pictures = self.plan_cap(sub, email)
+            used = self.used_today(sub)
+        except Exception as exc:
+            _log_usage_error(exc)
+            return Decision(False, FAILED_MESSAGE, sub, email)
         if used >= cap:
             return Decision(
                 False,
@@ -131,30 +153,51 @@ class UsageStore:
         return Decision(True, "", sub, email)
 
     def commit(self, sub: str) -> None:
-        table = self.table()
-        if table is None:
+        if self.settings.usage_cap_dev_bypass:
             return
-        table.update_item(
-            Key={"pk": f"usage#{sub}", "sk": self.today()},
-            UpdateExpression="ADD #count :one",
-            ExpressionAttributeNames={"#count": "count"},
-            ExpressionAttributeValues={":one": 1},
-        )
+        if not self.settings.usage_table:
+            raise UsageError(UNCONFIGURED_MESSAGE)
+        try:
+            table = self.table()
+            if table is None:
+                raise UsageError(UNCONFIGURED_MESSAGE)
+            table.update_item(
+                Key={"pk": f"usage#{sub}", "sk": self.today()},
+                UpdateExpression="ADD #count :one",
+                ExpressionAttributeNames={"#count": "count"},
+                ExpressionAttributeValues={":one": 1},
+            )
+        except UsageError:
+            raise
+        except Exception as exc:
+            _log_usage_error(exc)
+            raise UsageError(FAILED_MESSAGE) from exc
 
     def snapshot(self, sub: str, email: str = "") -> dict[str, object]:
-        table = self.table()
-        account = {}
-        if table is not None:
-            account = table.get_item(Key={"pk": f"account#{sub}", "sk": "account"}).get("Item") or {}
-        plan_name, cap, pictures = self.plan_cap(sub, email or str(account.get("email") or ""))
-        return {
-            "sub": sub,
-            "email": account.get("email", ""),
-            "plan": plan_name,
-            "used_today": self.used_today(sub),
-            "daily_cap": cap,
-            "pictures": pictures,
-        }
+        try:
+            table = self.table()
+            account = {}
+            if table is not None:
+                account = table.get_item(Key={"pk": f"account#{sub}", "sk": "account"}).get("Item") or {}
+            plan_name, cap, pictures = self.plan_cap(sub, email or str(account.get("email") or ""))
+            return {
+                "sub": sub,
+                "email": account.get("email", ""),
+                "plan": plan_name,
+                "used_today": self.used_today(sub),
+                "daily_cap": cap,
+                "pictures": pictures,
+            }
+        except Exception as exc:
+            _log_usage_error(exc)
+            return {
+                "sub": sub,
+                "email": email,
+                "plan": FREE_PLAN,
+                "used_today": 0,
+                "daily_cap": 0,
+                "pictures": False,
+            }
 
     def delete_user(self, sub: str) -> None:
         table = self.table()
@@ -174,3 +217,7 @@ class UsageStore:
             items.extend(pages.get("Items", []))
         for item in items:
             table.delete_item(Key={"pk": item["pk"], "sk": item["sk"]})
+
+
+def _log_usage_error(exc: Exception) -> None:
+    print(f"usage store error: {type(exc).__name__}: {exc}", file=sys.stderr)

@@ -10,6 +10,14 @@ def _flag(name: str) -> bool:
     return os.environ.get(name, "").strip().lower() in {"1", "true", "yes"}
 
 
+def assert_no_usage_bypass_on_lambda() -> None:
+    """Local dev may set USAGE_CAP_DEV_BYPASS. A deployed Lambda must not."""
+    if os.environ.get("AWS_LAMBDA_FUNCTION_NAME", "").strip() and _flag("USAGE_CAP_DEV_BYPASS"):
+        raise SystemExit(
+            "USAGE_CAP_DEV_BYPASS is set in the Lambda environment. Refusing to start."
+        )
+
+
 _ssm_client_id = ""
 _ssm_grok_key = ""
 
@@ -83,6 +91,8 @@ class Settings:
     public_base_url: str
     account_site_url: str
     result_link_secret: str = ""
+    usage_cap_dev_bypass: bool = False
+    owner_unlimited_emails: str = ""
 
 
 def load_settings(repo_root: str) -> Settings:
@@ -101,4 +111,6 @@ def load_settings(repo_root: str) -> Settings:
         public_base_url=os.environ.get("PUBLIC_BASE_URL", "").rstrip("/"),
         account_site_url=os.environ.get("ACCOUNT_SITE_URL", "").rstrip("/"),
         result_link_secret=os.environ.get("RESULT_LINK_SECRET", ""),
+        usage_cap_dev_bypass=_flag("USAGE_CAP_DEV_BYPASS"),
+        owner_unlimited_emails=os.environ.get("OWNER_UNLIMITED_EMAILS", ""),
     )

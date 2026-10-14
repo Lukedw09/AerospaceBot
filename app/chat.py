@@ -18,7 +18,7 @@ from starlette.responses import JSONResponse
 from app.catalog import load_catalog, repo_root_from
 from app.config import grok_api_key, grok_model
 from app.runner import result_root_for
-from app.usage import UsageStore
+from app.usage import UsageError, UsageStore
 
 GROK_URL = "https://api.x.ai/v1/responses"
 GROK_TIMEOUT_SEC = 70
@@ -33,6 +33,8 @@ SYSTEM_PROMPT = (
     "You are Astraeus, an aerospace assistant. "
     "Every calculated number you state must come from a tool result in this conversation, "
     "never from memory or your own arithmetic. "
+    "Any arithmetic or unit conversion must be a calculate tool call, never mental math. "
+    "That includes seconds to minutes, km/s to ft/s, and degrees to radians. "
     "State units and the tool's caveats. "
     "If a tool needs an input the user did not give, ask instead of guessing. "
     "When the user explicitly asks for an example, choose the missing inputs yourself, "
@@ -275,6 +277,7 @@ def _for_model(text: str) -> str:
 def _run_tool(name: str, arguments: dict[str, Any]) -> str:
     from app.server import (
         _unknown_parameter_message,
+        dispatch_calculate,
         dispatch_calculation,
         dispatch_formula,
         dispatch_list,
@@ -296,6 +299,19 @@ def _run_tool(name: str, arguments: dict[str, Any]) -> str:
         return dispatch_formula(
             "" if formula_id is None else str(formula_id),
             arguments.get("values_json"),
+        )
+    if name == "calculate":
+        message = _unknown_parameter_message(arguments, names[name])
+        if message:
+            return f"error: {message}"
+        expression = arguments.get("expression")
+        from_unit = arguments.get("from_unit")
+        to_unit = arguments.get("to_unit")
+        return dispatch_calculate(
+            None if expression is None else str(expression),
+            arguments.get("value"),
+            None if from_unit is None else str(from_unit),
+            None if to_unit is None else str(to_unit),
         )
     return dispatch_calculation(name, arguments)
 
@@ -628,7 +644,7 @@ def run_turn(kept: list[dict[str, str]], store: UsageStore, sub: str, key: str, 
                 }
             )
             plots.extend(plots_from(str(item["name"]), output))
-            if output.startswith("Daily limit reached"):
+            if output.startswith("Daily limit reached") or output.startswith("Usage tracking"):
                 limit = output
                 break
         if limit:
@@ -730,11 +746,14 @@ async def handle_post(request: Request) -> JSONResponse:
         return _json({"error": problem}, status)
     store = UsageStore(settings)
     sub = identity.sub if identity is not None else ""
-    if identity is not None and not settings.auth_disabled:
+    if identity is not None and not settings.usage_cap_dev_bypass:
         decision = store.check(identity.sub, identity.email)
         if not decision.allowed:
             return _reply(_limit_result(decision.message), store, sub, "")
-        store.commit(identity.sub)
+        try:
+            store.commit(identity.sub)
+        except UsageError as exc:
+            return _reply(_limit_result(str(exc)), store, sub, "")
     try:
         key = grok_api_key()
     except Exception:
