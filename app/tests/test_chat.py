@@ -145,6 +145,9 @@ class ChatTests(unittest.TestCase):
         self.assertIn("explicitly asks for an example", SYSTEM_PROMPT)
         self.assertIn("random values", SYSTEM_PROMPT)
         self.assertIn("Do not choose inputs unless they asked for an example", SYSTEM_PROMPT)
+        self.assertIn("calculate", SYSTEM_PROMPT)
+        self.assertIn("never mental math", SYSTEM_PROMPT)
+        self.assertIn("km/s to ft/s", SYSTEM_PROMPT)
 
     def test_chat_page_is_served_at_chat(self) -> None:
         status, _data, text, headers = call(self.app, "GET", "/chat")
@@ -630,6 +633,46 @@ class ChatTests(unittest.TestCase):
         self.assertNotIn(SENTINEL, data["error"])
         self.assert_key_hidden(text, headers)
 
+    def test_calculate_is_a_chat_tool(self) -> None:
+        calls = {"n": 0}
+
+        def grok(_messages, tools, _model, _key, timeout=70):
+            del timeout
+            calls["n"] += 1
+            names = [tool["function"]["name"] for tool in tools]
+            if calls["n"] == 1:
+                self.assertIn("calculate", names)
+                return tool_call(
+                    "calculate",
+                    {"value": 90, "from_unit": "s", "to_unit": "min"},
+                )
+            return final("That is 1.5 minutes.")
+
+        env = {
+            "AUTH_DISABLED": "1",
+            "USAGE_CAP_DEV_BYPASS": "1",
+            "USAGE_TABLE": "",
+            "GROK_API_KEY": SENTINEL,
+            "GROK_MODEL": "grok-test",
+        }
+        with mock.patch.dict(os.environ, env, clear=False):
+            with mock.patch("app.chat.complete", side_effect=grok):
+                status, data, text, headers = call(
+                    self.app,
+                    "POST",
+                    "/api/chat",
+                    {"messages": [{"role": "user", "content": "How many minutes is 90 seconds?"}]},
+                )
+        self.assertEqual(status, 200)
+        self.assertEqual(data["answer"], "That is 1.5 minutes.")
+        detail = data["details"][0]
+        self.assertEqual(detail["tool"], "calculate")
+        self.assertIn("input: 90 s", detail["output"])
+        self.assertIn("result: 1.5", detail["output"])
+        self.assertIn("units: min", detail["output"])
+        self.assertEqual(detail["arguments"]["from_unit"], "s")
+        self.assert_key_hidden(text, headers)
+
     def test_hohmann_transfer_end_to_end(self) -> None:
         calls = {"n": 0}
         seen: list[str] = []
@@ -647,6 +690,7 @@ class ChatTests(unittest.TestCase):
             "GROK_MODEL": "grok-test",
             "PICTURE_BUCKET": "",
             "USAGE_TABLE": "",
+            "USAGE_CAP_DEV_BYPASS": "1",
         }
         with mock.patch.dict(os.environ, env, clear=False):
             with mock.patch("app.chat.complete", side_effect=grok):
@@ -661,11 +705,12 @@ class ChatTests(unittest.TestCase):
         self.assertEqual(data["answer"], "Quoted from the tool.")
         self.assertEqual(data["details"][0]["tool"], "hohmann_transfer")
         self.assertIn("dv_m_s:", data["details"][0]["output"])
-        self.assertEqual(len(seen), len(load_catalog(ROOT)) + 2)
-        self.assertEqual(len(seen), 141)
+        self.assertEqual(len(seen), len(load_catalog(ROOT)) + 3)
+        self.assertEqual(len(seen), 142)
         self.assertIn("hohmann_transfer", seen)
         self.assertIn("list_tools", seen)
         self.assertIn("lookup_formula", seen)
+        self.assertIn("calculate", seen)
         plots = data["plots"]
         self.assertTrue(plots)
         self.assertTrue(plots[0]["src"].startswith("data:image/png;base64,"))

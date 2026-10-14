@@ -250,6 +250,10 @@ class FormulaTests(unittest.TestCase):
 
 class PluginCases(unittest.TestCase):
     def test_five_cases(self) -> None:
+        with mock.patch.dict(os.environ, {"USAGE_CAP_DEV_BYPASS": "1"}):
+            self._five_cases()
+
+    def _five_cases(self) -> None:
         full = dispatch_calculation(
             "throat_sizing",
             {"thrust": 1500, "cf": 1.5, "pc": 2e6, "cstar": 1600},
@@ -299,6 +303,8 @@ class PluginCases(unittest.TestCase):
         self.assertIn("throat_sizing", names)
         self.assertIn("lookup_formula", names)
         self.assertIn("list_tools", names)
+        self.assertIn("calculate", names)
+        self.assertIn("calculate", INSTRUCTIONS)
         values_schema = server._tool_manager._tools["lookup_formula"].parameters["properties"]["values_json"]
         kinds = values_schema.get("anyOf", [values_schema])
         self.assertTrue(any(item.get("type") == "object" for item in kinds))
