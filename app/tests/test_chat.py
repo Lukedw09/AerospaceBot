@@ -706,7 +706,7 @@ class ChatTests(unittest.TestCase):
         self.assertEqual(data["details"][0]["tool"], "hohmann_transfer")
         self.assertIn("dv_m_s:", data["details"][0]["output"])
         self.assertEqual(len(seen), len(load_catalog(ROOT)) + 3)
-        self.assertEqual(len(seen), 142)
+        self.assertEqual(len(seen), 143)
         self.assertIn("hohmann_transfer", seen)
         self.assertIn("list_tools", seen)
         self.assertIn("lookup_formula", seen)
