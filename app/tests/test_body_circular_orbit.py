@@ -49,6 +49,45 @@ def num(data: dict[str, str], key: str) -> float:
     return float(data[key])
 
 
+def _body_fill_blobs(path: Path) -> int:
+    """Count separate disks of the custom-body fill. The inset is a second disk."""
+    from PIL import Image
+
+    image = Image.open(path).convert("RGB")
+    target = (0xF5, 0xCB, 0xA7)
+    width, height = image.size
+    pixels = image.load()
+    seen = bytearray(width * height)
+    blobs = 0
+
+    def close(x: int, y: int) -> bool:
+        red, green, blue = pixels[x, y]
+        return abs(red - target[0]) <= 8 and abs(green - target[1]) <= 8 and abs(blue - target[2]) <= 8
+
+    for y in range(height):
+        for x in range(width):
+            index = y * width + x
+            if seen[index] or not close(x, y):
+                continue
+            size = 0
+            stack = [(x, y)]
+            seen[index] = 1
+            while stack:
+                cx, cy = stack.pop()
+                size += 1
+                for nx, ny in ((cx - 1, cy), (cx + 1, cy), (cx, cy - 1), (cx, cy + 1)):
+                    if nx < 0 or ny < 0 or nx >= width or ny >= height:
+                        continue
+                    neighbor = ny * width + nx
+                    if seen[neighbor] or not close(nx, ny):
+                        continue
+                    seen[neighbor] = 1
+                    stack.append((nx, ny))
+            if size >= 80:
+                blobs += 1
+    return blobs
+
+
 class PresetCitationTests(unittest.TestCase):
     def test_every_preset_has_citation_url(self) -> None:
         self.assertGreaterEqual(len(orbit.PRESETS), 8)
@@ -168,6 +207,37 @@ class CircularOrbitTests(unittest.TestCase):
             self.assertTrue(err.startswith("error:"), err)
             self.assertIn(snippet, err)
             self.assertNotIn("Traceback", err)
+
+    def test_one_call_returns_exactly_one_png(self) -> None:
+        from app.catalog import load_catalog, tool_by_name
+        from app.runner import run_tool
+
+        tool = tool_by_name(load_catalog(ROOT), "body_circular_orbit")
+        self.assertIsNotNone(tool)
+        assert tool is not None
+        result = run_tool(
+            tool,
+            {"v": 47.30, "rho": 2700},
+            repo_root=ROOT,
+            timeout_sec=60,
+        )
+        self.assertEqual(result.exit_code, 0, result.text)
+        graph_lines = [line for line in result.text.splitlines() if line.startswith("graph:")]
+        self.assertEqual(graph_lines, [f"graph: {result.files[0]}"] if result.files else [])
+        pngs = [path for path in result.files if path.suffix.lower() == ".png"]
+        self.assertEqual(len(pngs), 1)
+        self.assertEqual(list(result.job_dir.glob("*.png")), pngs)
+        self.assertEqual(pngs[0].read_bytes()[:8], b"\x89PNG\r\n\x1a\n")
+        self.assertIn("orbit_inset: yes", result.text)
+        self.assertGreaterEqual(_body_fill_blobs(pngs[0]), 2)
+        wide = run_ok(
+            self,
+            ["--radius", "100000", "--rho", "2700", "--alt", "400000", "--compare", "phobos", "--out", str(Path(result.job_dir) / "wide.png")],
+        )
+        wide_path = Path(wide["graph"])
+        self.assertEqual(wide["orbit_inset"], "no")
+        self.assertEqual(_body_fill_blobs(wide_path), 1)
+        self.assertEqual(sorted(path.name for path in result.job_dir.glob("*.png")), ["out.png", "wide.png"])
 
     def test_png_for_tiny_body_and_moon(self) -> None:
         with tempfile.TemporaryDirectory() as folder:

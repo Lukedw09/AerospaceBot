@@ -514,15 +514,92 @@ def ensure_matplotlib():
     return plt, Circle
 
 
-def plot_png(path: Path, result: Solution) -> None:
+# A gap thinner than this fraction of the comparison span is a stroke on the
+# limb. It stays in the same PNG as an enlarged inset, not a second file.
+INSET_GAP_FRACTION = 0.025
+
+
+def comparison_layout(body_km: float, orbit_km: float, ref_km: float) -> tuple[float, float, float, float]:
+    gap = 0.28 * max(orbit_km, ref_km, body_km, 1e-6)
+    ref_x = orbit_km + gap + ref_km
+    left = -orbit_km
+    right = ref_x + ref_km
+    span = max(right - left, 1e-6)
+    return ref_x, left, right, span
+
+
+def orbit_hidden_at_comparison_scale(body_km: float, orbit_km: float, span_km: float) -> bool:
+    """True when the altitude gap would not read as an orbit beside the reference."""
+    gap = max(0.0, orbit_km - body_km)
+    return gap / max(span_km, 1e-6) < INSET_GAP_FRACTION
+
+
+def draw_dashed_orbit(ax, center_x: float, orbit_km: float, *, width: float, under: float) -> None:
+    xs, ys = circle_xy(center_x, orbit_km)
+    # White understroke keeps the dashes readable when the orbit lies on the limb.
+    ax.plot(xs, ys, color="white", linewidth=under, linestyle=(0, (6, 4)), zorder=4)
+    ax.plot(
+        xs,
+        ys,
+        color=PALETTE["orbit"],
+        linewidth=width,
+        linestyle=(0, (6, 4)),
+        zorder=5,
+    )
+
+
+def draw_orbit_inset(ax, Circle, result: Solution, body_km: float, orbit_km: float) -> None:
+    """Enlarged custom body. Same PNG; not a second file and not the comparison scale."""
+    ax.set_facecolor("white")
+    ax.add_patch(
+        Circle(
+            (0.0, 0.0),
+            body_km,
+            facecolor=PALETTE["body_fill"],
+            edgecolor=PALETTE["body"],
+            linewidth=1.4,
+            zorder=3,
+        )
+    )
+    draw_dashed_orbit(ax, 0.0, orbit_km, width=2.4, under=4.6)
+    pad = max(0.55 * orbit_km, 0.35 * body_km)
+    limit = orbit_km + pad
+    ax.set_xlim(-limit, limit)
+    ax.set_ylim(-1.42 * limit, 1.08 * limit)
+    ax.set_aspect("equal", adjustable="box")
+    ax.set_xticks([])
+    ax.set_yticks([])
+    for spine in ax.spines.values():
+        spine.set_color(PALETTE["note"])
+        spine.set_linewidth(0.8)
+    alt_km = result.altitude_m / 1000.0
+    if alt_km == 0.0:
+        detail = "surface orbit"
+    elif alt_km >= 1.0:
+        detail = f"altitude {alt_km:.4g} km"
+    else:
+        detail = f"altitude {result.altitude_m:.4g} m"
+    ax.set_title("Enlarged orbit", color=PALETTE["text"], fontsize=10)
+    ax.text(
+        0.0,
+        -1.28 * limit,
+        detail,
+        ha="center",
+        va="top",
+        color=PALETTE["orbit"],
+        fontsize=8,
+    )
+
+
+def plot_png(path: Path, result: Solution) -> bool:
     plt, Circle = ensure_matplotlib()
     fig, ax = plt.subplots(figsize=(9.4, 6.6))
     body_km = result.radius_m / 1000.0
     orbit_km = result.orbit_radius_m / 1000.0
     ref_km = result.compare.radius_m / 1000.0
-    gap = 0.28 * max(orbit_km, ref_km, body_km, 1e-6)
-    ref_x = orbit_km + gap + ref_km
+    ref_x, left, right, span = comparison_layout(body_km, orbit_km, ref_km)
     half = max(orbit_km, ref_km, body_km)
+    show_inset = orbit_hidden_at_comparison_scale(body_km, orbit_km, span)
 
     ax.add_patch(
         Circle(
@@ -544,18 +621,8 @@ def plot_png(path: Path, result: Solution) -> None:
             zorder=3,
         )
     )
-    xs, ys = circle_xy(0.0, orbit_km)
-    # White understroke keeps the dashes readable when the orbit lies on the limb.
-    ax.plot(xs, ys, color="white", linewidth=3.4, linestyle=(0, (6, 4)), zorder=4)
-    ax.plot(
-        xs,
-        ys,
-        color=PALETTE["orbit"],
-        linewidth=1.8,
-        linestyle=(0, (6, 4)),
-        zorder=5,
-        label="circular orbit",
-    )
+    draw_dashed_orbit(ax, 0.0, orbit_km, width=1.8, under=3.4)
+    ax.plot([], [], color=PALETTE["orbit"], linewidth=1.8, linestyle=(0, (6, 4)), label="circular orbit")
     ax.plot([], [], color=PALETTE["body"], linewidth=6, label=result.body_label)
     ax.plot([], [], color=PALETTE["reference"], linewidth=6, label=result.compare.display)
 
@@ -578,9 +645,6 @@ def plot_png(path: Path, result: Solution) -> None:
         color=PALETTE["reference"],
         fontsize=10,
     )
-    left = -orbit_km
-    right = ref_x + ref_km
-    span = max(right - left, 1e-6)
     pad = 0.08 * span
     ax.set_xlim(left - pad, right + pad)
     ax.set_ylim(-1.55 * half, 1.28 * half)
@@ -591,7 +655,13 @@ def plot_png(path: Path, result: Solution) -> None:
     ax.set_title(IDEALIZED_NOTE, color=PALETTE["note"], fontsize=9, style="italic")
     ax.grid(True, color=PALETTE["grid"], alpha=0.7)
     ax.legend(loc="upper right", fontsize=8.5)
-    fig.tight_layout()
+    if show_inset:
+        # Leave a column on the right of this same figure. Do not open a second PNG.
+        fig.subplots_adjust(left=0.07, right=0.64, bottom=0.10, top=0.88)
+        inset = fig.add_axes([0.68, 0.16, 0.28, 0.62])
+        draw_orbit_inset(inset, Circle, result, body_km, orbit_km)
+    else:
+        fig.tight_layout()
     path.parent.mkdir(parents=True, exist_ok=True)
     try:
         fig.savefig(path, dpi=140, bbox_inches="tight", facecolor="white")
@@ -599,9 +669,10 @@ def plot_png(path: Path, result: Solution) -> None:
         plt.close(fig)
         raise ValueError(f"could not write the plot: {exc}") from exc
     plt.close(fig)
+    return show_inset
 
 
-def emit(result: Solution, path: Path | None) -> None:
+def emit(result: Solution, path: Path | None, orbit_inset: bool = False) -> None:
     print_kv("title", PLOT_TITLE)
     print_kv("assumptions", ASSUMPTIONS)
     print_kv("input_mode", result.mode)
@@ -628,6 +699,7 @@ def emit(result: Solution, path: Path | None) -> None:
     print_kv("compare_diameter_m", result.compare.diameter_m)
     print_kv("compare_rule", result.compare_rule)
     if path is not None:
+        print_kv("orbit_inset", "yes" if orbit_inset else "no")
         print_kv("graph", str(path))
 
 
@@ -643,13 +715,14 @@ def run(ns: argparse.Namespace) -> int:
         compare=ns.compare,
     )
     path: Path | None = None
+    orbit_inset = False
     if not ns.no_plot:
         path = Path(ns.out) if ns.out else SKILL_DIR / "body_circular_orbit.png"
         path = path.resolve()
-        plot_png(path, result)
+        orbit_inset = plot_png(path, result)
     elif ns.out is not None:
         raise ValueError("pass --out only when a PNG is written")
-    emit(result, path)
+    emit(result, path, orbit_inset)
     return 0
 
 
@@ -791,6 +864,11 @@ def run_check() -> int:
             return fail(f"tiny-body PNG failed: {err}")
         if _values(text).get("compare_body") != "mimas":
             return fail("a 50 km body was not compared with Mimas")
+        graphs = [line for line in text.splitlines() if line.startswith("graph:")]
+        if len(graphs) != 1:
+            return fail(f"one call printed {len(graphs)} graph lines")
+        if _values(text).get("orbit_inset") != "yes":
+            return fail("a surface orbit beside Mimas did not include an inset")
         moon_png = folder_path / "moon.png"
         code, text, err = capture(["--body", "Moon", "--out", str(moon_png)])
         if code != 0:
